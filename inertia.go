@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -79,83 +78,10 @@ type marshallJSON func(v any) ([]byte, error)
 // logger gives methods to display status of the Inertia.
 //
 // Sometimes it's not possible to return an error,
-// so we will this messages to logger.
+// so we will send those messages to logger.
 type logger interface {
 	Printf(format string, v ...any)
 	Println(v ...any)
-}
-
-// Option is an option parameter that modifies Inertia.
-type Option func(i *Inertia) error
-
-// WithTemplateFS returns Option that will set Inertia's templateFS.
-func WithTemplateFS(templateFS fs.FS) Option {
-	return func(i *Inertia) error {
-		i.templateFS = templateFS
-		return nil
-	}
-}
-
-// WithVersion returns Option that will set Inertia's version.
-func WithVersion(version string) Option {
-	return func(i *Inertia) error {
-		i.version = version
-		return nil
-	}
-}
-
-// WithAssetURL returns Option that will set Inertia's version based on asset url.
-func WithAssetURL(url string) Option {
-	return WithVersion(md5(url))
-}
-
-// WithManifestFile returns Option that will set Inertia's version based on manifest file.
-func WithManifestFile(path string) Option {
-	version, err := md5File(path)
-	if err == nil {
-		return WithVersion(version)
-	}
-
-	return func(i *Inertia) error {
-		return fmt.Errorf("calculating md5 hash of manifest file error: %w", err)
-	}
-}
-
-// WithMarshalJSON returns Option that will set Inertia's marshallJSON func.
-func WithMarshalJSON(f marshallJSON) Option {
-	return func(i *Inertia) error {
-		i.marshallJSON = f
-		return nil
-	}
-}
-
-// WithLogger returns Option that will set Inertia's logger.
-func WithLogger(log logger) Option {
-	if log == nil {
-		return WithoutLogger()
-	}
-
-	return func(i *Inertia) error {
-		i.logger = log
-		return nil
-	}
-}
-
-// WithoutLogger returns Option that will unset Inertia's logger.
-// Actually set a logger with io.Discard output.
-func WithoutLogger() Option {
-	return func(i *Inertia) error {
-		i.logger = log.New(io.Discard, "", 0)
-		return nil
-	}
-}
-
-// WithContainerID returns Option that will set Inertia's container id.
-func WithContainerID(id string) Option {
-	return func(i *Inertia) error {
-		i.containerID = id
-		return nil
-	}
 }
 
 // Location creates redirect response.
@@ -171,38 +97,18 @@ func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, s
 	redirectResponse(w, r, url, status...)
 }
 
-// ShareTemplateData adds passed data to shared template data.
-func (i *Inertia) ShareTemplateData(key string, val any) {
-	i.sharedTemplateData[key] = val
-}
-
-// FlushSharedTemplateData flushes shared template data.
-func (i *Inertia) FlushSharedTemplateData() {
-	i.sharedTemplateData = make(templateData)
-}
-
-// ShareTemplateFunc adds passed value to the shared template func map.
-func (i *Inertia) ShareTemplateFunc(key string, val any) {
-	i.sharedTemplateFuncMap[key] = val
-}
-
-// FlushSharedTemplateFunc flushes the shared template func map.
-func (i *Inertia) FlushSharedTemplateFunc() {
-	i.sharedTemplateFuncMap = make(template.FuncMap)
-}
-
 // Render return response with Inertia data.
 //
 // If request is Inertia request - it will return JSON.
 // Otherwise, it will return root template.
-func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component string, props Props) (err error) {
+func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component string, props ...Props) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("render error: %w", err)
 		}
 	}()
 
-	page, err := i.buildPage(r, component, props)
+	page, err := i.buildPage(r, component, firstOr[Props](props, nil))
 	if err != nil {
 		return err
 	}
@@ -282,7 +188,7 @@ func (i *Inertia) inertiaContainerHTML(pageJSON []byte) template.HTML {
 }
 
 // backURL returns url that will be used to redirect browser to previous page.
-// At the moment it based only by Referer HTTP header.
+// At the moment it based only by the "Referer" HTTP header.
 func (i *Inertia) backURL(r *http.Request) string {
 	return refererFromRequest(r)
 }

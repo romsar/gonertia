@@ -1,20 +1,33 @@
-# Inertia.js Go Adapter
+# Gonertia
 
-<img src="https://user-images.githubusercontent.com/27378369/215351322-26995373-ca54-4dfa-b000-59908bbf4d5a.png" style="width: 200px" />
+<img src="https://user-images.githubusercontent.com/27378369/215432769-35e7b0f5-29a9-41d0-ba79-ca81e624b970.png" style="width: 200px"  alt="gonertia"/>
 
-This is a Inertia.js server-side adapter for Golang. Visit [inertiajs.com](https://inertiajs.com/) to learn more.
+Gonertia is a Inertia.js server-side adapter for Golang. Visit [inertiajs.com](https://inertiajs.com/) to learn more.
+
+[![Audit Workflow](https://github.com/romsar/gonertia/actions/workflows/audit.yml/badge.svg?branch=master)](https://github.com/romsar/gonertia/actions/workflows/audit.yml?query=branch:master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/romsar/gonertia)](https://goreportcard.com/report/github.com/romsar/gonertia)
+[![Go Reference](https://godoc.org/github.com/romsar/gonertia?status.svg)](https://pkg.go.dev/github.com/romsar/gonertia)
+[![MIT license](https://img.shields.io/badge/LICENSE-MIT-orange.svg)](https://github.com/romsar/gonertia/blob/master/LICENSE)
 
 ## Introdution
 
-This package based on [petaki/inertia-go](https://github.com/petaki/inertia-go), but with more striving for similarity [inertia-laravel](https://github.com/inertiajs/inertia-laravel):
-- Middleware (redirect back if empty/303 redirect status for post/put/patch).
-- Lazy and closure props support.
-- Redirect with `inertia.Location` function works for inertia and non-inertia requests.
-- Template directives `inertia` and `inertiaHead` just like in [inertia-laravel](https://github.com/inertiajs/inertia-laravel).
-- Asset versioning by asset url or manifest file.
-- Some other differences like testing coverage or more complex examples.
+Inertia allows you to create fully client-side rendered, single-page apps, without the complexity that comes with modern SPAs. It does this by leveraging existing server-side patterns that you already love.
 
-The purpose of developing this package is to implement all the functions that are available in the official Laravel package, as well as their maximum similar implementation.
+This package based on [petaki/inertia-go](https://github.com/petaki/inertia-go), but with a great desire for the similarity of the official Inertia.js adapter for Laravel: [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel). 
+
+At the moment, this package works identically to the official Laravel adapter:
+- Same middleware.
+- Lazy and closure props support.
+- Redirect with `inertia.Location` function works for Inertia and non-Inertia requests.
+- Template directives `inertia` and `inertiaHead` works the same.
+- Asset versioning by asset url or manifest file.
+- Share props and template (view) data.
+- etc.
+
+## Roadmap
+- [ ] Tests
+- [ ] Validation errors
+- [ ] SSR
 
 ## Installation
 Install using `go get` command:
@@ -25,26 +38,30 @@ go get github.com/romsar/gonertia
 ## Usage
 
 ### Basic example
-main.go
+Initialize Gonertia in your `main.go`:
 ```go
 package main
 
 import (
-    inertia "github.com/romsar/gonertia"
     "log"
     "http"
     "time"
+    
+    inertia "github.com/romsar/gonertia"
 )
 
 func main() {
     i, err := inertia.New(
         "https://yourwebsite.com",
-        "./root.html",
+        "./ui/templates/root.html",
     )
     if err != nil {
         log.Fatal(err)
     }
 
+    // Now create your HTTP server.
+    // Gonertia works well with standard http handlers,
+    // but you free to use some frameworks like Gorilla Mux or Chi.
     mux := http.NewServeMux()
 
     mux.Handle("/home", i.Middleware(homeHandler(i)))
@@ -52,11 +69,11 @@ func main() {
 
 func homeHandler(i *inertia.Inertia) http.Handler {
     fn := func(w http.ResponseWriter, r *http.Request) {
-        props := inertia.Props{
+		err := i.Render(w, r, "Home/Index", inertia.Props{
             "some": "data",
-        }
+        })
 		
-        if err := i.Render(w, r, "Index", props); err != nil {
+        if err != nil {
            handleServerErr(w, err)
         }
     }
@@ -65,7 +82,7 @@ func homeHandler(i *inertia.Inertia) http.Handler {
 }
 ```
 
-root.html
+Create `root.html` template:
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -83,8 +100,9 @@ root.html
 </html>
 ```
 
-#### Load root template using embed
+### More examples
 
+#### Load root template using embed
 ```go
 import "embed"
 
@@ -94,78 +112,66 @@ var templateFS embed.FS
 // ...
 
 i, err := inertia.New(
-    "https://yourwebsite.com",
-    "templates/root.html",
+    /* ... */
     inertia.WithTemplateFS(templateFS),
 )
 ```
 
-#### With asset version
+#### Set asset version ([learn more](https://inertiajs.com/asset-versioning))
 
 ```go
 i, err := inertia.New(
-    "https://yourwebsite.com",
-    "templates/root.html",
+    /* ... */
     inertia.WithVersion("some-version"),
 )
 ```
 
-or
+#### Set asset version by asset url
 
 ```go
 i, err := inertia.New(
-    "https://yourwebsite.com",
-    "templates/root.html",
+    /* ... */
     inertia.WithAssetURL("/static/js/1f0f8sc6.js"),
 )
 ```
 
-or
+#### Set asset version by manifest file
 
 ```go
 i, err := inertia.New(
-    "https://yourwebsite.com",
-    "templates/root.html",
+    /* ... */
     inertia.WithManifestFile("./ui/manifest.json"),
 )
 ```
 
-#### With your marshal JSON function
+#### Replace standard JSON marshall function
 
 ```go
+import jsoniter "github.com/json-iterator/go"
+
+// ...
+
 i, err := inertia.New(
-    "https://yourwebsite.com",
-    "templates/root.html",
-    inertia.WithMarshalJSON(jsoniter.Marshal),
+	/* ... */, 
+	inertia.WithMarshalJSON(jsoniter.Marshal),
 )
 ```
 
-#### With your logger
+#### Use your logger
 
 ```go
 i, err := inertia.New(
-    "https://yourwebsite.com",
-    "templates/root.html",
+    /* ... */
     inertia.WithLogger(somelogger.New()),
+	// or inertia.WithoutLogger(),
 )
 ```
 
-or disable logging at all:
+#### Set custom container id
 
 ```go
 i, err := inertia.New(
-    "https://yourwebsite.com",
-    "templates/root.html",
-    inertia.WithoutLogger(),
-)
-```
-
-#### With custom container id
-
-```go
-i, err := inertia.New(
-    "https://yourwebsite.com",
-    "templates/root.html",
+    /* ... */
     inertia.WithContainerID("inertia"),
 )
 ```
@@ -173,25 +179,18 @@ i, err := inertia.New(
 #### Closure and lazy props ([learn more](https://inertiajs.com/partial-reloads))
 
 ```go
-func homeHandler(i *inertia.Inertia) http.Handler {
-    fn := func(w http.ResponseWriter, r *http.Request) {
-        props := inertia.Props{
-            "time": func () (any, error) { return time.Now().String(), nil },
-            "lazy": inertia.LazyProp(func () (any, error) {
-                return "lazy data", nil
-            }),
-        }
-		
-        if err := i.Render(w, r, "Index", props); err != nil {
-           handleServerErr(w, err)
-        }
-    }
-
-    return http.HandlerFunc(fn)
+props := inertia.Props{
+	"regular": "prop",
+	"closure": func () (any, error) { return "prop", nil },
+	"lazy": inertia.LazyProp(func () (any, error) {
+		return "prop", nil
+	},
 }
+
+i.Render(w, r, "Some/Page", props)
 ```
 
-#### Redirects
+#### Redirects ([learn more](https://inertiajs.com/redirects))
 
 ```go
 func homeHandler(i *inertia.Inertia) http.Handler {
@@ -203,13 +202,14 @@ func homeHandler(i *inertia.Inertia) http.Handler {
 }
 ```
 
+NOTES:
+If request was Inertia request - user will be redirected via Inertia.js.
+If not - user will be redirected via 302 status.
 If response is empty - user will be redirected to the previous url.
 
-#### Share template data
+#### Share template data ([learn more](https://inertiajs.com/responses#root-template-data))
 
 ```go
-i, err := inertia.New(/* ... */)
-
 i.ShareTemplateData("title", "Home page")
 ```
 
@@ -220,39 +220,35 @@ i.ShareTemplateData("title", "Home page")
 #### Share template func
 
 ```go
-i, err := inertia.New(/* ... */)
-
 i.ShareTemplateFunc("trim", strings.Trim)
 ```
 
 ```html
-<title>{{ trim " foo bar " }}</title>
+<title>{{ trim "foo bar" }}</title>
 ```
 
-#### Share prop globally
-
-```go
-i, err := inertia.New(/* ... */)
-
-i.ShareProp("name", "Roman")
-```
-
-#### Pass template data via context (in middleware/handler)
+#### Pass template data via context (in middleware)
 
 ```go
 ctx := i.WithTemplateData(r.Context(), "title", "Home page")
 
-// pass it to the next middleware or inertia.Render function. 
+// pass it to the next middleware or inertia.Render function via r.WithContext(ctx).
 ```
 
-#### Pass props via context (in middleware/handler)
+#### Share prop globally ([learn more](https://inertiajs.com/shared-data))
+
+```go
+i.ShareProp("name", "Roman")
+```
+
+#### Pass props via context (in middleware)
 
 ```go
 ctx := i.WithProp(r.Context(), "name", "Roman")
 
-// pass it to the next middleware or inertia.Render function. 
+// pass it to the next middleware or inertia.Render function via r.WithContext(ctx).
 ```
 
-## Roadmap
-- [ ] Validation errors
-- [ ] SSR
+## License
+
+Gonertia is released under the [MIT License](http://www.opensource.org/licenses/MIT).

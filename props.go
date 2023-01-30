@@ -14,27 +14,6 @@ type Props map[string]any
 // https://inertiajs.com/partial-reloads
 type LazyProp func() (any, error)
 
-// ShareProp adds passed prop to shared props.
-func (i *Inertia) ShareProp(key string, val any) {
-	i.sharedProps[key] = val
-}
-
-// SharedProps returns shared props.
-func (i *Inertia) SharedProps() Props {
-	return i.sharedProps
-}
-
-// SharedProp return the shared prop.
-func (i *Inertia) SharedProp(key string) (any, bool) {
-	val, ok := i.sharedProps[key]
-	return val, ok
-}
-
-// FlushSharedProps flushes shared props.
-func (i *Inertia) FlushSharedProps() {
-	i.sharedProps = make(Props)
-}
-
 // prepareProps returns prepared and filtered props.
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
