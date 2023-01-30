@@ -98,8 +98,6 @@ func (i *Inertia) copyHeaders(dst http.ResponseWriter, src *inertiaResponseWrite
 	}
 }
 
-var _ http.ResponseWriter = (*inertiaResponseWriter)(nil)
-
 // inertiaResponseWriter is the implementation of http.ResponseWriter,
 // that have response body buffer and status code that will be return to client.
 type inertiaResponseWriter struct {
@@ -109,29 +107,7 @@ type inertiaResponseWriter struct {
 	header     http.Header
 }
 
-// buildInertiaResponseWriter initializes inertiaResponseWriter.
-func buildInertiaResponseWriter(w http.ResponseWriter) *inertiaResponseWriter {
-	// In some situations, we can pass a http.ResponseWriter,
-	// that also implements this interface.
-	if val, ok := w.(interface {
-		StatusCode() int
-		Header() http.Header
-		Buffer() *bytes.Buffer
-	}); ok {
-		return &inertiaResponseWriter{
-			statusCode: val.StatusCode(),
-			buf:        val.Buffer(),
-			header:     val.Header(),
-		}
-	}
-
-	// Let's create writer with default values.
-	return &inertiaResponseWriter{
-		statusCode: http.StatusOK,
-		buf:        bytes.NewBuffer(nil),
-		header:     w.Header(),
-	}
-}
+var _ http.ResponseWriter = (*inertiaResponseWriter)(nil)
 
 // Method returns HTTP method of response.
 func (w *inertiaResponseWriter) Method() string {
@@ -161,4 +137,27 @@ func (w *inertiaResponseWriter) Write(p []byte) (int, error) {
 // WriteHeader sets the status code of the response.
 func (w *inertiaResponseWriter) WriteHeader(code int) {
 	w.statusCode = code
+}
+
+// buildInertiaResponseWriter initializes inertiaResponseWriter.
+func buildInertiaResponseWriter(w http.ResponseWriter) *inertiaResponseWriter {
+	w2 := &inertiaResponseWriter{
+		statusCode: http.StatusOK,
+		buf:        bytes.NewBuffer(nil),
+		header:     w.Header(),
+	}
+
+	// In some situations, we can pass a http.ResponseWriter,
+	// that also implements these interfaces.
+	if val, ok := w.(interface{ StatusCode() int }); ok {
+		w2.statusCode = val.StatusCode()
+	}
+	if val, ok := w.(interface{ Header() http.Header }); ok {
+		w2.header = val.Header()
+	}
+	if val, ok := w.(interface{ Buffer() *bytes.Buffer }); ok {
+		w2.buf = val.Buffer()
+	}
+
+	return w2
 }
