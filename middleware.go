@@ -32,19 +32,19 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		//
 		// It's not critical that we now have a byte buffer, because we
 		// know that Inertia response has JSON format and usually not very big.
-		responseWriter := buildInertiaResponseWriter(w)
+		w2 := buildInertiaResponseWriter(w)
 
 		// Now put our response writer to other handlers.
-		next.ServeHTTP(responseWriter, r)
+		next.ServeHTTP(w2, r)
 
 		// Now, our response writer does have all needle data! Yuppy!
 		//
 		// Don't forget to copy all data to the original
 		// response writer before end!
 		defer func() {
-			i.copyHeaders(w, responseWriter)
-			i.copyStatusCode(w, responseWriter)
-			i.copyBuffer(w, responseWriter)
+			i.copyHeaders(w, w2)
+			i.copyStatusCode(w, w2)
+			i.copyBuffer(w, w2)
 		}()
 
 		// Determines what to do when the Inertia asset version has changed.
@@ -52,13 +52,13 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		//
 		// https://inertiajs.com/asset-versioning
 		if r.Method == http.MethodGet && inertiaVersionFromRequest(r) != i.version {
-			i.Location(responseWriter, r, i.url+r.RequestURI)
+			i.Location(w2, r, i.url+r.RequestURI)
 			return
 		}
 
 		// Determines what to do when an Inertia action returned with no response.
 		// By default, we'll redirect the user back to where they came from.
-		if responseWriter.StatusCode() == http.StatusOK && responseWriter.IsEmpty() {
+		if w2.StatusCode() == http.StatusOK && w2.IsEmpty() {
 			backURL := i.backURL(r)
 
 			if backURL != "" {
@@ -71,8 +71,8 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// Let's set the status code to 303 instead.
 		//
 		// https://inertiajs.com/redirects#303-response-code
-		if responseWriter.StatusCode() == http.StatusFound && isSeeOtherRedirectMethod(responseWriter.Method()) {
-			setResponseStatus(responseWriter, http.StatusSeeOther)
+		if w2.StatusCode() == http.StatusFound && isSeeOtherRedirectMethod(w2.Method()) {
+			setResponseStatus(w2, http.StatusSeeOther)
 		}
 	})
 }
