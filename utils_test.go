@@ -16,7 +16,7 @@ func Test_set(t *testing.T) {
 		var want map[string]struct{}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want %#v", got, want)
+			t.Fatalf("got=%#v, want=%#v", got, want)
 		}
 	})
 
@@ -27,7 +27,7 @@ func Test_set(t *testing.T) {
 		var want map[string]struct{}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want %#v", got, want)
+			t.Fatalf("got=%#v, want=%#v", got, want)
 		}
 	})
 
@@ -40,7 +40,7 @@ func Test_set(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want %#v", got, want)
+			t.Fatalf("got=%#v, want=%#v", got, want)
 		}
 	})
 
@@ -54,7 +54,7 @@ func Test_set(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want %#v", got, want)
+			t.Fatalf("got=%#v, want=%#v", got, want)
 		}
 	})
 
@@ -68,7 +68,7 @@ func Test_set(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want %#v", got, want)
+			t.Fatalf("got=%#v, want=%#v", got, want)
 		}
 	})
 }
@@ -109,7 +109,7 @@ func Test_firstOr(t *testing.T) {
 
 			got := firstOr[string](tt.items, tt.fallback)
 			if got != tt.want {
-				t.Fatalf("got=%#v, want %#v", got, tt.want)
+				t.Fatalf("got=%#v, want=%#v", got, tt.want)
 			}
 		})
 	}
@@ -140,7 +140,7 @@ func Test_md5(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := md5(tt.str)
 			if got != tt.want {
-				t.Fatalf("got=%#v, want %#v", got, tt.want)
+				t.Fatalf("got=%#v, want=%#v", got, tt.want)
 			}
 		})
 	}
@@ -187,7 +187,7 @@ func Test_md5File(t *testing.T) {
 
 		want := md5("foo")
 		if got != want {
-			t.Fatalf("got=%#v, want %#v", got, want)
+			t.Fatalf("got=%#v, want=%#v", got, want)
 		}
 	})
 }
