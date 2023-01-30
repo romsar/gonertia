@@ -15,15 +15,6 @@ Inertia allows you to create fully client-side rendered, single-page apps, witho
 
 This package based on [petaki/inertia-go](https://github.com/petaki/inertia-go), but with a great desire for the similarity of the official Inertia.js adapter for Laravel: [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel). 
 
-At the moment, this package works identically to the official Laravel adapter:
-- Same middleware.
-- Lazy and closure props support.
-- Redirect with `inertia.Location` function works for Inertia and non-Inertia requests.
-- Template directives `inertia` and `inertiaHead` works the same.
-- Asset versioning by asset url or manifest file.
-- Share props and template (view) data.
-- etc.
-
 ## Roadmap
 - [ ] Tests
 - [ ] Validation errors
