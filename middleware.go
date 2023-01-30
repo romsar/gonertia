@@ -44,7 +44,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		defer func() {
 			i.copyHeaders(w, responseWriter)
 			i.copyStatusCode(w, responseWriter)
-			i.copyBuf(w, responseWriter)
+			i.copyBuffer(w, responseWriter)
 		}()
 
 		// Determines what to do when the Inertia asset version has changed.
@@ -77,10 +77,10 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-// copyBuf copying source bytes buf into destination bytes buf.
-func (i *Inertia) copyBuf(dst http.ResponseWriter, src *inertiaResponseWriter) {
+// copyBuffer copying source bytes buf into destination bytes buffer.
+func (i *Inertia) copyBuffer(dst http.ResponseWriter, src *inertiaResponseWriter) {
 	if _, err := io.Copy(dst, src.buf); err != nil {
-		i.logger.Printf("cannot copy inertia response buf to writer: %s", err)
+		i.logger.Printf("cannot copy inertia response buffer to writer: %s", err)
 	}
 }
 
@@ -111,7 +111,7 @@ type inertiaResponseWriter struct {
 
 // buildInertiaResponseWriter initializes inertiaResponseWriter.
 func buildInertiaResponseWriter(w http.ResponseWriter) *inertiaResponseWriter {
-	// In rare situations, we can pass a http.ResponseWriter,
+	// In some situations, we can pass a http.ResponseWriter,
 	// that also implements this interface.
 	if val, ok := w.(interface {
 		StatusCode() int
@@ -129,7 +129,7 @@ func buildInertiaResponseWriter(w http.ResponseWriter) *inertiaResponseWriter {
 	return &inertiaResponseWriter{
 		statusCode: http.StatusOK,
 		buf:        bytes.NewBuffer(nil),
-		header:     w.Header().Clone(),
+		header:     w.Header(),
 	}
 }
 
