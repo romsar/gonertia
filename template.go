@@ -5,12 +5,12 @@ import (
 	"net/http"
 )
 
-// TemplateData is a map with values that
+// templateData is a map with values that
 // will be available in the root template.
-type TemplateData map[string]any
+type templateData map[string]any
 
 // buildTemplateData returns sharedProps based on page.
-func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, error) {
+func (i *Inertia) buildTemplateData(r *http.Request, page *page) (templateData, error) {
 	pageJSON, err := i.marshallJSON(page)
 	if err != nil {
 		return nil, fmt.Errorf("marshal page into json error: %w", err)
@@ -22,7 +22,7 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 		return nil, fmt.Errorf("getting template data from context error: %w", err)
 	}
 
-	data := TemplateData{
+	data := templateData{
 		"inertiaHead": "", // reserved for SSR.
 		"inertia":     i.inertiaContainerHTML(pageJSON),
 	}

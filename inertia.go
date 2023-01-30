@@ -30,7 +30,7 @@ type Inertia struct {
 	sharedProps Props
 
 	// sharedTemplateData are global template data.
-	sharedTemplateData TemplateData
+	sharedTemplateData templateData
 
 	// sharedTemplateFuncMap is template's function map.
 	sharedTemplateFuncMap template.FuncMap
@@ -57,7 +57,7 @@ func New(url, rootTemplatePath string, opts ...Option) (*Inertia, error) {
 		containerID:           "app",
 		logger:                log.Default(),
 		sharedProps:           make(Props),
-		sharedTemplateData:    make(TemplateData),
+		sharedTemplateData:    make(templateData),
 		sharedTemplateFuncMap: make(template.FuncMap),
 	}
 
@@ -178,7 +178,7 @@ func (i *Inertia) ShareTemplateData(key string, val any) {
 
 // FlushSharedTemplateData flushes shared template data.
 func (i *Inertia) FlushSharedTemplateData() {
-	i.sharedTemplateData = make(TemplateData)
+	i.sharedTemplateData = make(templateData)
 }
 
 // ShareTemplateFunc adds passed value to the shared template func map.
