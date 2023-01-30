@@ -1,6 +1,7 @@
 package gonertia
 
 import (
+	"os"
 	"reflect"
 	"testing"
 )
@@ -70,17 +71,122 @@ func Test_set(t *testing.T) {
 			t.Fatalf("got=%#v, want %#v", got, want)
 		}
 	})
+}
 
-	t.Run("floats", func(t *testing.T) {
+func Test_firstOr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		items    []string
+		fallback string
+		want     string
+	}{
+		{
+			"nil",
+			nil,
+			"zoo",
+			"zoo",
+		},
+		{
+			"empty",
+			[]string{},
+			"zoo",
+			"zoo",
+		},
+		{
+			"not empty",
+			[]string{"foo", "bar"},
+			"zoo",
+			"foo",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := firstOr[string](tt.items, tt.fallback)
+			if got != tt.want {
+				t.Fatalf("got=%#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_md5(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		str  string
+		want string
+	}{
+		{
+			"empty",
+			"",
+			"d41d8cd98f00b204e9800998ecf8427e",
+		},
+		{
+			"not empty",
+			"foo",
+			"acbd18db4cc2f85cedef654fccc4a4d8",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			got := md5(tt.str)
+			if got != tt.want {
+				t.Fatalf("got=%#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_md5File(t *testing.T) {
+	t.Parallel()
+
+	t.Run("basic test", func(t *testing.T) {
 		t.Parallel()
 
-		got := set[float64]([]float64{123.45, 456.78})
-		want := map[float64]struct{}{
-			123.45: {},
-			456.78: {},
+		f, err := os.CreateTemp("", "sample")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if !reflect.DeepEqual(got, want) {
+		closed := false
+
+		t.Cleanup(func() {
+			if !closed {
+				if err := f.Close(); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			}
+
+			if err := os.Remove(f.Name()); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+
+		if _, err := f.WriteString("foo"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if err := f.Close(); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		closed = true
+
+		got, err := md5File(f.Name())
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		want := md5("foo")
+		if got != want {
 			t.Fatalf("got=%#v, want %#v", got, want)
 		}
 	})
