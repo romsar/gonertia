@@ -69,7 +69,7 @@ func main() {
 
 func homeHandler(i *inertia.Inertia) http.Handler {
     fn := func(w http.ResponseWriter, r *http.Request) {
-		err := i.Render(w, r, "Home/Index", inertia.Props{
+        err := i.Render(w, r, "Home/Index", inertia.Props{
             "some": "data",
         })
 		
@@ -152,8 +152,8 @@ import jsoniter "github.com/json-iterator/go"
 // ...
 
 i, err := inertia.New(
-	/* ... */, 
-	inertia.WithMarshalJSON(jsoniter.Marshal),
+    /* ... */, 
+    inertia.WithMarshalJSON(jsoniter.Marshal),
 )
 ```
 
@@ -163,7 +163,7 @@ i, err := inertia.New(
 i, err := inertia.New(
     /* ... */
     inertia.WithLogger(somelogger.New()),
-	// or inertia.WithoutLogger(),
+    // or inertia.WithoutLogger(),
 )
 ```
 
@@ -180,11 +180,11 @@ i, err := inertia.New(
 
 ```go
 props := inertia.Props{
-	"regular": "prop",
-	"closure": func () (any, error) { return "prop", nil },
-	"lazy": inertia.LazyProp(func () (any, error) {
-		return "prop", nil
-	},
+    "regular": "prop",
+    "closure": func () (any, error) { return "prop", nil },
+    "lazy": inertia.LazyProp(func () (any, error) {
+        return "prop", nil
+    },
 }
 
 i.Render(w, r, "Some/Page", props)
