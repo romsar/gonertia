@@ -93,7 +93,7 @@ func (i *Inertia) copyStatusCode(dst http.ResponseWriter, src *inertiaResponseWr
 func (i *Inertia) copyHeaders(dst http.ResponseWriter, src *inertiaResponseWriter) {
 	for key, headers := range src.header {
 		for _, header := range headers {
-			dst.Header().Set(key, header)
+			dst.Header().Add(key, header)
 		}
 	}
 }

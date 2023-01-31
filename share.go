@@ -35,10 +35,10 @@ func (i *Inertia) FlushSharedTemplateData() {
 
 // ShareTemplateFunc adds passed value to the shared template func map.
 func (i *Inertia) ShareTemplateFunc(key string, val any) {
-	i.sharedTemplateFuncMap[key] = val
+	i.sharedTemplateFuncs[key] = val
 }
 
-// FlushSharedTemplateFunc flushes the shared template func map.
-func (i *Inertia) FlushSharedTemplateFunc() {
-	i.sharedTemplateFuncMap = make(template.FuncMap)
+// FlushSharedTemplateFuncs flushes the shared template func map.
+func (i *Inertia) FlushSharedTemplateFuncs() {
+	i.sharedTemplateFuncs = make(template.FuncMap)
 }

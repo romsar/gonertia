@@ -31,8 +31,8 @@ type Inertia struct {
 	// sharedTemplateData are global template data.
 	sharedTemplateData templateData
 
-	// sharedTemplateFuncMap is template's function map.
-	sharedTemplateFuncMap template.FuncMap
+	// sharedTemplateFuncs is template's function map.
+	sharedTemplateFuncs template.FuncMap
 
 	// version is the server asset version.
 	version string
@@ -50,14 +50,14 @@ type Inertia struct {
 // New initializes and returns Inertia.
 func New(url, rootTemplatePath string, opts ...Option) (*Inertia, error) {
 	i := &Inertia{
-		url:                   url,
-		rootTemplatePath:      rootTemplatePath,
-		marshallJSON:          json.Marshal,
-		containerID:           "app",
-		logger:                log.Default(),
-		sharedProps:           make(Props),
-		sharedTemplateData:    make(templateData),
-		sharedTemplateFuncMap: make(template.FuncMap),
+		url:                 url,
+		rootTemplatePath:    rootTemplatePath,
+		marshallJSON:        json.Marshal,
+		containerID:         "app",
+		logger:              log.Default(),
+		sharedProps:         make(Props),
+		sharedTemplateData:  make(templateData),
+		sharedTemplateFuncs: make(template.FuncMap),
 	}
 
 	for _, opt := range opts {
@@ -164,7 +164,7 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 
 // buildRootTemplate parses files or FS and then returns root template.
 func (i *Inertia) buildRootTemplate() (*template.Template, error) {
-	tmpl := template.New(filepath.Base(i.rootTemplatePath)).Funcs(i.sharedTemplateFuncMap)
+	tmpl := template.New(filepath.Base(i.rootTemplatePath)).Funcs(i.sharedTemplateFuncs)
 
 	if i.templateFS != nil {
 		return tmpl.ParseFS(i.templateFS, i.rootTemplatePath)
