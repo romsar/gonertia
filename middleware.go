@@ -62,7 +62,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 			backURL := i.backURL(r)
 
 			if backURL != "" {
-				redirectResponse(w, r, backURL)
+				setInertiaLocationToResponse(w, backURL)
 				return
 			}
 		}
@@ -71,7 +71,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// Let's set the status code to 303 instead.
 		//
 		// https://inertiajs.com/redirects#303-response-code
-		if w2.StatusCode() == http.StatusFound && isSeeOtherRedirectMethod(w2.Method()) {
+		if w2.StatusCode() == http.StatusFound && isSeeOtherRedirectMethod(r.Method) {
 			setResponseStatus(w2, http.StatusSeeOther)
 		}
 	})
@@ -101,18 +101,12 @@ func (i *Inertia) copyHeaders(dst http.ResponseWriter, src *inertiaResponseWrite
 // inertiaResponseWriter is the implementation of http.ResponseWriter,
 // that have response body buffer and status code that will be return to client.
 type inertiaResponseWriter struct {
-	method     string
 	statusCode int
 	buf        *bytes.Buffer
 	header     http.Header
 }
 
 var _ http.ResponseWriter = (*inertiaResponseWriter)(nil)
-
-// Method returns HTTP method of response.
-func (w *inertiaResponseWriter) Method() string {
-	return w.method
-}
 
 // StatusCode returns HTTP status code of response.
 func (w *inertiaResponseWriter) StatusCode() int {
