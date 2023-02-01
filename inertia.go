@@ -102,22 +102,22 @@ func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, s
 // If request is Inertia request - it will return JSON.
 // Otherwise, it will return root template.
 func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component string, props ...Props) (err error) {
-	defer func() {
-		if err != nil {
-			err = fmt.Errorf("render error: %w", err)
-		}
-	}()
-
 	page, err := i.buildPage(r, component, firstOr[Props](props, nil))
 	if err != nil {
-		return err
+		return fmt.Errorf("build page error: %w", err)
 	}
 
 	if IsInertiaRequest(r) {
-		return i.doInertiaResponse(w, page)
+		if err := i.doInertiaResponse(w, page); err != nil {
+			return fmt.Errorf("inertia response error: %w", err)
+		}
 	}
 
-	return i.doHTMLResponse(w, r, page)
+	if err := i.doHTMLResponse(w, r, page); err != nil {
+		return fmt.Errorf("html response error: %w", err)
+	}
+
+	return nil
 }
 
 // doInertiaResponse writes Inertia response to the response writer.
