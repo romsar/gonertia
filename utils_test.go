@@ -149,45 +149,42 @@ func Test_md5(t *testing.T) {
 func Test_md5File(t *testing.T) {
 	t.Parallel()
 
-	t.Run("basic test", func(t *testing.T) {
-		t.Parallel()
+	f, err := os.CreateTemp("", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
-		f, err := os.CreateTemp("", "sample")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
+	closed := false
 
-		closed := false
-
-		t.Cleanup(func() {
-			if !closed {
-				if err := f.Close(); err != nil {
-					t.Fatalf("unexpected error: %v", err)
-				}
-			}
-
-			if err := os.Remove(f.Name()); err != nil {
+	t.Cleanup(func() {
+		if !closed {
+			if err := f.Close(); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-		})
-
-		if _, err := f.WriteString("foo"); err != nil {
-			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if err := f.Close(); err != nil {
+		if err := os.Remove(f.Name()); err != nil {
 			t.Fatalf("unexpected error: %v", err)
-		}
-		closed = true
-
-		got, err := md5File(f.Name())
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		want := md5("foo")
-		if got != want {
-			t.Fatalf("got=%#v, want=%#v", got, want)
 		}
 	})
+
+	if _, err := f.WriteString("foo"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := f.Close(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	closed = true
+
+	got, err := md5File(f.Name())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	want := md5("foo")
+	if got != want {
+		t.Fatalf("got=%#v, want=%#v", got, want)
+	}
 }

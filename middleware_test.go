@@ -139,26 +139,6 @@ func TestInertia_Middleware(t *testing.T) {
 	})
 }
 
-func assertNextHandlerServed(t *testing.T, handlers ...http.HandlerFunc) http.HandlerFunc {
-	t.Helper()
-
-	called := false
-
-	t.Cleanup(func() {
-		if called == false {
-			t.Fatal("next handler was not called")
-		}
-	})
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		for _, handler := range handlers {
-			handler(w, r)
-		}
-
-		called = true
-	}
-}
-
 var (
 	successJSON = `{"success": true}`
 	errorJSON   = `{"success": false}`
