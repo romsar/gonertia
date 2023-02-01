@@ -3,6 +3,7 @@ package testing
 import (
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 )
 
@@ -11,8 +12,8 @@ func AssertInertia(t *testing.T, w *httptest.ResponseRecorder) {
 
 	got := w.Result().Header.Get("X-Inertia")
 
-	if got != "true" {
-		t.Fatalf("not intertia request")
+	if got != strconv.FormatBool(true) {
+		t.Fatalf("not inertia request")
 	}
 }
 
