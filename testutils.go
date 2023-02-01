@@ -72,7 +72,7 @@ func assertNextHandlerServed(t *testing.T, handlers ...http.HandlerFunc) http.Ha
 	called := false
 
 	t.Cleanup(func() {
-		if called == false {
+		if !called {
 			t.Fatal("next handler was not called")
 		}
 	})
