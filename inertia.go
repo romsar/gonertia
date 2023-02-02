@@ -11,18 +11,19 @@ import (
 	"strings"
 )
 
-// Inertia is a structure that contain all logic of Inertia server adapter.
+// Inertia is a main Gonertia structure, which contains all the logic for being an Inertia adapter.
 type Inertia struct {
 	// url is the app URL.
+	// The main reason to store it is to create redirects with right urls.
 	url string
 
 	// rootTemplate is the parsed root template.
 	rootTemplate *template.Template
 
-	// rootTemplatePath is the path to root template.
+	// rootTemplatePath is the path to the root template.
 	rootTemplatePath string
 
-	// templateFS is the FS that contain root template.
+	// templateFS is the FS that contain the root template.
 	templateFS fs.FS
 
 	// sharedProps are global props.
@@ -31,7 +32,7 @@ type Inertia struct {
 	// sharedTemplateData are global template data.
 	sharedTemplateData templateData
 
-	// sharedTemplateFuncs is template's function map.
+	// sharedTemplateFuncs is a functional map of the template.
 	sharedTemplateFuncs template.FuncMap
 
 	// version is the server asset version.
@@ -40,7 +41,7 @@ type Inertia struct {
 	// marshallJSON is the function that can encode bytes into JSON.
 	marshallJSON marshallJSON
 
-	// containerID is id of the Inertia HTML container.
+	// containerID is id attribute of the Inertia HTML container.
 	containerID string
 
 	// logger is the package logger.
@@ -75,10 +76,10 @@ func New(url, rootTemplatePath string, opts ...Option) (*Inertia, error) {
 // but you are free to change this behavior.
 type marshallJSON func(v any) ([]byte, error)
 
-// logger gives methods to display status of the Inertia.
+// logger gives methods to send log messages.
 //
 // Sometimes it's not possible to return an error,
-// so we will send those messages to logger.
+// so we will send those messages to the logger.
 type logger interface {
 	Printf(format string, v ...any)
 	Println(v ...any)
@@ -86,11 +87,11 @@ type logger interface {
 
 // Location creates redirect response.
 //
-// If request is Inertia request, it will set status to 409 and url will be in "X-Inertia-Location" header.
-// Otherwise, it will do an HTTP redirect with specified status (default is 302).
+// If request was made by Inertia - sets status to 409 and url will be in "X-Inertia-Location" header.
+// Otherwise, it will do an HTTP redirect with specified status (default is 302 for GET, 303 for POST/PUT/PATCH).
 func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, status ...int) {
 	if IsInertiaRequest(r) {
-		setInertiaLocationToResponse(w, url)
+		setInertiaLocationInResponse(w, url)
 		return
 	}
 
@@ -99,8 +100,8 @@ func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, s
 
 // Render return response with Inertia data.
 //
-// If request is Inertia request - it will return JSON.
-// Otherwise, it will return root template.
+// If request was made by Inertia - it will return data in JSON format.
+// Otherwise, it will return HTML with root template.
 func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component string, props ...Props) (err error) {
 	page, err := i.buildPage(r, component, firstOr[Props](props, nil))
 	if err != nil {
@@ -120,14 +121,14 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 	return nil
 }
 
-// doInertiaResponse writes Inertia response to the response writer.
+// doInertiaResponse writes Inertia JSON response to the response writer.
 func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
 	pageJSON, err := i.marshallJSON(page)
 	if err != nil {
 		return fmt.Errorf("marshal page into json error: %w", err)
 	}
 
-	markAsInertiaResponse(w)
+	setInertiaInResponse(w)
 	markAsJSONResponse(w)
 	setResponseStatus(w, http.StatusOK)
 
@@ -162,7 +163,7 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 	return nil
 }
 
-// buildRootTemplate parses files or FS and then returns root template.
+// buildRootTemplate parses files or FS and returns the root template.
 func (i *Inertia) buildRootTemplate() (*template.Template, error) {
 	tmpl := template.New(filepath.Base(i.rootTemplatePath)).Funcs(i.sharedTemplateFuncs)
 
@@ -173,7 +174,7 @@ func (i *Inertia) buildRootTemplate() (*template.Template, error) {
 	return tmpl.ParseFiles(i.rootTemplatePath)
 }
 
-// inertiaContainerHTML returns Inertia container HTML based on page.
+// inertiaContainerHTML returns Inertia container HTML based on the page data.
 func (i *Inertia) inertiaContainerHTML(pageJSON []byte) template.HTML {
 	builder := new(strings.Builder)
 
@@ -187,8 +188,8 @@ func (i *Inertia) inertiaContainerHTML(pageJSON []byte) template.HTML {
 	return template.HTML(builder.String())
 }
 
-// backURL returns url that will be used to redirect browser to previous page.
-// At the moment it based only by the "Referer" HTTP header.
+// backURL returns the url that will be used to redirect browser to the previous page.
+// At the moment, it based only on the "Referer" HTTP header.
 func (i *Inertia) backURL(r *http.Request) string {
 	return refererFromRequest(r)
 }

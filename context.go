@@ -16,7 +16,7 @@ const (
 	propsContextKey
 )
 
-// WithTemplateData appends template data value to passed context.Context.
+// WithTemplateData appends template data value to the passed context.Context.
 func (i *Inertia) WithTemplateData(ctx context.Context, key string, val any) context.Context {
 	if ctxData := ctx.Value(templateDataContextKey); ctxData != nil {
 		ctxData, ok := ctxData.(templateData)
@@ -32,7 +32,7 @@ func (i *Inertia) WithTemplateData(ctx context.Context, key string, val any) con
 	})
 }
 
-// WithProp appends prop value to passed context.Context.
+// WithProp appends prop value to the passed context.Context.
 func (i *Inertia) WithProp(ctx context.Context, key string, val any) context.Context {
 	if ctxData := ctx.Value(propsContextKey); ctxData != nil {
 		ctxData, ok := ctxData.(Props)
@@ -48,7 +48,7 @@ func (i *Inertia) WithProp(ctx context.Context, key string, val any) context.Con
 	})
 }
 
-// WithProps appends props values to passed context.Context.
+// WithProps appends props values to the passed context.Context.
 func (i *Inertia) WithProps(ctx context.Context, props Props) context.Context {
 	if ctxData := ctx.Value(propsContextKey); ctxData != nil {
 		ctxData, ok := ctxData.(Props)
@@ -65,14 +65,14 @@ func (i *Inertia) WithProps(ctx context.Context, props Props) context.Context {
 	return context.WithValue(ctx, propsContextKey, props)
 }
 
-// templateDataFromContext returns template data from context.
+// templateDataFromContext returns template data from the context.
 func templateDataFromContext(ctx context.Context) (templateData, error) {
 	ctxData := ctx.Value(templateDataContextKey)
 
 	if ctxData != nil {
 		data, ok := ctxData.(templateData)
 		if !ok {
-			return nil, fmt.Errorf("template data in context has invalid type")
+			return nil, fmt.Errorf("template data in the context has invalid type")
 		}
 
 		return data, nil
@@ -81,14 +81,14 @@ func templateDataFromContext(ctx context.Context) (templateData, error) {
 	return nil, nil
 }
 
-// propsFromContext returns props from context.
+// propsFromContext returns props from the context.
 func propsFromContext(ctx context.Context) (Props, error) {
 	ctxData := ctx.Value(propsContextKey)
 
 	if ctxData != nil {
 		props, ok := ctxData.(Props)
 		if !ok {
-			return nil, fmt.Errorf("props in context have invalid type")
+			return nil, fmt.Errorf("props in the context have invalid type")
 		}
 
 		return props, nil

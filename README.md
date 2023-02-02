@@ -13,10 +13,10 @@ Gonertia is a Inertia.js server-side adapter for Golang. Visit [inertiajs.com](h
 
 Inertia allows you to create fully client-side rendered, single-page apps, without the complexity that comes with modern SPAs. It does this by leveraging existing server-side patterns that you already love.
 
-This package based on official Laravel adapter for Inertia.js: [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel).
+This package based on the official Laravel adapter for Inertia.js: [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel).
 
 ## Roadmap
-- [ ] Tests
+- [x] Tests
 - [ ] Validation errors
 - [ ] SSR
 
@@ -239,6 +239,10 @@ ctx := i.WithProp(r.Context(), "name", "Roman")
 
 // pass it to the next middleware or inertia.Render function via r.WithContext(ctx).
 ```
+
+## Credits
+
+This package is based on [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel) and uses some parts of [petaki/inertia-go](https://github.com/petaki/inertia-go).
 
 ## License
 

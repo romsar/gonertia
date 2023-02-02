@@ -18,12 +18,12 @@ type LazyProp func() (any, error)
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 
-	// Add shared props to result.
+	// Add shared props to the result.
 	for key, val := range i.sharedProps {
 		result[key] = val
 	}
 
-	// Add props from context to result.
+	// Add props from context to the result.
 	ctxProps, err := propsFromContext(r.Context())
 	if err != nil {
 		return nil, fmt.Errorf("getting props from context error: %w", err)
@@ -33,7 +33,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 		result[key] = val
 	}
 
-	// Add passed props to result.
+	// Add passed props to the result.
 	for key, val := range props {
 		result[key] = val
 	}
@@ -68,7 +68,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	return result, nil
 }
 
-// returns props keys to include to response.
+// propsKeysToReturn returns props keys that will be included in the response.
 func (i *Inertia) propsKeysToReturn(r *http.Request, component string) map[string]struct{} {
 	// Partial reloads only work for visits made to the same page component.
 	//
@@ -80,7 +80,7 @@ func (i *Inertia) propsKeysToReturn(r *http.Request, component string) map[strin
 	return nil
 }
 
-// resolvePropVal resolves scalar value from prop value.
+// resolvePropVal resolves scalar value of the prop.
 func resolvePropVal(val any) (_ any, err error) {
 	if closure, ok := val.(func() (any, error)); ok {
 		val, err = closure()

@@ -6,38 +6,38 @@ import (
 	"net/http"
 )
 
-// Middleware returns http.Handler with Inertia support.
+// Middleware returns Inertia middleware handler.
 //
-// All of your handlers that need to be handled by the Inertia
-// should be under this middleware.
+// All of your handlers that can be handled by
+// the Inertia should be under this middleware.
 func (i *Inertia) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set header Vary to "X-Inertia".
 		//
 		// https://github.com/inertiajs/inertia-laravel/pull/404
-		setInertiaVaryToResponse(w)
+		setInertiaVaryInResponse(w)
 
-		// If request is not Inertia request, we can move next.
+		// If request is not request by Inertia, we can move next.
 		if !IsInertiaRequest(r) {
 			next.ServeHTTP(w, r)
 
 			return
 		}
 
-		// Now we know that it's Inertia request.
+		// Now we know that this request was made by Inertia.
 		//
 		// But there is one problem:
-		// http.ResponseWriter doesn't have methods for getting status code and response content.
-		// So we have to create our own response writer, that will contain that info.
+		// http.ResponseWriter has no methods for getting the response status code and response content.
+		// So, we have to create our own response writer wrapper, that will contain that info.
 		//
-		// It's not critical that we now have a byte buffer, because we
-		// know that Inertia response has JSON format and usually not very big.
-		w2 := buildInertiaResponseWriter(w)
+		// It's not critical that we will have a byte buffer, because we
+		// know that Inertia response always in JSON format and actually not very big.
+		w2 := buildInertiaResponseWrapper(w)
 
-		// Now put our response writer to other handlers.
+		// Now put our response writer wrapper to other handlers.
 		next.ServeHTTP(w2, r)
 
-		// Now, our response writer does have all needle data! Yuppy!
+		// Our response writer wrapper does have all needle data! Yuppy!
 		//
 		// Don't forget to copy all data to the original
 		// response writer before end!
@@ -56,19 +56,19 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Determines what to do when an Inertia action returned with no response.
-		// By default, we'll redirect the user back to where they came from.
+		// Determines what to do when an Inertia action returned empty response.
+		// By default, we will redirect the user back to where he came from.
 		if w2.StatusCode() == http.StatusOK && w2.IsEmpty() {
 			backURL := i.backURL(r)
 
 			if backURL != "" {
-				setInertiaLocationToResponse(w, backURL)
+				setInertiaLocationInResponse(w, backURL)
 				return
 			}
 		}
 
-		// The POST, PUT and PATCH requests cannot have the status 302.
-		// Let's set the status code to 303 instead.
+		// The POST, PUT and PATCH requests cannot have the 302 code status.
+		// Let's set the status code to the 303 instead.
 		//
 		// https://inertiajs.com/redirects#303-response-code
 		if w2.StatusCode() == http.StatusFound && isSeeOtherRedirectMethod(r.Method) {
@@ -77,20 +77,20 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-// copyBuffer copying source bytes buf into destination bytes buffer.
-func (i *Inertia) copyBuffer(dst http.ResponseWriter, src *inertiaResponseWriter) {
+// copyBuffer copying source bytes buf into the destination bytes buffer.
+func (i *Inertia) copyBuffer(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	if _, err := io.Copy(dst, src.buf); err != nil {
 		i.logger.Printf("cannot copy inertia response buffer to writer: %s", err)
 	}
 }
 
-// copyStatusCode copying source status code into destination status code.
-func (i *Inertia) copyStatusCode(dst http.ResponseWriter, src *inertiaResponseWriter) {
+// copyStatusCode copying source status code into the destination status code.
+func (i *Inertia) copyStatusCode(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	dst.WriteHeader(src.statusCode)
 }
 
-// copyHeaders copying source header into destination header.
-func (i *Inertia) copyHeaders(dst http.ResponseWriter, src *inertiaResponseWriter) {
+// copyHeaders copying source header into the destination header.
+func (i *Inertia) copyHeaders(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	for key, headers := range src.header {
 		for _, header := range headers {
 			dst.Header().Add(key, header)
@@ -98,44 +98,44 @@ func (i *Inertia) copyHeaders(dst http.ResponseWriter, src *inertiaResponseWrite
 	}
 }
 
-// inertiaResponseWriter is the implementation of http.ResponseWriter,
-// that have response body buffer and status code that will be return to client.
-type inertiaResponseWriter struct {
+// inertiaResponseWrapper is the implementation of http.ResponseWriter,
+// that have response body buffer and status code that will be returned to the front.
+type inertiaResponseWrapper struct {
 	statusCode int
 	buf        *bytes.Buffer
 	header     http.Header
 }
 
-var _ http.ResponseWriter = (*inertiaResponseWriter)(nil)
+var _ http.ResponseWriter = (*inertiaResponseWrapper)(nil)
 
-// StatusCode returns HTTP status code of response.
-func (w *inertiaResponseWriter) StatusCode() int {
+// StatusCode returns HTTP status code of the response.
+func (w *inertiaResponseWrapper) StatusCode() int {
 	return w.statusCode
 }
 
-// IsEmpty returns true is response body is empty.
-func (w *inertiaResponseWriter) IsEmpty() bool {
+// IsEmpty returns true is the response body is empty.
+func (w *inertiaResponseWrapper) IsEmpty() bool {
 	return w.buf.Len() == 0
 }
 
 // Header returns response headers.
-func (w *inertiaResponseWriter) Header() http.Header {
+func (w *inertiaResponseWrapper) Header() http.Header {
 	return w.header
 }
 
-// Write pushes some bytes to response body.
-func (w *inertiaResponseWriter) Write(p []byte) (int, error) {
+// Write pushes some bytes to the response body.
+func (w *inertiaResponseWrapper) Write(p []byte) (int, error) {
 	return w.buf.Write(p)
 }
 
 // WriteHeader sets the status code of the response.
-func (w *inertiaResponseWriter) WriteHeader(code int) {
+func (w *inertiaResponseWrapper) WriteHeader(code int) {
 	w.statusCode = code
 }
 
-// buildInertiaResponseWriter initializes inertiaResponseWriter.
-func buildInertiaResponseWriter(w http.ResponseWriter) *inertiaResponseWriter {
-	w2 := &inertiaResponseWriter{
+// buildInertiaResponseWrapper initializes inertiaResponseWrapper.
+func buildInertiaResponseWrapper(w http.ResponseWriter) *inertiaResponseWrapper {
+	w2 := &inertiaResponseWrapper{
 		statusCode: http.StatusOK,
 		buf:        bytes.NewBuffer(nil),
 		header:     w.Header(),

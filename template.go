@@ -9,7 +9,7 @@ import (
 // will be available in the root template.
 type templateData map[string]any
 
-// buildTemplateData returns sharedProps based on page.
+// buildTemplateData returns sharedProps based the page.
 func (i *Inertia) buildTemplateData(r *http.Request, page *page) (templateData, error) {
 	pageJSON, err := i.marshallJSON(page)
 	if err != nil {
@@ -22,20 +22,20 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (templateData, 
 		return nil, fmt.Errorf("getting template data from context error: %w", err)
 	}
 
-	data := templateData{
-		"inertiaHead": "", // reserved for SSR.
+	result := templateData{
+		"inertiaHead": "", // todo reserved for SSR.
 		"inertia":     i.inertiaContainerHTML(pageJSON),
 	}
 
-	// Add shared template data.
+	// Add the shared template data to the result.
 	for key, val := range i.sharedTemplateData {
-		data[key] = val
+		result[key] = val
 	}
 
-	// Add template data from context.
+	// Add template data from context to the result.
 	for key, val := range ctxTemplateData {
-		data[key] = val
+		result[key] = val
 	}
 
-	return data, nil
+	return result, nil
 }

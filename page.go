@@ -5,20 +5,20 @@ import (
 	"net/http"
 )
 
-// page is a structure that will be encoded via JSON
+// page is a structure that will be encoded to the JSON
 // and present inside "data-page" attribute of the Inertia HTML container,
-// or will be returned to browser directly (if request is Inertia request).
+// or will be returned to the browser directly (if request was made by Inertia).
 type page struct {
-	// Component is the front-end component to render.
+	// Component is the front-end component that will be rendered on users browsers.
 	Component string `json:"component"`
 
-	// Props are key-value data structure that will inject into front-end component.
+	// Props are key-value data structure that will be available in a front-end component.
 	Props Props `json:"props"`
 
 	// URL is the current page URL.
 	URL string `json:"url"`
 
-	// Version is the server asset version.
+	// Version is the asset version of the server.
 	Version string `json:"version"`
 }
 
