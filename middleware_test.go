@@ -181,7 +181,7 @@ func TestInertia_Middleware(t *testing.T) {
 				}
 
 				I().Middleware(assertHandlerServed(t, successJSONHandler)).ServeHTTP(wrap, r)
-				i.copyResponseWrapper(w, wrap)
+				i.copyWrapperResponse(w, wrap)
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusNotFound)

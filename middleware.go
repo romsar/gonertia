@@ -42,7 +42,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// Don't forget to copy all data to the original
 		// response writer before end!
 		defer func() {
-			i.copyResponseWrapper(w, w2)
+			i.copyWrapperResponse(w, w2)
 		}()
 
 		// Determines what to do when the Inertia asset version has changed.
@@ -75,26 +75,27 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-func (i *Inertia) copyResponseWrapper(dst http.ResponseWriter, src *inertiaResponseWrapper) {
-	i.copyHeaders(dst, src)
-	i.copyStatusCode(dst, src)
-	i.copyBuffer(dst, src)
+// copyWrapperResponse copying wrapper into the destination response writer.
+func (i *Inertia) copyWrapperResponse(dst http.ResponseWriter, src *inertiaResponseWrapper) {
+	i.copyWrapperHeaders(dst, src)
+	i.copyWrapperStatusCode(dst, src)
+	i.copyWrapperBuffer(dst, src)
 }
 
-// copyBuffer copying source bytes buf into the destination bytes buffer.
-func (i *Inertia) copyBuffer(dst http.ResponseWriter, src *inertiaResponseWrapper) {
+// copyWrapperBuffer copying source bytes buf into the destination bytes buffer.
+func (i *Inertia) copyWrapperBuffer(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	if _, err := io.Copy(dst, src.buf); err != nil {
 		i.logger.Printf("cannot copy inertia response buffer to writer: %s", err)
 	}
 }
 
-// copyStatusCode copying source status code into the destination status code.
-func (i *Inertia) copyStatusCode(dst http.ResponseWriter, src *inertiaResponseWrapper) {
+// copyWrapperStatusCode copying source status code into the destination status code.
+func (i *Inertia) copyWrapperStatusCode(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	dst.WriteHeader(src.statusCode)
 }
 
-// copyHeaders copying source header into the destination header.
-func (i *Inertia) copyHeaders(dst http.ResponseWriter, src *inertiaResponseWrapper) {
+// copyWrapperHeaders copying source header into the destination header.
+func (i *Inertia) copyWrapperHeaders(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	for key, headers := range src.header {
 		dst.Header().Del(key)
 
