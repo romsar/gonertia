@@ -42,9 +42,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// Don't forget to copy all data to the original
 		// response writer before end!
 		defer func() {
-			i.copyHeaders(w, w2)
-			i.copyStatusCode(w, w2)
-			i.copyBuffer(w, w2)
+			i.copyResponseWrapper(w, w2)
 		}()
 
 		// Determines what to do when the Inertia asset version has changed.
@@ -77,6 +75,12 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 	})
 }
 
+func (i *Inertia) copyResponseWrapper(dst http.ResponseWriter, src *inertiaResponseWrapper) {
+	i.copyHeaders(dst, src)
+	i.copyStatusCode(dst, src)
+	i.copyBuffer(dst, src)
+}
+
 // copyBuffer copying source bytes buf into the destination bytes buffer.
 func (i *Inertia) copyBuffer(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	if _, err := io.Copy(dst, src.buf); err != nil {
@@ -92,6 +96,8 @@ func (i *Inertia) copyStatusCode(dst http.ResponseWriter, src *inertiaResponseWr
 // copyHeaders copying source header into the destination header.
 func (i *Inertia) copyHeaders(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	for key, headers := range src.header {
+		dst.Header().Del(key)
+
 		for _, header := range headers {
 			dst.Header().Add(key, header)
 		}
@@ -142,15 +148,9 @@ func buildInertiaResponseWrapper(w http.ResponseWriter) *inertiaResponseWrapper 
 	}
 
 	// In some situations, we can pass a http.ResponseWriter,
-	// that also implements these interfaces.
+	// that also implements this interfaces.
 	if val, ok := w.(interface{ StatusCode() int }); ok {
 		w2.statusCode = val.StatusCode()
-	}
-	if val, ok := w.(interface{ Header() http.Header }); ok {
-		w2.header = val.Header()
-	}
-	if val, ok := w.(interface{ Buffer() *bytes.Buffer }); ok {
-		w2.buf = val.Buffer()
 	}
 
 	return w2

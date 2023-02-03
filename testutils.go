@@ -58,7 +58,7 @@ func assertInertiaLocation(t *testing.T, w *httptest.ResponseRecorder, want stri
 func assertInertiaVary(t *testing.T, w *httptest.ResponseRecorder) {
 	t.Helper()
 
-	gotVary := w.Result().Header.Get("Vary")
+	gotVary := w.Header().Get("Vary")
 	wantVary := "X-Inertia"
 
 	if gotVary != wantVary {
@@ -66,7 +66,7 @@ func assertInertiaVary(t *testing.T, w *httptest.ResponseRecorder) {
 	}
 }
 
-func assertNextHandlerServed(t *testing.T, handlers ...http.HandlerFunc) http.HandlerFunc {
+func assertHandlerServed(t *testing.T, handlers ...http.HandlerFunc) http.HandlerFunc {
 	t.Helper()
 
 	called := false

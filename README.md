@@ -115,25 +115,9 @@ i, err := inertia.New(
 ```go
 i, err := inertia.New(
     /* ... */
-    inertia.WithVersion("some-version"),
-)
-```
-
-#### Set asset version by asset url
-
-```go
-i, err := inertia.New(
-    /* ... */
-    inertia.WithAssetURL("/static/js/1f0f8sc6.js"),
-)
-```
-
-#### Set asset version by manifest file
-
-```go
-i, err := inertia.New(
-    /* ... */
-    inertia.WithManifestFile("./ui/manifest.json"),
+    inertia.WithVersion("some-version"), // by any string
+    inertia.WithAssetURL("/static/js/1f0f8sc6.js"), // by asset url
+    inertia.WithManifestFile("./ui/manifest.json"), // by manifest file path
 )
 ```
 
@@ -196,8 +180,6 @@ func homeHandler(i *inertia.Inertia) http.Handler {
 ```
 
 NOTES:
-If request was Inertia request - user will be redirected via Inertia.js.
-If not - user will be redirected via 302 status.
 If response is empty - user will be redirected to the previous url.
 
 #### Share template data ([learn more](https://inertiajs.com/responses#root-template-data))
@@ -225,7 +207,7 @@ i.ShareTemplateFunc("trim", strings.Trim)
 ```go
 ctx := i.WithTemplateData(r.Context(), "title", "Home page")
 
-// pass it to the next middleware or inertia.Render function via r.WithContext(ctx).
+// pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
 
 #### Share prop globally ([learn more](https://inertiajs.com/shared-data))
@@ -239,7 +221,37 @@ i.ShareProp("name", "Roman")
 ```go
 ctx := i.WithProp(r.Context(), "name", "Roman")
 
-// pass it to the next middleware or inertia.Render function via r.WithContext(ctx).
+// pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
+```
+
+#### Testing
+
+Of course, this package provides convenient interfaces for testing!
+
+```go
+func TestHomepage(t *testing.T) {
+    assertable := inertia.AssertInertia(t, body) // io.Reader body
+    
+    // OR
+	
+    assertable := inertia.AssertInertiaFromBytes(t, body) // []byte body
+
+    // OR
+
+    assertable := inertia.AssertInertiaFromString(t, body) // string body
+	
+    // now you can do assertions using assertable.Assert methods:
+    assertable.AssertComponent("Foo/Bar")
+	assertable.AssertVersion("foo bar")
+    assertable.AssertURL("https://example.com")
+    assertable.AssertProps(inertia.Props{"foo": "bar"})
+
+    // or work with the data yourself:
+    assertable.Component // Foo/Bar
+    assertable.Version // foo bar
+    assertable.URL // https://example.com
+    assertable.Props // inertia.Props{"foo": "bar"}
+}
 ```
 
 ## Credits

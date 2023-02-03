@@ -1,7 +1,9 @@
 package gonertia
 
 import (
+	"bytes"
 	"net/http"
+	"reflect"
 	"testing"
 )
 
@@ -16,7 +18,7 @@ func TestInertia_Middleware(t *testing.T) {
 
 			w, r := requestMock(http.MethodGet, "/")
 
-			I().Middleware(assertNextHandlerServed(t)).ServeHTTP(w, r)
+			I().Middleware(assertHandlerServed(t)).ServeHTTP(w, r)
 
 			assertInertiaVary(t, w)
 			assertResponseStatusCode(t, w, http.StatusOK)
@@ -40,7 +42,7 @@ func TestInertia_Middleware(t *testing.T) {
 				asInertiaRequest(r)
 				withInertiaVersion(r, "bar")
 
-				i.Middleware(assertNextHandlerServed(t, successJSONHandler)).ServeHTTP(w, r)
+				i.Middleware(assertHandlerServed(t, successJSONHandler)).ServeHTTP(w, r)
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusConflict)
@@ -58,7 +60,7 @@ func TestInertia_Middleware(t *testing.T) {
 				asInertiaRequest(r)
 				withInertiaVersion(r, "bar")
 
-				i.Middleware(assertNextHandlerServed(t, successJSONHandler)).ServeHTTP(w, r)
+				i.Middleware(assertHandlerServed(t, successJSONHandler)).ServeHTTP(w, r)
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusOK)
@@ -75,7 +77,7 @@ func TestInertia_Middleware(t *testing.T) {
 				asInertiaRequest(r)
 				withReferer(r, "/foo")
 
-				I().Middleware(assertNextHandlerServed(t)).ServeHTTP(w, r)
+				I().Middleware(assertHandlerServed(t)).ServeHTTP(w, r)
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusConflict)
@@ -89,7 +91,7 @@ func TestInertia_Middleware(t *testing.T) {
 				asInertiaRequest(r)
 				withReferer(r, "/foo")
 
-				I().Middleware(assertNextHandlerServed(t, errorJSONHandler)).ServeHTTP(w, r)
+				I().Middleware(assertHandlerServed(t, errorJSONHandler)).ServeHTTP(w, r)
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusBadRequest)
@@ -106,7 +108,7 @@ func TestInertia_Middleware(t *testing.T) {
 				w, r := requestMock(http.MethodGet, "/")
 				asInertiaRequest(r)
 
-				I().Middleware(assertNextHandlerServed(t, redirectHandler(http.StatusFound))).ServeHTTP(w, r)
+				I().Middleware(assertHandlerServed(t, setStatusHandler(http.StatusFound))).ServeHTTP(w, r)
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusFound)
@@ -121,12 +123,80 @@ func TestInertia_Middleware(t *testing.T) {
 					w, r := requestMock(method, "/")
 					asInertiaRequest(r)
 
-					I().Middleware(assertNextHandlerServed(t, redirectHandler(http.StatusFound))).ServeHTTP(w, r)
+					I().Middleware(assertHandlerServed(t, setStatusHandler(http.StatusFound))).ServeHTTP(w, r)
 
 					assertInertiaVary(t, w)
 					assertResponseStatusCode(t, w, http.StatusSeeOther)
 				})
 			}
+		})
+
+		t.Run("success", func(t *testing.T) {
+			t.Parallel()
+
+			t.Run("with new response writer", func(t *testing.T) {
+				t.Parallel()
+
+				w, r := requestMock(http.MethodGet, "/")
+				asInertiaRequest(r)
+
+				handlers := []http.HandlerFunc{
+					successJSONHandler,
+					setHeadersHandler(map[string]string{
+						"foo": "bar",
+					}),
+				}
+
+				I().Middleware(assertHandlerServed(t, handlers...)).ServeHTTP(w, r)
+
+				assertInertiaVary(t, w)
+				assertResponseStatusCode(t, w, http.StatusOK)
+
+				if !reflect.DeepEqual(w.Body.String(), successJSON) {
+					t.Fatalf("JSON=%#v, want=%#v", w.Body.String(), successJSON)
+				}
+
+				gotHeader := w.Header().Get("foo")
+				wantHeader := "bar"
+
+				if gotHeader != wantHeader {
+					t.Fatalf("header=%#v, want=%#v", gotHeader, wantHeader)
+				}
+			})
+
+			t.Run("with passed response writer", func(t *testing.T) {
+				t.Parallel()
+
+				w, r := requestMock(http.MethodGet, "/")
+				asInertiaRequest(r)
+
+				buf := bytes.NewBufferString(successJSON)
+
+				i := I()
+
+				wrap := &inertiaResponseWrapper{
+					statusCode: http.StatusNotFound,
+					buf:        buf,
+					header:     http.Header{"foo": []string{"bar"}},
+				}
+
+				I().Middleware(assertHandlerServed(t, successJSONHandler)).ServeHTTP(wrap, r)
+				i.copyResponseWrapper(w, wrap)
+
+				assertInertiaVary(t, w)
+				assertResponseStatusCode(t, w, http.StatusNotFound)
+
+				if !reflect.DeepEqual(w.Body.String(), successJSON+successJSON) {
+					t.Fatalf("JSON=%#v, want=%#v", w.Body.String(), successJSON)
+				}
+
+				gotHeader := w.Header().Get("foo")
+				wantHeader := "bar"
+
+				if gotHeader != wantHeader {
+					t.Fatalf("header=%#v, want=%#v", gotHeader, wantHeader)
+				}
+			})
 		})
 	})
 }
@@ -145,8 +215,16 @@ func errorJSONHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func redirectHandler(status int) http.HandlerFunc {
+func setStatusHandler(status int) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(status)
+	}
+}
+
+func setHeadersHandler(headers map[string]string) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		for key, val := range headers {
+			w.Header().Set(key, val)
+		}
 	}
 }

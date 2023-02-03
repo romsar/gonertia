@@ -15,7 +15,7 @@ func BenchmarkInertia_inertiaContainer(b *testing.B) {
 		"foo": "bar",
 	})
 	if err != nil {
-		b.Fatalf("unexpected error: %v", err)
+		b.Fatalf("unexpected error: %#v", err)
 	}
 
 	b.ResetTimer()
@@ -30,7 +30,7 @@ func BenchmarkInertia_buildPage(b *testing.B) {
 
 	req, err := http.NewRequest("GET", "/foo", nil)
 	if err != nil {
-		b.Fatalf("unexpected error: %v", err)
+		b.Fatalf("unexpected error: %#v", err)
 	}
 
 	props := Props{

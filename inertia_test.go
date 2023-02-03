@@ -6,6 +6,19 @@ import (
 	"testing"
 )
 
+func I(opts ...func(i *Inertia)) *Inertia {
+	i := &Inertia{
+		containerID:  "app",
+		marshallJSON: json.Marshal,
+	}
+
+	for _, opt := range opts {
+		opt(i)
+	}
+
+	return i
+}
+
 func TestInertia_Location(t *testing.T) {
 	t.Parallel()
 
@@ -52,17 +65,4 @@ func TestInertia_Location(t *testing.T) {
 		assertResponseStatusCode(t, w, http.StatusConflict)
 		assertInertiaLocation(t, w, wantInertiaLocation)
 	})
-}
-
-func I(opts ...func(i *Inertia)) *Inertia {
-	i := &Inertia{
-		containerID:  "app",
-		marshallJSON: json.Marshal,
-	}
-
-	for _, opt := range opts {
-		opt(i)
-	}
-
-	return i
 }
