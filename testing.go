@@ -14,11 +14,14 @@ type t interface {
 	Fatalf(format string, args ...any)
 }
 
+// AssertableInertia is an Inertia response struct with assert methods.
 type AssertableInertia struct {
 	t t
 	*page
 }
 
+// AssertComponent verifies that component from Inertia
+// response and the passed component are the same.
 func (i AssertableInertia) AssertComponent(component string) {
 	i.t.Helper()
 
@@ -27,6 +30,8 @@ func (i AssertableInertia) AssertComponent(component string) {
 	}
 }
 
+// AssertVersion verifies that version from Inertia
+// response and the passed version are the same.
 func (i AssertableInertia) AssertVersion(version string) {
 	i.t.Helper()
 
@@ -35,6 +40,8 @@ func (i AssertableInertia) AssertVersion(version string) {
 	}
 }
 
+// AssertURL verifies that url from Inertia
+// response and the passed url are the same.
 func (i AssertableInertia) AssertURL(url string) {
 	i.t.Helper()
 
@@ -43,6 +50,8 @@ func (i AssertableInertia) AssertURL(url string) {
 	}
 }
 
+// AssertProps verifies that props from Inertia
+// response and the passed props are the same.
 func (i AssertableInertia) AssertProps(props Props) {
 	i.t.Helper()
 
@@ -51,6 +60,7 @@ func (i AssertableInertia) AssertProps(props Props) {
 	}
 }
 
+// AssertInertia creates AssertableInertia from the io.Reader body.
 func AssertInertia(t t, body io.Reader) AssertableInertia {
 	t.Helper()
 
@@ -62,6 +72,7 @@ func AssertInertia(t t, body io.Reader) AssertableInertia {
 	return AssertInertiaFromBytes(t, bodyBs)
 }
 
+// AssertInertiaFromBytes creates AssertableInertia from the bytes body.
 func AssertInertiaFromBytes(t t, body []byte) AssertableInertia {
 	t.Helper()
 
@@ -70,6 +81,7 @@ func AssertInertiaFromBytes(t t, body []byte) AssertableInertia {
 
 var pageRe = regexp.MustCompile(` data-page="(.*?)"`)
 
+// AssertInertiaFromString creates AssertableInertia from the string body.
 func AssertInertiaFromString(t t, body string) AssertableInertia {
 	t.Helper()
 

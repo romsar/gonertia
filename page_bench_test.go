@@ -1,6 +1,7 @@
 package gonertia
 
 import (
+	"context"
 	"net/http"
 	"testing"
 )
@@ -8,7 +9,7 @@ import (
 func BenchmarkInertia_buildPage(b *testing.B) {
 	inertia := Inertia{}
 
-	req, err := http.NewRequest("GET", "/foo", nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/foo", nil)
 	if err != nil {
 		b.Fatalf("unexpected error: %#v", err)
 	}

@@ -138,6 +138,8 @@ func Test_md5(t *testing.T) {
 		tt := tt
 
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got := md5(tt.str)
 			if got != tt.want {
 				t.Fatalf("md5()=%s, want=%s", got, tt.want)
@@ -183,8 +185,7 @@ func Test_md5File(t *testing.T) {
 		t.Fatalf("unexpected error: %#v", err)
 	}
 
-	want := md5("foo")
-	if got != want {
+	if want := md5("foo"); got != want {
 		t.Fatalf("md5File()=%s, want=%s", got, want)
 	}
 }

@@ -207,11 +207,11 @@ var (
 )
 
 func successJSONHandler(w http.ResponseWriter, _ *http.Request) {
-	w.Write([]byte(successJSON))
+	_, _ = w.Write([]byte(successJSON))
 }
 
 func errorJSONHandler(w http.ResponseWriter, _ *http.Request) {
-	w.Write([]byte(errorJSON))
+	_, _ = w.Write([]byte(errorJSON))
 	w.WriteHeader(http.StatusBadRequest)
 }
 

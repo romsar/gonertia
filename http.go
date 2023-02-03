@@ -61,7 +61,7 @@ func markAsJSONResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-// markAsHTMLResponse sets the type of response content in HTML format
+// markAsHTMLResponse sets the type of response content in HTML format.
 func markAsHTMLResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html")
 }

@@ -28,17 +28,15 @@ func requestMock(method, target string) (*httptest.ResponseRecorder, *http.Reque
 func assertResponseStatusCode(t *testing.T, w *httptest.ResponseRecorder, want int) {
 	t.Helper()
 
-	if w.Result().StatusCode != want {
-		t.Fatalf("status=%d, want=%d", w.Result().StatusCode, want)
+	if w.Code != want {
+		t.Fatalf("status=%d, want=%d", w.Code, want)
 	}
 }
 
 func assertHeader(t *testing.T, w *httptest.ResponseRecorder, key, want string) {
 	t.Helper()
 
-	got := w.Result().Header.Get(key)
-
-	if got != want {
+	if got := w.Header().Get(key); got != want {
 		t.Fatalf("header=%s, want=%s", got, want)
 	}
 }

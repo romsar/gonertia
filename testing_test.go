@@ -296,6 +296,8 @@ func TestAssertInertia(t *testing.T) {
 }
 
 func testStubSuccess(t *testing.T, mock *tMock, assertable AssertableInertia) {
+	t.Helper()
+
 	if !mock.helperInvoked {
 		t.Fatal("expected Helper() to be invoked")
 	}
@@ -304,23 +306,19 @@ func testStubSuccess(t *testing.T, mock *tMock, assertable AssertableInertia) {
 		t.Fatal("unexpected assertion failure")
 	}
 
-	wantComponent := "Foo/Bar"
-	wantVersion := "foobar"
-	wantURL := "https://example.com"
-	wantProps := Props{"foo": "bar"}
-
-	if assertable.Component != wantComponent {
+	if wantComponent := "Foo/Bar"; assertable.Component != wantComponent {
 		t.Fatalf("Component=%s, want=%s", assertable.Component, wantComponent)
 	}
 
-	if assertable.Version != wantVersion {
+	if wantVersion := "foobar"; assertable.Version != wantVersion {
 		t.Fatalf("Version=%s, want=%s", assertable.Version, wantVersion)
 	}
 
-	if assertable.URL != wantURL {
+	if wantURL := "https://example.com"; assertable.URL != wantURL {
 		t.Fatalf("URL=%s, want=%s", assertable.URL, wantURL)
 	}
 
+	wantProps := Props{"foo": "bar"}
 	if !reflect.DeepEqual(assertable.Props, wantProps) {
 		t.Fatalf("Props=%#v, want=%#v", assertable.Props, wantProps)
 	}

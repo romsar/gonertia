@@ -11,7 +11,7 @@ import (
 // Values of set are empty structs.
 //
 // Example:
-// []string{"foo", "bar"} -> map[string]{"foo": struct{}{}, "bar": struct{}{}}
+// []string{"foo", "bar"} -> map[string]{"foo": struct{}{}, "bar": struct{}{}}.
 func set[T comparable](data []T) map[T]struct{} {
 	if len(data) == 0 {
 		return nil
@@ -39,7 +39,9 @@ func md5File(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
 
 	if _, err := io.Copy(h, f); err != nil {
 		return "", err

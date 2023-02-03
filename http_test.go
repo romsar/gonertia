@@ -31,7 +31,7 @@ func TestIsInertiaRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r.Header = tt.header
 
 			got := IsInertiaRequest(r)
