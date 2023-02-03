@@ -117,7 +117,7 @@ i, err := inertia.New(
     /* ... */
     inertia.WithVersion("some-version"), // by any string
     inertia.WithAssetURL("/static/js/1f0f8sc6.js"), // by asset url
-    inertia.WithManifestFile("./ui/manifest.json"), // by manifest file path
+    inertia.WithManifestFile("./ui/manifest.json"), // by manifest file
 )
 ```
 
