@@ -17,7 +17,7 @@ This package based on the official Laravel adapter for Inertia.js: [inertiajs/in
 
 ## Roadmap
 - [x] Tests
-- [ ] Helpers for testing
+- [x] Helpers for testing
 - [ ] Helpers for validation errors
 - [ ] SSR
 - [ ] CLI
@@ -231,18 +231,14 @@ Of course, this package provides convenient interfaces for testing!
 ```go
 func TestHomepage(t *testing.T) {
     assertable := inertia.AssertInertia(t, body) // io.Reader body
-    
     // OR
-	
     assertable := inertia.AssertInertiaFromBytes(t, body) // []byte body
-
     // OR
-
     assertable := inertia.AssertInertiaFromString(t, body) // string body
 	
     // now you can do assertions using assertable.Assert methods:
     assertable.AssertComponent("Foo/Bar")
-	assertable.AssertVersion("foo bar")
+    assertable.AssertVersion("foo bar")
     assertable.AssertURL("https://example.com")
     assertable.AssertProps(inertia.Props{"foo": "bar"})
 
