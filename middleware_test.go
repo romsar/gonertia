@@ -14,11 +14,9 @@ func TestInertia_Middleware(t *testing.T) {
 		t.Run("do nothing, call next handler", func(t *testing.T) {
 			t.Parallel()
 
-			i := new(Inertia)
-
 			w, r := requestMock(http.MethodGet, "/")
 
-			i.Middleware(assertNextHandlerServed(t)).ServeHTTP(w, r)
+			I().Middleware(assertNextHandlerServed(t)).ServeHTTP(w, r)
 
 			assertInertiaVary(t, w)
 			assertResponseStatusCode(t, w, http.StatusOK)
@@ -34,8 +32,9 @@ func TestInertia_Middleware(t *testing.T) {
 			t.Run("diff version with GET, should change location with 409", func(t *testing.T) {
 				t.Parallel()
 
-				i := new(Inertia)
-				i.version = "foo"
+				i := I(func(i *Inertia) {
+					i.version = "foo"
+				})
 
 				w, r := requestMock(http.MethodGet, "https://example.com/home")
 				asInertiaRequest(r)
@@ -51,8 +50,9 @@ func TestInertia_Middleware(t *testing.T) {
 			t.Run("diff version with POST, do nothing", func(t *testing.T) {
 				t.Parallel()
 
-				i := new(Inertia)
-				i.version = "foo"
+				i := I(func(i *Inertia) {
+					i.version = "foo"
+				})
 
 				w, r := requestMock(http.MethodPost, "https://example.com/home")
 				asInertiaRequest(r)
@@ -71,13 +71,11 @@ func TestInertia_Middleware(t *testing.T) {
 			t.Run("redirect back if empty request and status ok", func(t *testing.T) {
 				t.Parallel()
 
-				i := new(Inertia)
-
 				w, r := requestMock(http.MethodGet, "/")
 				asInertiaRequest(r)
 				withReferer(r, "/foo")
 
-				i.Middleware(assertNextHandlerServed(t)).ServeHTTP(w, r)
+				I().Middleware(assertNextHandlerServed(t)).ServeHTTP(w, r)
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusConflict)
@@ -87,13 +85,11 @@ func TestInertia_Middleware(t *testing.T) {
 			t.Run("don't redirect back if empty request and status not ok", func(t *testing.T) {
 				t.Parallel()
 
-				i := new(Inertia)
-
 				w, r := requestMock(http.MethodGet, "/")
 				asInertiaRequest(r)
 				withReferer(r, "/foo")
 
-				i.Middleware(assertNextHandlerServed(t, errorJSONHandler)).ServeHTTP(w, r)
+				I().Middleware(assertNextHandlerServed(t, errorJSONHandler)).ServeHTTP(w, r)
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusBadRequest)
@@ -107,12 +103,10 @@ func TestInertia_Middleware(t *testing.T) {
 			t.Run("GET can have 302 status", func(t *testing.T) {
 				t.Parallel()
 
-				i := new(Inertia)
-
 				w, r := requestMock(http.MethodGet, "/")
 				asInertiaRequest(r)
 
-				i.Middleware(assertNextHandlerServed(t, redirectHandler(http.StatusFound))).ServeHTTP(w, r)
+				I().Middleware(assertNextHandlerServed(t, redirectHandler(http.StatusFound))).ServeHTTP(w, r)
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusFound)
@@ -124,12 +118,10 @@ func TestInertia_Middleware(t *testing.T) {
 				t.Run(method+" cannot have 302 status", func(t *testing.T) {
 					t.Parallel()
 
-					i := new(Inertia)
-
 					w, r := requestMock(method, "/")
 					asInertiaRequest(r)
 
-					i.Middleware(assertNextHandlerServed(t, redirectHandler(http.StatusFound))).ServeHTTP(w, r)
+					I().Middleware(assertNextHandlerServed(t, redirectHandler(http.StatusFound))).ServeHTTP(w, r)
 
 					assertInertiaVary(t, w)
 					assertResponseStatusCode(t, w, http.StatusSeeOther)

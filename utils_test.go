@@ -16,7 +16,7 @@ func Test_set(t *testing.T) {
 		var want map[string]struct{}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want=%#v", got, want)
+			t.Fatalf("set()=%#v, want=%#v", got, want)
 		}
 	})
 
@@ -27,7 +27,7 @@ func Test_set(t *testing.T) {
 		var want map[string]struct{}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want=%#v", got, want)
+			t.Fatalf("set()=%#v, want=%#v", got, want)
 		}
 	})
 
@@ -40,7 +40,7 @@ func Test_set(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want=%#v", got, want)
+			t.Fatalf("set()=%#v, want=%#v", got, want)
 		}
 	})
 
@@ -54,7 +54,7 @@ func Test_set(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want=%#v", got, want)
+			t.Fatalf("set()=%#v, want=%#v", got, want)
 		}
 	})
 
@@ -68,7 +68,7 @@ func Test_set(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("got=%#v, want=%#v", got, want)
+			t.Fatalf("set()=%#v, want=%#v", got, want)
 		}
 	})
 }
@@ -109,7 +109,7 @@ func Test_firstOr(t *testing.T) {
 
 			got := firstOr[string](tt.items, tt.fallback)
 			if got != tt.want {
-				t.Fatalf("got=%#v, want=%#v", got, tt.want)
+				t.Fatalf("firstOr()=%s, want=%s", got, tt.want)
 			}
 		})
 	}
@@ -140,7 +140,7 @@ func Test_md5(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := md5(tt.str)
 			if got != tt.want {
-				t.Fatalf("got=%#v, want=%#v", got, tt.want)
+				t.Fatalf("md5()=%s, want=%s", got, tt.want)
 			}
 		})
 	}
@@ -149,9 +149,9 @@ func Test_md5(t *testing.T) {
 func Test_md5File(t *testing.T) {
 	t.Parallel()
 
-	f, err := os.CreateTemp("", "")
+	f, err := os.CreateTemp("", "gonertia")
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	closed := false
@@ -159,32 +159,32 @@ func Test_md5File(t *testing.T) {
 	t.Cleanup(func() {
 		if !closed {
 			if err := f.Close(); err != nil {
-				t.Fatalf("unexpected error: %v", err)
+				t.Fatalf("unexpected error: %#v", err)
 			}
 		}
 
 		if err := os.Remove(f.Name()); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+			t.Fatalf("unexpected error: %#v", err)
 		}
 	})
 
 	if _, err := f.WriteString("foo"); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	if err := f.Close(); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	closed = true
 
 	got, err := md5File(f.Name())
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	want := md5("foo")
 	if got != want {
-		t.Fatalf("got=%#v, want=%#v", got, want)
+		t.Fatalf("md5File()=%s, want=%s", got, want)
 	}
 }

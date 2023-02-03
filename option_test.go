@@ -18,11 +18,11 @@ func TestWithTemplateFS(t *testing.T) {
 	option := WithTemplateFS(fs)
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	if !reflect.DeepEqual(i.templateFS, fs) {
-		t.Fatalf("got=%#v, want=%#v", i.templateFS, fs)
+		t.Fatalf("templateFS=%#v, want=%#v", i.templateFS, fs)
 	}
 }
 
@@ -36,11 +36,11 @@ func TestWithVersion(t *testing.T) {
 	option := WithVersion(want)
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	if i.version != want {
-		t.Fatalf("got=%#v, want=%#v", i.version, want)
+		t.Fatalf("version=%s, want=%s", i.version, want)
 	}
 }
 
@@ -55,11 +55,11 @@ func TestWithAssetURL(t *testing.T) {
 	option := WithAssetURL(url)
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	if i.version != want {
-		t.Fatalf("got=%#v, want=%#v", i.version, want)
+		t.Fatalf("version=%s, want=%s", i.version, want)
 	}
 }
 
@@ -68,9 +68,9 @@ func TestWithManifestFile(t *testing.T) {
 
 	i := new(Inertia)
 
-	f, err := os.CreateTemp("", "")
+	f, err := os.CreateTemp("", "gonertia")
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	closed := false
@@ -78,21 +78,21 @@ func TestWithManifestFile(t *testing.T) {
 	t.Cleanup(func() {
 		if !closed {
 			if err := f.Close(); err != nil {
-				t.Fatalf("unexpected error: %v", err)
+				t.Fatalf("unexpected error: %#v", err)
 			}
 		}
 
 		if err := os.Remove(f.Name()); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+			t.Fatalf("unexpected error: %#v", err)
 		}
 	})
 
 	if _, err := f.WriteString("foo"); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	if err := f.Close(); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	closed = true
@@ -102,11 +102,11 @@ func TestWithManifestFile(t *testing.T) {
 	want := "acbd18db4cc2f85cedef654fccc4a4d8"
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	if i.version != want {
-		t.Fatalf("got=%#v, want=%#v", i.version, want)
+		t.Fatalf("version=%s, want=%s", i.version, want)
 	}
 }
 
@@ -122,16 +122,16 @@ func TestWithMarshalJSON(t *testing.T) {
 	})
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	got, err := i.marshallJSON([]byte{})
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	if string(got) != want {
-		t.Fatalf("got=%#v, want=%#v", string(got), want)
+		t.Fatalf("marshallJSON()=%s, want=%s", string(got), want)
 	}
 }
 
@@ -145,11 +145,11 @@ func TestWithoutLogger(t *testing.T) {
 	option := WithoutLogger()
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	if !reflect.DeepEqual(i.logger, want) {
-		t.Fatalf("got=%#v, want=%#v", i.logger, want)
+		t.Fatalf("logger=%#v, want=%#v", i.logger, want)
 	}
 }
 
@@ -166,11 +166,11 @@ func TestWithLogger(t *testing.T) {
 		option := WithLogger(nil)
 
 		if err := option(i); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+			t.Fatalf("unexpected error: %#v", err)
 		}
 
 		if !reflect.DeepEqual(i.logger, want) {
-			t.Fatalf("got=%#v, want=%#v", i.logger, want)
+			t.Fatalf("logger=%#v, want=%#v", i.logger, want)
 		}
 	})
 
@@ -184,11 +184,11 @@ func TestWithLogger(t *testing.T) {
 		option := WithLogger(want)
 
 		if err := option(i); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+			t.Fatalf("unexpected error: %#v", err)
 		}
 
 		if !reflect.DeepEqual(i.logger, want) {
-			t.Fatalf("got=%#v, want=%#v", i.logger, want)
+			t.Fatalf("logger=%#v, want=%#v", i.logger, want)
 		}
 	})
 }
@@ -203,10 +203,10 @@ func TestWithContainerID(t *testing.T) {
 	option := WithContainerID(want)
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %#v", err)
 	}
 
 	if i.containerID != want {
-		t.Fatalf("got=%#v, want=%#v", i.containerID, want)
+		t.Fatalf("containerID=%s, want=%s", i.containerID, want)
 	}
 }

@@ -21,11 +21,11 @@ func AssertInertiaLocation(t *testing.T, w *httptest.ResponseRecorder, want stri
 	t.Helper()
 
 	if w.Result().StatusCode != http.StatusConflict {
-		t.Fatalf("got status=%#v, want status=%#v", w.Result().StatusCode, http.StatusConflict)
+		t.Fatalf("status=%d, want=%d", w.Result().StatusCode, http.StatusConflict)
 	}
 
 	got := w.Result().Header.Get("X-Inertia-Location")
 	if got != want {
-		t.Fatalf("got url=%#v, want url=%#v", got, want)
+		t.Fatalf("url=%s, want=%s", got, want)
 	}
 }

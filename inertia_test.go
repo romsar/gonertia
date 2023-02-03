@@ -1,6 +1,7 @@
 package gonertia
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 )
@@ -11,14 +12,12 @@ func TestInertia_Location(t *testing.T) {
 	t.Run("plain redirect with default status", func(t *testing.T) {
 		t.Parallel()
 
-		i := new(Inertia)
-
 		w, r := requestMock(http.MethodGet, "/")
 
 		wantStatus := http.StatusFound
 		wantLocation := "/foo"
 
-		i.Location(w, r, wantLocation)
+		I().Location(w, r, wantLocation)
 
 		assertResponseStatusCode(t, w, wantStatus)
 		assertLocation(t, w, wantLocation)
@@ -27,14 +26,12 @@ func TestInertia_Location(t *testing.T) {
 	t.Run("plain redirect with specified status", func(t *testing.T) {
 		t.Parallel()
 
-		i := new(Inertia)
-
 		w, r := requestMock(http.MethodGet, "/")
 
 		wantStatus := http.StatusMovedPermanently
 		wantLocation := "/foo"
 
-		i.Location(w, r, wantLocation, wantStatus)
+		I().Location(w, r, wantLocation, wantStatus)
 
 		assertResponseStatusCode(t, w, wantStatus)
 		assertLocation(t, w, wantLocation)
@@ -43,18 +40,29 @@ func TestInertia_Location(t *testing.T) {
 	t.Run("inertia location", func(t *testing.T) {
 		t.Parallel()
 
-		i := new(Inertia)
-
 		w, r := requestMock(http.MethodGet, "/")
 		asInertiaRequest(r)
 
 		wantLocation := ""
 		wantInertiaLocation := "/foo"
 
-		i.Location(w, r, wantInertiaLocation, http.StatusMovedPermanently)
+		I().Location(w, r, wantInertiaLocation, http.StatusMovedPermanently)
 
 		assertLocation(t, w, wantLocation)
 		assertResponseStatusCode(t, w, http.StatusConflict)
 		assertInertiaLocation(t, w, wantInertiaLocation)
 	})
+}
+
+func I(opts ...func(i *Inertia)) *Inertia {
+	i := &Inertia{
+		containerID:  "app",
+		marshallJSON: json.Marshal,
+	}
+
+	for _, opt := range opts {
+		opt(i)
+	}
+
+	return i
 }

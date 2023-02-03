@@ -37,7 +37,7 @@ func TestIsInertiaRequest(t *testing.T) {
 			got := IsInertiaRequest(r)
 
 			if got != tt.want {
-				t.Fatalf("got=%#v, want=%#v", got, tt.want)
+				t.Fatalf("IsInertiaRequest()=%t, want=%t", got, tt.want)
 			}
 		})
 	}

@@ -29,7 +29,7 @@ func assertResponseStatusCode(t *testing.T, w *httptest.ResponseRecorder, want i
 	t.Helper()
 
 	if w.Result().StatusCode != want {
-		t.Fatalf("got=%#v, want=%#v", w.Result().StatusCode, want)
+		t.Fatalf("status=%d, want=%d", w.Result().StatusCode, want)
 	}
 }
 
@@ -39,7 +39,7 @@ func assertHeader(t *testing.T, w *httptest.ResponseRecorder, key, want string) 
 	got := w.Result().Header.Get(key)
 
 	if got != want {
-		t.Fatalf("got=%#v, want=%#v", got, want)
+		t.Fatalf("header=%s, want=%s", got, want)
 	}
 }
 
@@ -62,7 +62,7 @@ func assertInertiaVary(t *testing.T, w *httptest.ResponseRecorder) {
 	wantVary := "X-Inertia"
 
 	if gotVary != wantVary {
-		t.Fatalf("got=%#v, want=%#v", gotVary, wantVary)
+		t.Fatalf("vary=%s, want=%s", gotVary, wantVary)
 	}
 }
 
