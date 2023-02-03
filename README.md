@@ -230,7 +230,7 @@ Of course, this package provides convenient interfaces for testing!
 
 ```go
 func TestHomepage(t *testing.T) {
-    body := ... // get the HTML using a httptest package or a real HTTP request. 
+    body := ... // get an HTML using httptest package or real HTTP request. 
 	
     // ...
 	
