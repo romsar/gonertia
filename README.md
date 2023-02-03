@@ -17,8 +17,10 @@ This package based on the official Laravel adapter for Inertia.js: [inertiajs/in
 
 ## Roadmap
 - [x] Tests
-- [ ] Validation errors
+- [ ] Helpers for testing
+- [ ] Helpers for validation errors
 - [ ] SSR
+- [ ] CLI
 
 ## Installation
 Install using `go get` command:
