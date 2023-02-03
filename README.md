@@ -230,6 +230,10 @@ Of course, this package provides convenient interfaces for testing!
 
 ```go
 func TestHomepage(t *testing.T) {
+    body := ... // get the HTML using a httptest package or a real HTTP request. 
+	
+    // ...
+	
     assertable := inertia.AssertInertia(t, body) // io.Reader body
     // OR
     assertable := inertia.AssertInertiaFromBytes(t, body) // []byte body
