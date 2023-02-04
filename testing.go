@@ -23,41 +23,41 @@ type AssertableInertia struct {
 
 // AssertComponent verifies that component from Inertia
 // response and the passed component are the same.
-func (i AssertableInertia) AssertComponent(component string) {
+func (i AssertableInertia) AssertComponent(want string) {
 	i.t.Helper()
 
-	if i.Component != component {
-		i.t.Fatalf("inertia: Component=%s, want=%s", i.Component, component)
+	if i.Component != want {
+		i.t.Fatalf("inertia: Component=%s, want=%s", i.Component, want)
 	}
 }
 
 // AssertVersion verifies that version from Inertia
 // response and the passed version are the same.
-func (i AssertableInertia) AssertVersion(version string) {
+func (i AssertableInertia) AssertVersion(want string) {
 	i.t.Helper()
 
-	if i.Version != version {
-		i.t.Fatalf("inertia: Version=%s, want=%s", i.Version, version)
+	if i.Version != want {
+		i.t.Fatalf("inertia: Version=%s, want=%s", i.Version, want)
 	}
 }
 
 // AssertURL verifies that url from Inertia
 // response and the passed url are the same.
-func (i AssertableInertia) AssertURL(url string) {
+func (i AssertableInertia) AssertURL(want string) {
 	i.t.Helper()
 
-	if i.URL != url {
-		i.t.Fatalf("inertia: URL=%s, want=%s", i.URL, url)
+	if i.URL != want {
+		i.t.Fatalf("inertia: URL=%s, want=%s", i.URL, want)
 	}
 }
 
 // AssertProps verifies that props from Inertia
 // response and the passed props are the same.
-func (i AssertableInertia) AssertProps(props Props) {
+func (i AssertableInertia) AssertProps(want Props) {
 	i.t.Helper()
 
-	if !reflect.DeepEqual(i.Props, props) {
-		i.t.Fatalf("inertia: Props=%#v, want=%#v", i.Props, props)
+	if !reflect.DeepEqual(i.Props, want) {
+		i.t.Fatalf("inertia: Props=%#v, want=%#v", i.Props, want)
 	}
 }
 

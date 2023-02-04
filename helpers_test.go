@@ -5,13 +5,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 )
 
 func I(opts ...func(i *Inertia)) *Inertia {
 	i := &Inertia{
-		containerID:  "app",
-		marshallJSON: json.Marshal,
+		containerID:        "app",
+		marshallJSON:       json.Marshal,
+		sharedProps:        make(Props),
+		sharedTemplateData: make(templateData),
 	}
 
 	for _, opt := range opts {
@@ -30,6 +33,14 @@ func requestMock(method, target string) (*httptest.ResponseRecorder, *http.Reque
 
 func asInertiaRequest(r *http.Request) {
 	r.Header.Set("X-Inertia", "true")
+}
+
+func withPartialData(r *http.Request, data []string) {
+	r.Header.Set("X-Inertia-Partial-Data", strings.Join(data, ","))
+}
+
+func withPartialComponent(r *http.Request, component string) {
+	r.Header.Set("X-Inertia-Partial-Component", component)
 }
 
 func withInertiaVersion(r *http.Request, ver string) {

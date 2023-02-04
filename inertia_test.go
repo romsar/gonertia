@@ -102,32 +102,126 @@ func TestInertia_Render(t *testing.T) {
 	t.Run("inertia request", func(t *testing.T) {
 		t.Parallel()
 
-		f := tmpFile(t, rootTemplate)
+		t.Run("success", func(t *testing.T) {
+			t.Parallel()
 
-		i := I(func(i *Inertia) {
-			i.rootTemplatePath = f.Name()
-			i.version = "f8v01xv4h4"
+			i := I(func(i *Inertia) {
+				i.version = "f8v01xv4h4"
+			})
+
+			w, r := requestMock(http.MethodGet, "/home")
+			asInertiaRequest(r)
+
+			err := i.Render(w, r, "Some/Component", Props{
+				"foo": "bar",
+			})
+			if err != nil {
+				t.Fatalf("unexpected error: %#v", err)
+			}
+
+			assertable := AssertInertiaFromString(t, w.Body.String())
+			assertable.AssertComponent("Some/Component")
+			assertable.AssertProps(Props{"foo": "bar"})
+			assertable.AssertVersion("f8v01xv4h4")
+			assertable.AssertURL("/home")
+
+			assertInertiaResponse(t, w)
+			assertJSONResponse(t, w)
+			assertResponseStatusCode(t, w, http.StatusOK)
 		})
 
-		w, r := requestMock(http.MethodGet, "/home")
-		asInertiaRequest(r)
+		t.Run("props priority", func(t *testing.T) {
+			t.Parallel()
 
-		err := i.Render(w, r, "Some/Component", Props{
-			"foo": "bar",
+			i := I(func(i *Inertia) {
+				i.sharedProps = Props{"foo": "bar", "abc": "123", "shared": "prop"}
+			})
+
+			w, r := requestMock(http.MethodGet, "/home")
+			asInertiaRequest(r)
+
+			ctx := i.WithProps(r.Context(), Props{"foo": "baz", "abc": "456", "ctx": "prop"})
+
+			err := i.Render(w, r.WithContext(ctx), "Some/Component", Props{
+				"foo": "zzz",
+			})
+			if err != nil {
+				t.Fatalf("unexpected error: %#v", err)
+			}
+
+			assertable := AssertInertiaFromString(t, w.Body.String())
+			assertable.AssertProps(Props{"abc": "456", "ctx": "prop", "foo": "zzz", "shared": "prop"})
 		})
-		if err != nil {
-			t.Fatalf("unexpected error: %#v", err)
-		}
 
-		assertable := AssertInertiaFromString(t, w.Body.String())
-		assertable.AssertComponent("Some/Component")
-		assertable.AssertProps(Props{"foo": "bar"})
-		assertable.AssertVersion("f8v01xv4h4")
-		assertable.AssertURL("/home")
+		t.Run("props value resolving", func(t *testing.T) {
+			t.Parallel()
 
-		assertInertiaResponse(t, w)
-		assertJSONResponse(t, w)
-		assertResponseStatusCode(t, w, http.StatusOK)
+			t.Run("reject lazy props", func(t *testing.T) {
+				t.Parallel()
+
+				w, r := requestMock(http.MethodGet, "/home")
+				asInertiaRequest(r)
+
+				err := I().Render(w, r, "Some/Component", Props{
+					"foo":     "bar",
+					"closure": func() (any, error) { return "prop", nil },
+					"lazy":    LazyProp(func() (any, error) { return "prop", nil }),
+				})
+				if err != nil {
+					t.Fatalf("unexpected error: %#v", err)
+				}
+
+				assertable := AssertInertiaFromString(t, w.Body.String())
+				assertable.AssertProps(Props{"foo": "bar", "closure": "prop"})
+			})
+
+			t.Run("only", func(t *testing.T) {
+				t.Parallel()
+
+				t.Run("resolve lazy props, same component", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+					withPartialData(r, []string{"foo", "closure", "lazy"})
+					withPartialComponent(r, "Some/Component")
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"foo":     "bar",
+						"abc":     "123",
+						"closure": func() (any, error) { return "prop", nil },
+						"lazy":    LazyProp(func() (any, error) { return "prop", nil }),
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %#v", err)
+					}
+
+					assertable := AssertInertiaFromString(t, w.Body.String())
+					assertable.AssertProps(Props{"foo": "bar", "closure": "prop", "lazy": "prop"})
+				})
+
+				t.Run("resolve lazy props, other component", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+					withPartialData(r, []string{"foo", "closure", "lazy"})
+					withPartialComponent(r, "Other/Component")
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"foo":     "bar",
+						"abc":     "123",
+						"closure": func() (any, error) { return "prop", nil },
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %#v", err)
+					}
+
+					assertable := AssertInertiaFromString(t, w.Body.String())
+					assertable.AssertProps(Props{"foo": "bar", "abc": "123", "closure": "prop"})
+				})
+			})
+		})
 	})
 }
 
