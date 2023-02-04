@@ -20,7 +20,6 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// If request is not request by Inertia, we can move next.
 		if !IsInertiaRequest(r) {
 			next.ServeHTTP(w, r)
-
 			return
 		}
 
@@ -50,7 +49,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		//
 		// https://inertiajs.com/asset-versioning
 		if r.Method == http.MethodGet && inertiaVersionFromRequest(r) != i.version {
-			i.Location(w2, r, i.url+r.RequestURI)
+			setInertiaLocationInResponse(w2, r.URL.RequestURI())
 			return
 		}
 
@@ -60,7 +59,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 			backURL := i.backURL(r)
 
 			if backURL != "" {
-				setInertiaLocationInResponse(w, backURL)
+				setInertiaLocationInResponse(w2, backURL)
 				return
 			}
 		}

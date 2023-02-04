@@ -46,7 +46,7 @@ func TestInertia_Middleware(t *testing.T) {
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusConflict)
-				assertInertiaLocation(t, w, "https://example.com/home")
+				assertInertiaLocation(t, w, "/home")
 			})
 
 			t.Run("diff version with POST, do nothing", func(t *testing.T) {
@@ -56,7 +56,7 @@ func TestInertia_Middleware(t *testing.T) {
 					i.version = "foo"
 				})
 
-				w, r := requestMock(http.MethodPost, "https://example.com/home")
+				w, r := requestMock(http.MethodPost, "/home")
 				asInertiaRequest(r)
 				withInertiaVersion(r, "bar")
 

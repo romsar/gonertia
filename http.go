@@ -56,13 +56,13 @@ func redirectResponse(w http.ResponseWriter, r *http.Request, url string, status
 	http.Redirect(w, r, url, firstOr[int](status, http.StatusFound))
 }
 
-// markAsJSONResponse sets the type of response content in JSON format.
-func markAsJSONResponse(w http.ResponseWriter) {
+// setJSONResponse sets the type of response content in JSON format.
+func setJSONResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-// markAsHTMLResponse sets the type of response content in HTML format.
-func markAsHTMLResponse(w http.ResponseWriter) {
+// setHTMLResponse sets the type of response content in HTML format.
+func setHTMLResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html")
 }
 

@@ -1,23 +1,9 @@
 package gonertia
 
 import (
-	"encoding/json"
 	"net/http"
 	"testing"
 )
-
-func I(opts ...func(i *Inertia)) *Inertia {
-	i := &Inertia{
-		containerID:  "app",
-		marshallJSON: json.Marshal,
-	}
-
-	for _, opt := range opts {
-		opt(i)
-	}
-
-	return i
-}
 
 func TestInertia_Location(t *testing.T) {
 	t.Parallel()
@@ -27,10 +13,12 @@ func TestInertia_Location(t *testing.T) {
 
 		w, r := requestMock(http.MethodGet, "/")
 
+		i := I()
+
 		wantStatus := http.StatusFound
 		wantLocation := "/foo"
 
-		I().Location(w, r, wantLocation)
+		i.Location(w, r, wantLocation)
 
 		assertResponseStatusCode(t, w, wantStatus)
 		assertLocation(t, w, wantLocation)
@@ -64,5 +52,43 @@ func TestInertia_Location(t *testing.T) {
 		assertLocation(t, w, wantLocation)
 		assertResponseStatusCode(t, w, http.StatusConflict)
 		assertInertiaLocation(t, w, wantInertiaLocation)
+	})
+}
+
+var rootTemplate = `<html>
+	<head>{{ .inertiaHead }}</head>
+	<body>{{ .inertia }}</body>
+</html>`
+
+func TestInertia_Render(t *testing.T) {
+	t.Parallel()
+
+	t.Run("plain request", func(t *testing.T) {
+		t.Parallel()
+
+		f := tmpFile(t, rootTemplate)
+
+		i := I(func(i *Inertia) {
+			i.rootTemplatePath = f.Name()
+			i.version = "f8v01xv4h4"
+		})
+
+		w, r := requestMock(http.MethodGet, "/home")
+
+		err := i.Render(w, r, "Some/Component", Props{
+			"foo": "bar",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %#v", err)
+		}
+
+		assertable := AssertInertia(t, w.Body)
+		assertable.AssertComponent("Some/Component")
+		assertable.AssertProps(Props{"foo": "bar"})
+		assertable.AssertVersion("f8v01xv4h4")
+		assertable.AssertURL("/home")
+
+		assertHTMLResponse(t, w)
+		assertResponseStatusCode(t, w, http.StatusOK)
 	})
 }

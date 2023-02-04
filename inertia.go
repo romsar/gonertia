@@ -13,10 +13,6 @@ import (
 
 // Inertia is a main Gonertia structure, which contains all the logic for being an Inertia adapter.
 type Inertia struct {
-	// url is the app URL.
-	// The main reason to store it is to create redirects with right urls.
-	url string
-
 	// rootTemplate is the parsed root template.
 	rootTemplate *template.Template
 
@@ -49,9 +45,8 @@ type Inertia struct {
 }
 
 // New initializes and returns Inertia.
-func New(url, rootTemplatePath string, opts ...Option) (*Inertia, error) {
+func New(rootTemplatePath string, opts ...Option) (*Inertia, error) {
 	i := &Inertia{
-		url:                 url,
 		rootTemplatePath:    rootTemplatePath,
 		marshallJSON:        json.Marshal,
 		containerID:         "app",
@@ -112,6 +107,8 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 		if err := i.doInertiaResponse(w, page); err != nil {
 			return fmt.Errorf("inertia response error: %w", err)
 		}
+
+		return
 	}
 
 	if err := i.doHTMLResponse(w, r, page); err != nil {
@@ -129,7 +126,7 @@ func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
 	}
 
 	setInertiaInResponse(w)
-	markAsJSONResponse(w)
+	setJSONResponse(w)
 	setResponseStatus(w, http.StatusOK)
 
 	if _, err := w.Write(pageJSON); err != nil {
@@ -154,7 +151,7 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 		return fmt.Errorf("build template data error: %w", err)
 	}
 
-	markAsHTMLResponse(w)
+	setHTMLResponse(w)
 
 	if err := i.rootTemplate.Execute(w, templateData); err != nil {
 		return fmt.Errorf("execute root template error: %w", err)

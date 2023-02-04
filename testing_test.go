@@ -133,10 +133,10 @@ func TestAssertableInertia_AssertURL(t *testing.T) {
 
 		i := AssertableInertia{
 			t:    mock,
-			page: &page{URL: "https://foobar.com"},
+			page: &page{URL: "/home"},
 		}
 
-		i.AssertURL("https://foobar.com")
+		i.AssertURL("/home")
 
 		if !mock.helperInvoked {
 			t.Fatal("expected Helper() to be invoked")

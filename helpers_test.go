@@ -1,10 +1,32 @@
 package gonertia
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
+
+func I(opts ...func(i *Inertia)) *Inertia {
+	i := &Inertia{
+		containerID:  "app",
+		marshallJSON: json.Marshal,
+	}
+
+	for _, opt := range opts {
+		opt(i)
+	}
+
+	return i
+}
+
+func requestMock(method, target string) (*httptest.ResponseRecorder, *http.Request) {
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(method, target, nil)
+
+	return w, r
+}
 
 func asInertiaRequest(r *http.Request) {
 	r.Header.Set("X-Inertia", "true")
@@ -16,13 +38,6 @@ func withInertiaVersion(r *http.Request, ver string) {
 
 func withReferer(r *http.Request, referer string) {
 	r.Header.Set("Referer", referer)
-}
-
-func requestMock(method, target string) (*httptest.ResponseRecorder, *http.Request) {
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(method, target, nil)
-
-	return w, r
 }
 
 func assertResponseStatusCode(t *testing.T, w *httptest.ResponseRecorder, want int) {
@@ -53,6 +68,19 @@ func assertInertiaLocation(t *testing.T, w *httptest.ResponseRecorder, want stri
 	assertHeader(t, w, "X-Inertia-Location", want)
 }
 
+//nolint:deadcode,unused
+func assertJSONResponse(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+
+	assertHeader(t, w, "Content-Type", "application/json")
+}
+
+func assertHTMLResponse(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+
+	assertHeader(t, w, "Content-Type", "text/html")
+}
+
 func assertInertiaVary(t *testing.T, w *httptest.ResponseRecorder) {
 	t.Helper()
 
@@ -71,7 +99,7 @@ func assertHandlerServed(t *testing.T, handlers ...http.HandlerFunc) http.Handle
 
 	t.Cleanup(func() {
 		if !called {
-			t.Fatal("next handler was not called")
+			t.Fatal("handler was not called")
 		}
 	})
 
@@ -82,4 +110,39 @@ func assertHandlerServed(t *testing.T, handlers ...http.HandlerFunc) http.Handle
 
 		called = true
 	}
+}
+
+func tmpFile(t *testing.T, content string) *os.File {
+	t.Helper()
+
+	f, err := os.CreateTemp("", "gonertia")
+	if err != nil {
+		t.Fatalf("unexpected error: %#v", err)
+	}
+
+	closed := false
+
+	if _, err := f.WriteString(content); err != nil {
+		t.Fatalf("unexpected error: %#v", err)
+	}
+
+	if err := f.Close(); err != nil {
+		t.Fatalf("unexpected error: %#v", err)
+	}
+
+	closed = true
+
+	t.Cleanup(func() {
+		if !closed {
+			if err := f.Close(); err != nil {
+				t.Fatalf("unexpected error: %#v", err)
+			}
+		}
+
+		if err := os.Remove(f.Name()); err != nil {
+			t.Fatalf("unexpected error: %#v", err)
+		}
+	})
+
+	return f
 }

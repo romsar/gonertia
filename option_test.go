@@ -4,7 +4,6 @@ import (
 	"embed"
 	"io"
 	"log"
-	"os"
 	"reflect"
 	"testing"
 )
@@ -68,34 +67,7 @@ func TestWithManifestFile(t *testing.T) {
 
 	i := new(Inertia)
 
-	f, err := os.CreateTemp("", "gonertia")
-	if err != nil {
-		t.Fatalf("unexpected error: %#v", err)
-	}
-
-	closed := false
-
-	t.Cleanup(func() {
-		if !closed {
-			if err := f.Close(); err != nil {
-				t.Fatalf("unexpected error: %#v", err)
-			}
-		}
-
-		if err := os.Remove(f.Name()); err != nil {
-			t.Fatalf("unexpected error: %#v", err)
-		}
-	})
-
-	if _, err := f.WriteString("foo"); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
-	}
-
-	if err := f.Close(); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
-	}
-
-	closed = true
+	f := tmpFile(t, "foo")
 
 	option := WithManifestFile(f.Name())
 
