@@ -61,8 +61,8 @@ func (i AssertableInertia) AssertProps(want Props) {
 	}
 }
 
-// AssertInertia creates AssertableInertia from the io.Reader body.
-func AssertInertia(t t, body io.Reader) AssertableInertia {
+// Assert creates AssertableInertia from the io.Reader body.
+func Assert(t t, body io.Reader) AssertableInertia {
 	t.Helper()
 
 	bodyBs, err := io.ReadAll(body)
@@ -70,20 +70,20 @@ func AssertInertia(t t, body io.Reader) AssertableInertia {
 		t.Fatalf("read response bodyBs error: %#v", err)
 	}
 
-	return AssertInertiaFromBytes(t, bodyBs)
+	return AssertFromBytes(t, bodyBs)
 }
 
-// AssertInertiaFromBytes creates AssertableInertia from the bytes body.
-func AssertInertiaFromBytes(t t, body []byte) AssertableInertia {
+// AssertFromBytes creates AssertableInertia from the bytes body.
+func AssertFromBytes(t t, body []byte) AssertableInertia {
 	t.Helper()
 
-	return AssertInertiaFromString(t, string(body))
+	return AssertFromString(t, string(body))
 }
 
 var pageRe = regexp.MustCompile(` data-page="(.*?)"`)
 
-// AssertInertiaFromString creates AssertableInertia from the string body.
-func AssertInertiaFromString(t t, body string) AssertableInertia {
+// AssertFromString creates AssertableInertia from the string body.
+func AssertFromString(t t, body string) AssertableInertia {
 	t.Helper()
 
 	assertable := AssertableInertia{t: t}

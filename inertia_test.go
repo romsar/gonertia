@@ -119,7 +119,7 @@ func TestInertia_Render(t *testing.T) {
 				t.Fatalf("unexpected error: %#v", err)
 			}
 
-			assertable := AssertInertiaFromString(t, w.Body.String())
+			assertable := AssertFromString(t, w.Body.String())
 			assertable.AssertComponent("Some/Component")
 			assertable.AssertProps(Props{"foo": "bar"})
 			assertable.AssertVersion("f8v01xv4h4")
@@ -149,7 +149,7 @@ func TestInertia_Render(t *testing.T) {
 				t.Fatalf("unexpected error: %#v", err)
 			}
 
-			assertable := AssertInertiaFromString(t, w.Body.String())
+			assertable := AssertFromString(t, w.Body.String())
 			assertable.AssertProps(Props{"abc": "456", "ctx": "prop", "foo": "zzz", "shared": "prop"})
 		})
 
@@ -171,7 +171,7 @@ func TestInertia_Render(t *testing.T) {
 					t.Fatalf("unexpected error: %#v", err)
 				}
 
-				assertable := AssertInertiaFromString(t, w.Body.String())
+				assertable := AssertFromString(t, w.Body.String())
 				assertable.AssertProps(Props{"foo": "bar", "closure": "prop"})
 			})
 
@@ -196,7 +196,7 @@ func TestInertia_Render(t *testing.T) {
 						t.Fatalf("unexpected error: %#v", err)
 					}
 
-					assertable := AssertInertiaFromString(t, w.Body.String())
+					assertable := AssertFromString(t, w.Body.String())
 					assertable.AssertProps(Props{"foo": "bar", "closure": "prop", "lazy": "prop"})
 				})
 
@@ -217,7 +217,7 @@ func TestInertia_Render(t *testing.T) {
 						t.Fatalf("unexpected error: %#v", err)
 					}
 
-					assertable := AssertInertiaFromString(t, w.Body.String())
+					assertable := AssertFromString(t, w.Body.String())
 					assertable.AssertProps(Props{"foo": "bar", "abc": "123", "closure": "prop"})
 				})
 			})
@@ -237,7 +237,7 @@ func assertRootTemplateSuccess(t *testing.T, i *Inertia) {
 		t.Fatalf("unexpected error: %#v", err)
 	}
 
-	assertable := AssertInertia(t, w.Body)
+	assertable := Assert(t, w.Body)
 	assertable.AssertComponent("Some/Component")
 	assertable.AssertProps(Props{"foo": "bar"})
 	assertable.AssertVersion("f8v01xv4h4")

@@ -217,7 +217,7 @@ func TestAssertableInertia_AssertProps(t *testing.T) {
 	})
 }
 
-func TestAssertInertiaFromString(t *testing.T) {
+func TestAssertFromString(t *testing.T) {
 	t.Parallel()
 
 	t.Run("without inertia container", func(t *testing.T) {
@@ -225,7 +225,7 @@ func TestAssertInertiaFromString(t *testing.T) {
 
 		mock := new(tMock)
 
-		AssertInertiaFromString(mock, `<html>
+		AssertFromString(mock, `<html>
 	<head></head>
 	<body><div id="app" data-foo="bar"></div></body>
 </html>`)
@@ -244,7 +244,7 @@ func TestAssertInertiaFromString(t *testing.T) {
 
 		mock := new(tMock)
 
-		AssertInertiaFromString(mock, `<html>
+		AssertFromString(mock, `<html>
 	<head></head>
 	<body><div id="app" data-page="foo bar"></div></body>
 </html>`)
@@ -263,7 +263,7 @@ func TestAssertInertiaFromString(t *testing.T) {
 
 		mock := new(tMock)
 
-		assertable := AssertInertiaFromString(mock, stubJSON)
+		assertable := AssertFromString(mock, stubJSON)
 
 		assertStubSuccess(t, mock, assertable)
 	})
@@ -273,28 +273,28 @@ func TestAssertInertiaFromString(t *testing.T) {
 
 		mock := new(tMock)
 
-		assertable := AssertInertiaFromString(mock, stubHTML)
+		assertable := AssertFromString(mock, stubHTML)
 
 		assertStubSuccess(t, mock, assertable)
 	})
 }
 
-func TestAssertInertiaFromBytes(t *testing.T) {
+func TestAssertFromBytes(t *testing.T) {
 	t.Parallel()
 
 	mock := new(tMock)
 
-	assertable := AssertInertiaFromBytes(mock, []byte(stubHTML))
+	assertable := AssertFromBytes(mock, []byte(stubHTML))
 
 	assertStubSuccess(t, mock, assertable)
 }
 
-func TestAssertInertia(t *testing.T) {
+func TestAssert(t *testing.T) {
 	t.Parallel()
 
 	mock := new(tMock)
 
-	assertable := AssertInertia(mock, strings.NewReader(stubHTML))
+	assertable := Assert(mock, strings.NewReader(stubHTML))
 
 	assertStubSuccess(t, mock, assertable)
 }

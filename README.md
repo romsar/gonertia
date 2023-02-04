@@ -231,13 +231,13 @@ func TestHomepage(t *testing.T) {
 	
     // ...
 	
-    assertable := inertia.AssertInertia(t, body) // io.Reader body
+    assertable := inertia.Assert(t, body) // io.Reader body
     // OR
-    assertable := inertia.AssertInertiaFromBytes(t, body) // []byte body
+    assertable := inertia.AssertFromBytes(t, body) // []byte body
     // OR
-    assertable := inertia.AssertInertiaFromString(t, body) // string body
+    assertable := inertia.AssertFromString(t, body) // string body
 	
-    // now you can do assertions using assertable.Assert methods:
+    // now you can do assertions using assertable.Assert[...] methods:
     assertable.AssertComponent("Foo/Bar")
     assertable.AssertVersion("foo bar")
     assertable.AssertURL("https://example.com")
