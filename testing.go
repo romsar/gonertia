@@ -8,6 +8,7 @@ import (
 	"regexp"
 )
 
+// t is the contract of testing.T.
 type t interface {
 	Helper()
 	Fatal(args ...any)
@@ -85,12 +86,17 @@ var pageRe = regexp.MustCompile(` data-page="(.*?)"`)
 func AssertInertiaFromString(t t, body string) AssertableInertia {
 	t.Helper()
 
+	assertable := AssertableInertia{t: t}
+
+	// Might be body is a json? Let's try to unmarshall first.
+	if err := json.Unmarshal([]byte(body), &assertable.page); err == nil {
+		return assertable
+	}
+
 	matched := pageRe.FindAllStringSubmatch(body, -1)
 	if len(matched) == 0 {
 		invalidInertiaResponse(t)
 	}
-
-	assertable := AssertableInertia{t: t}
 
 	for _, m := range matched {
 		if len(m) <= 1 {
@@ -110,6 +116,7 @@ func AssertInertiaFromString(t t, body string) AssertableInertia {
 	return assertable
 }
 
+// invalidInertiaResponse fail test with invalid inertia response message.
 func invalidInertiaResponse(t t) {
 	t.Fatal("invalid inertia response")
 }

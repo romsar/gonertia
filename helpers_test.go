@@ -56,10 +56,30 @@ func assertHeader(t *testing.T, w *httptest.ResponseRecorder, key, want string) 
 	}
 }
 
+func assertHeaderMissing(t *testing.T, w *httptest.ResponseRecorder, key string) {
+	t.Helper()
+
+	if got := w.Header().Get(key); got != "" {
+		t.Fatalf("header=%s, want=%s", got, "")
+	}
+}
+
 func assertLocation(t *testing.T, w *httptest.ResponseRecorder, want string) {
 	t.Helper()
 
 	assertHeader(t, w, "Location", want)
+}
+
+func assertInertiaResponse(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+
+	assertHeader(t, w, "X-Inertia", "true")
+}
+
+func assertNotInertiaResponse(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+
+	assertHeaderMissing(t, w, "X-Inertia")
 }
 
 func assertInertiaLocation(t *testing.T, w *httptest.ResponseRecorder, want string) {
@@ -68,7 +88,6 @@ func assertInertiaLocation(t *testing.T, w *httptest.ResponseRecorder, want stri
 	assertHeader(t, w, "X-Inertia-Location", want)
 }
 
-//nolint:deadcode,unused
 func assertJSONResponse(t *testing.T, w *httptest.ResponseRecorder) {
 	t.Helper()
 

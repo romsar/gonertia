@@ -2,14 +2,14 @@
 
 <img src="https://user-images.githubusercontent.com/27378369/215432769-35e7b0f5-29a9-41d0-ba79-ca81e624b970.png" style="width: 200px"  alt="gonertia"/>
 
-Gonertia is a Inertia.js server-side adapter for Golang. Visit [inertiajs.com](https://inertiajs.com/) to learn more.
+Gonertia is a well-tested and zero-dependency Inertia.js server-side adapter for Golang. Visit [inertiajs.com](https://inertiajs.com/) to learn more.
 
 [![Audit Workflow](https://github.com/romsar/gonertia/actions/workflows/audit.yml/badge.svg?branch=master)](https://github.com/romsar/gonertia/actions/workflows/audit.yml?query=branch:master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/romsar/gonertia)](https://goreportcard.com/report/github.com/romsar/gonertia)
 [![Go Reference](https://godoc.org/github.com/romsar/gonertia?status.svg)](https://pkg.go.dev/github.com/romsar/gonertia)
 [![MIT license](https://img.shields.io/badge/LICENSE-MIT-orange.svg)](https://github.com/romsar/gonertia/blob/master/LICENSE)
 
-## Introdution
+## Introduction
 
 Inertia allows you to create fully client-side rendered, single-page apps, without the complexity that comes with modern SPAs. It does this by leveraging existing server-side patterns that you already love.
 
@@ -44,10 +44,7 @@ import (
 )
 
 func main() {
-    i, err := inertia.New(
-        "https://yourwebsite.com",
-        "./ui/templates/root.html",
-    )
+    i, err := inertia.New("./ui/templates/root.html")
     if err != nil {
         log.Fatal(err)
     }
@@ -230,7 +227,7 @@ Of course, this package provides convenient interfaces for testing!
 
 ```go
 func TestHomepage(t *testing.T) {
-    body := ... // get an HTML using httptest package or real HTTP request. 
+    body := ... // get an HTML or JSON using httptest package or real HTTP request. 
 	
     // ...
 	

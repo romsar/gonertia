@@ -31,6 +31,8 @@ const stubHTML = `<html>
 	</body>
 </html>`
 
+const stubJSON = `{"component":"Foo/Bar","props":{"foo": "bar"},"url":"https://example.com","version":"foobar"}`
+
 func TestAssertableInertia_AssertComponent(t *testing.T) {
 	t.Parallel()
 
@@ -256,46 +258,48 @@ func TestAssertInertiaFromString(t *testing.T) {
 		}
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("success with json", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		assertable := AssertInertiaFromString(mock, stubJSON)
+
+		assertStubSuccess(t, mock, assertable)
+	})
+
+	t.Run("success with html", func(t *testing.T) {
 		t.Parallel()
 
 		mock := new(tMock)
 
 		assertable := AssertInertiaFromString(mock, stubHTML)
 
-		testStubSuccess(t, mock, assertable)
+		assertStubSuccess(t, mock, assertable)
 	})
 }
 
 func TestAssertInertiaFromBytes(t *testing.T) {
 	t.Parallel()
 
-	t.Run("success", func(t *testing.T) {
-		t.Parallel()
+	mock := new(tMock)
 
-		mock := new(tMock)
+	assertable := AssertInertiaFromBytes(mock, []byte(stubHTML))
 
-		assertable := AssertInertiaFromBytes(mock, []byte(stubHTML))
-
-		testStubSuccess(t, mock, assertable)
-	})
+	assertStubSuccess(t, mock, assertable)
 }
 
 func TestAssertInertia(t *testing.T) {
 	t.Parallel()
 
-	t.Run("success", func(t *testing.T) {
-		t.Parallel()
+	mock := new(tMock)
 
-		mock := new(tMock)
+	assertable := AssertInertia(mock, strings.NewReader(stubHTML))
 
-		assertable := AssertInertia(mock, strings.NewReader(stubHTML))
-
-		testStubSuccess(t, mock, assertable)
-	})
+	assertStubSuccess(t, mock, assertable)
 }
 
-func testStubSuccess(t *testing.T, mock *tMock, assertable AssertableInertia) {
+func assertStubSuccess(t *testing.T, mock *tMock, assertable AssertableInertia) {
 	t.Helper()
 
 	if !mock.helperInvoked {
