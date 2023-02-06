@@ -15,7 +15,7 @@ const (
 // WithTemplateData appends template data value to the passed context.Context.
 func (i *Inertia) WithTemplateData(ctx context.Context, key string, val any) context.Context {
 	if ctxData := ctx.Value(templateDataContextKey); ctxData != nil {
-		ctxData, ok := ctxData.(templateData)
+		ctxData, ok := ctxData.(TemplateData)
 
 		if ok {
 			ctxData[key] = val
@@ -23,7 +23,7 @@ func (i *Inertia) WithTemplateData(ctx context.Context, key string, val any) con
 		}
 	}
 
-	return context.WithValue(ctx, templateDataContextKey, templateData{
+	return context.WithValue(ctx, templateDataContextKey, TemplateData{
 		key: val,
 	})
 }
@@ -62,11 +62,11 @@ func (i *Inertia) WithProps(ctx context.Context, props Props) context.Context {
 }
 
 // TemplateDataFromContext returns template data from the context.
-func TemplateDataFromContext(ctx context.Context) (templateData, error) {
+func TemplateDataFromContext(ctx context.Context) (TemplateData, error) {
 	ctxData := ctx.Value(templateDataContextKey)
 
 	if ctxData != nil {
-		data, ok := ctxData.(templateData)
+		data, ok := ctxData.(TemplateData)
 		if !ok {
 			return nil, fmt.Errorf("template data in the context has invalid type")
 		}

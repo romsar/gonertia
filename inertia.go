@@ -18,7 +18,7 @@ type Inertia struct {
 	rootTemplatePath string
 
 	sharedProps         Props
-	sharedTemplateData  templateData
+	sharedTemplateData  TemplateData
 	sharedTemplateFuncs template.FuncMap
 
 	containerID  string
@@ -35,7 +35,7 @@ func New(rootTemplatePath string, opts ...Option) (*Inertia, error) {
 		containerID:         "app",
 		logger:              log.Default(),
 		sharedProps:         make(Props),
-		sharedTemplateData:  make(templateData),
+		sharedTemplateData:  make(TemplateData),
 		sharedTemplateFuncs: make(template.FuncMap),
 	}
 

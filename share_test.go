@@ -201,27 +201,27 @@ func TestInertia_ShareTemplateData(t *testing.T) {
 	}
 	tests := []struct {
 		name         string
-		templateData templateData
+		templateData TemplateData
 		args         args
-		want         templateData
+		want         TemplateData
 	}{
 		{
 			"add",
-			templateData{},
+			TemplateData{},
 			args{
 				key: "foo",
 				val: "bar",
 			},
-			templateData{"foo": "bar"},
+			TemplateData{"foo": "bar"},
 		},
 		{
 			"replace",
-			templateData{"foo": "zoo"},
+			TemplateData{"foo": "zoo"},
 			args{
 				key: "foo",
 				val: "bar",
 			},
-			templateData{"foo": "bar"},
+			TemplateData{"foo": "bar"},
 		},
 	}
 
@@ -249,15 +249,15 @@ func TestInertia_FlushTemplateData(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		templateData templateData
+		templateData TemplateData
 	}{
 		{
 			"empty template data",
-			templateData{},
+			TemplateData{},
 		},
 		{
 			"non-empty template data",
-			templateData{"foo": "bar"},
+			TemplateData{"foo": "bar"},
 		},
 	}
 
@@ -273,8 +273,8 @@ func TestInertia_FlushTemplateData(t *testing.T) {
 
 			i.FlushSharedTemplateData()
 
-			if !reflect.DeepEqual(i.sharedTemplateData, templateData{}) {
-				t.Fatalf("sharedTemplateData=%#v, want=%#v", i.sharedTemplateData, templateData{})
+			if !reflect.DeepEqual(i.sharedTemplateData, TemplateData{}) {
+				t.Fatalf("sharedTemplateData=%#v, want=%#v", i.sharedTemplateData, TemplateData{})
 			}
 		})
 	}

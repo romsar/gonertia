@@ -14,7 +14,7 @@ func I(opts ...func(i *Inertia)) *Inertia {
 		containerID:        "app",
 		marshallJSON:       json.Marshal,
 		sharedProps:        make(Props),
-		sharedTemplateData: make(templateData),
+		sharedTemplateData: make(TemplateData),
 	}
 
 	for _, opt := range opts {

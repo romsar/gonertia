@@ -5,9 +5,9 @@ import (
 	"net/http"
 )
 
-type templateData map[string]any
+type TemplateData map[string]any
 
-func (i *Inertia) buildTemplateData(r *http.Request, page *page) (templateData, error) {
+func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, error) {
 	pageJSON, err := i.marshallJSON(page)
 	if err != nil {
 		return nil, fmt.Errorf("marshal page into json error: %w", err)
@@ -19,7 +19,7 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (templateData, 
 		return nil, fmt.Errorf("getting template data from context error: %w", err)
 	}
 
-	result := templateData{
+	result := TemplateData{
 		"inertiaHead": "", // todo reserved for SSR.
 		"inertia":     i.inertiaContainerHTML(pageJSON),
 	}

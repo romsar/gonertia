@@ -11,12 +11,12 @@ func TestInertia_WithTemplateData(t *testing.T) {
 
 	ctx := I().WithTemplateData(context.Background(), "foo", "bar")
 
-	got, ok := ctx.Value(templateDataContextKey).(templateData)
+	got, ok := ctx.Value(templateDataContextKey).(TemplateData)
 	if !ok {
-		t.Fatal("template data from context is not templateData")
+		t.Fatal("template data from context is not TemplateData")
 	}
 
-	want := templateData{"foo": "bar"}
+	want := TemplateData{"foo": "bar"}
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("temlateData=%#v, want=%#v", got, want)
@@ -30,7 +30,7 @@ func TestInertia_WithTemplateProp(t *testing.T) {
 
 	got, ok := ctx.Value(propsContextKey).(Props)
 	if !ok {
-		t.Fatal("props from context is not templateData")
+		t.Fatal("props from context is not TemplateData")
 	}
 
 	want := Props{"foo": "bar"}
@@ -47,7 +47,7 @@ func TestInertia_WithTemplateProps(t *testing.T) {
 
 	got, ok := ctx.Value(propsContextKey).(Props)
 	if !ok {
-		t.Fatal("props from context is not templateData")
+		t.Fatal("props from context is not TemplateData")
 	}
 
 	want := Props{"foo": "bar"}
@@ -63,7 +63,7 @@ func Test_TemplateDataFromContext(t *testing.T) {
 	tests := []struct {
 		name    string
 		ctxData any
-		want    templateData
+		want    TemplateData
 		wantErr bool
 	}{
 		{
@@ -74,14 +74,14 @@ func Test_TemplateDataFromContext(t *testing.T) {
 		},
 		{
 			name:    "empty",
-			ctxData: templateData{},
-			want:    templateData{},
+			ctxData: TemplateData{},
+			want:    TemplateData{},
 			wantErr: false,
 		},
 		{
 			name:    "filled",
-			ctxData: templateData{"foo": "bar"},
-			want:    templateData{"foo": "bar"},
+			ctxData: TemplateData{"foo": "bar"},
+			want:    TemplateData{"foo": "bar"},
 			wantErr: false,
 		},
 		{
@@ -105,7 +105,7 @@ func Test_TemplateDataFromContext(t *testing.T) {
 			} else if !tt.wantErr && err != nil {
 				t.Fatalf("unexpected error: %#v", err)
 			} else if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
-				t.Fatalf("templateData=%#v, want=%#v", got, tt.want)
+				t.Fatalf("TemplateData=%#v, want=%#v", got, tt.want)
 			}
 		})
 	}
