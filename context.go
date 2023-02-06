@@ -5,14 +5,10 @@ import (
 	"fmt"
 )
 
-// contextKey represents an internal key for adding context fields.
 type contextKey int
 
 const (
-	// templateDataContextKey is the context key for template data.
 	templateDataContextKey = contextKey(iota + 1)
-
-	// propsContextKey is the context key for props.
 	propsContextKey
 )
 
@@ -65,8 +61,8 @@ func (i *Inertia) WithProps(ctx context.Context, props Props) context.Context {
 	return context.WithValue(ctx, propsContextKey, props)
 }
 
-// templateDataFromContext returns template data from the context.
-func templateDataFromContext(ctx context.Context) (templateData, error) {
+// TemplateDataFromContext returns template data from the context.
+func TemplateDataFromContext(ctx context.Context) (templateData, error) {
 	ctxData := ctx.Value(templateDataContextKey)
 
 	if ctxData != nil {
@@ -81,8 +77,8 @@ func templateDataFromContext(ctx context.Context) (templateData, error) {
 	return nil, nil
 }
 
-// propsFromContext returns props from the context.
-func propsFromContext(ctx context.Context) (Props, error) {
+// PropsFromContext returns props from the context.
+func PropsFromContext(ctx context.Context) (Props, error) {
 	ctxData := ctx.Value(propsContextKey)
 
 	if ctxData != nil {

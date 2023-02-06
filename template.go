@@ -5,11 +5,8 @@ import (
 	"net/http"
 )
 
-// templateData is a map with values that
-// will be available in the root template.
 type templateData map[string]any
 
-// buildTemplateData returns sharedProps based the page.
 func (i *Inertia) buildTemplateData(r *http.Request, page *page) (templateData, error) {
 	pageJSON, err := i.marshallJSON(page)
 	if err != nil {
@@ -17,7 +14,7 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (templateData, 
 	}
 
 	// Get template data from context.
-	ctxTemplateData, err := templateDataFromContext(r.Context())
+	ctxTemplateData, err := TemplateDataFromContext(r.Context())
 	if err != nil {
 		return nil, fmt.Errorf("getting template data from context error: %w", err)
 	}

@@ -13,35 +13,18 @@ import (
 
 // Inertia is a main Gonertia structure, which contains all the logic for being an Inertia adapter.
 type Inertia struct {
-	// rootTemplate is the parsed root template.
-	rootTemplate *template.Template
-
-	// rootTemplatePath is the path to the root template.
+	templateFS       fs.FS
+	rootTemplate     *template.Template
 	rootTemplatePath string
 
-	// templateFS is the FS that contain the root template.
-	templateFS fs.FS
-
-	// sharedProps are global props.
-	sharedProps Props
-
-	// sharedTemplateData are global template data.
-	sharedTemplateData templateData
-
-	// sharedTemplateFuncs is a functional map of the template.
+	sharedProps         Props
+	sharedTemplateData  templateData
 	sharedTemplateFuncs template.FuncMap
 
-	// version is the server asset version.
-	version string
-
-	// marshallJSON is the function that can encode bytes into JSON.
+	containerID  string
+	version      string
 	marshallJSON marshallJSON
-
-	// containerID is id attribute of the Inertia HTML container.
-	containerID string
-
-	// logger is the package logger.
-	logger logger
+	logger       logger
 }
 
 // New initializes and returns Inertia.
@@ -65,14 +48,8 @@ func New(rootTemplatePath string, opts ...Option) (*Inertia, error) {
 	return i, nil
 }
 
-// marshallJSON is the function that can encode bytes into JSON.
-//
-// By default, this package will use json.Marshal,
-// but you are free to change this behavior.
 type marshallJSON func(v any) ([]byte, error)
 
-// logger gives methods to send log messages.
-//
 // Sometimes it's not possible to return an error,
 // so we will send those messages to the logger.
 type logger interface {
@@ -118,7 +95,6 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 	return nil
 }
 
-// doInertiaResponse writes Inertia JSON response to the response writer.
 func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
 	pageJSON, err := i.marshallJSON(page)
 	if err != nil {
@@ -136,7 +112,6 @@ func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
 	return nil
 }
 
-// doHTMLResponse writes HTML response to the response writer.
 func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *page) (err error) {
 	// If root template is already created - we'll use it to save some time.
 	if i.rootTemplate == nil {
@@ -160,7 +135,6 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 	return nil
 }
 
-// buildRootTemplate parses files or FS and returns the root template.
 func (i *Inertia) buildRootTemplate() (*template.Template, error) {
 	tmpl := template.New(filepath.Base(i.rootTemplatePath)).Funcs(i.sharedTemplateFuncs)
 
@@ -171,7 +145,6 @@ func (i *Inertia) buildRootTemplate() (*template.Template, error) {
 	return tmpl.ParseFiles(i.rootTemplatePath)
 }
 
-// inertiaContainerHTML returns Inertia container HTML based on the page data.
 func (i *Inertia) inertiaContainerHTML(pageJSON []byte) template.HTML {
 	builder := new(strings.Builder)
 
@@ -185,8 +158,7 @@ func (i *Inertia) inertiaContainerHTML(pageJSON []byte) template.HTML {
 	return template.HTML(builder.String())
 }
 
-// backURL returns the url that will be used to redirect browser to the previous page.
-// At the moment, it based only on the "Referer" HTTP header.
 func (i *Inertia) backURL(r *http.Request) string {
+	// At the moment, it based only on the "Referer" HTTP header.
 	return refererFromRequest(r)
 }

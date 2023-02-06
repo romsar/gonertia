@@ -17,7 +17,6 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// https://github.com/inertiajs/inertia-laravel/pull/404
 		setInertiaVaryInResponse(w)
 
-		// If request is not request by Inertia, we can move next.
 		if !IsInertiaRequest(r) {
 			next.ServeHTTP(w, r)
 			return
@@ -74,26 +73,22 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-// copyWrapperResponse copying wrapper into the destination response writer.
 func (i *Inertia) copyWrapperResponse(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	i.copyWrapperHeaders(dst, src)
 	i.copyWrapperStatusCode(dst, src)
 	i.copyWrapperBuffer(dst, src)
 }
 
-// copyWrapperBuffer copying source bytes buf into the destination bytes buffer.
 func (i *Inertia) copyWrapperBuffer(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	if _, err := io.Copy(dst, src.buf); err != nil {
 		i.logger.Printf("cannot copy inertia response buffer to writer: %s", err)
 	}
 }
 
-// copyWrapperStatusCode copying source status code into the destination status code.
 func (i *Inertia) copyWrapperStatusCode(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	dst.WriteHeader(src.statusCode)
 }
 
-// copyWrapperHeaders copying source header into the destination header.
 func (i *Inertia) copyWrapperHeaders(dst http.ResponseWriter, src *inertiaResponseWrapper) {
 	for key, headers := range src.header {
 		dst.Header().Del(key)
@@ -104,8 +99,6 @@ func (i *Inertia) copyWrapperHeaders(dst http.ResponseWriter, src *inertiaRespon
 	}
 }
 
-// inertiaResponseWrapper is the implementation of http.ResponseWriter,
-// that have response body buffer and status code that will be returned to the front.
 type inertiaResponseWrapper struct {
 	statusCode int
 	buf        *bytes.Buffer
@@ -114,32 +107,26 @@ type inertiaResponseWrapper struct {
 
 var _ http.ResponseWriter = (*inertiaResponseWrapper)(nil)
 
-// StatusCode returns HTTP status code of the response.
 func (w *inertiaResponseWrapper) StatusCode() int {
 	return w.statusCode
 }
 
-// IsEmpty returns true is the response body is empty.
 func (w *inertiaResponseWrapper) IsEmpty() bool {
 	return w.buf.Len() == 0
 }
 
-// Header returns response headers.
 func (w *inertiaResponseWrapper) Header() http.Header {
 	return w.header
 }
 
-// Write pushes some bytes to the response body.
 func (w *inertiaResponseWrapper) Write(p []byte) (int, error) {
 	return w.buf.Write(p)
 }
 
-// WriteHeader sets the status code of the response.
 func (w *inertiaResponseWrapper) WriteHeader(code int) {
 	w.statusCode = code
 }
 
-// buildInertiaResponseWrapper initializes inertiaResponseWrapper.
 func buildInertiaResponseWrapper(w http.ResponseWriter) *inertiaResponseWrapper {
 	w2 := &inertiaResponseWrapper{
 		statusCode: http.StatusOK,
@@ -148,7 +135,7 @@ func buildInertiaResponseWrapper(w http.ResponseWriter) *inertiaResponseWrapper 
 	}
 
 	// In some situations, we can pass a http.ResponseWriter,
-	// that also implements this interfaces.
+	// that also implements this interface.
 	if val, ok := w.(interface{ StatusCode() int }); ok {
 		w2.statusCode = val.StatusCode()
 	}

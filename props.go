@@ -14,7 +14,6 @@ type Props map[string]any
 // https://inertiajs.com/partial-reloads
 type LazyProp func() (any, error)
 
-// prepareProps returns prepared and filtered props.
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 
@@ -24,7 +23,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	}
 
 	// Add props from context to the result.
-	ctxProps, err := propsFromContext(r.Context())
+	ctxProps, err := PropsFromContext(r.Context())
 	if err != nil {
 		return nil, fmt.Errorf("getting props from context error: %w", err)
 	}
@@ -68,7 +67,6 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	return result, nil
 }
 
-// propsKeysToReturn returns props keys that will be included in the response.
 func (i *Inertia) propsKeysToReturn(r *http.Request, component string) map[string]struct{} {
 	// Partial reloads only work for visits made to the same page component.
 	//
@@ -80,7 +78,6 @@ func (i *Inertia) propsKeysToReturn(r *http.Request, component string) map[strin
 	return nil
 }
 
-// resolvePropVal resolves scalar value of the prop.
 func resolvePropVal(val any) (_ any, err error) {
 	if closure, ok := val.(func() (any, error)); ok {
 		val, err = closure()

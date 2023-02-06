@@ -6,14 +6,16 @@ import (
 	"io"
 	"reflect"
 	"regexp"
+	"testing"
 )
 
-// t is the contract of testing.T.
 type t interface {
 	Helper()
 	Fatal(args ...any)
 	Fatalf(format string, args ...any)
 }
+
+var _ t = (*testing.T)(nil)
 
 // AssertableInertia is an Inertia response struct with assert methods.
 type AssertableInertia struct {
@@ -116,7 +118,6 @@ func AssertFromString(t t, body string) AssertableInertia {
 	return assertable
 }
 
-// invalidInertiaResponse fail test with invalid inertia response message.
 func invalidInertiaResponse(t t) {
 	t.Fatal("invalid inertia response")
 }

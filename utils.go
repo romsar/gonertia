@@ -7,11 +7,6 @@ import (
 	"os"
 )
 
-// set is a helper that creates a map, whose keys are slice values.
-// Values of set are empty structs.
-//
-// Example:
-// []string{"foo", "bar"} -> map[string]{"foo": struct{}{}, "bar": struct{}{}}.
 func set[T comparable](data []T) map[T]struct{} {
 	if len(data) == 0 {
 		return nil
@@ -25,13 +20,11 @@ func set[T comparable](data []T) map[T]struct{} {
 	return set
 }
 
-// md5 creates a md5 hash based on bytes of the string.
 func md5(str string) string {
 	hash := crypto.Sum([]byte(str))
 	return hex.EncodeToString(hash[:])
 }
 
-// md5File creates a md5 hash based on bytes of the file.
 func md5File(path string) (string, error) {
 	h := crypto.New()
 
@@ -50,7 +43,6 @@ func md5File(path string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-// firstOr returns first element of the slice, or a fallback if the slice is empty.
 func firstOr[T any](items []T, fallback T) T {
 	if len(items) > 0 {
 		return items[0]

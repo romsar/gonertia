@@ -57,7 +57,7 @@ func TestInertia_WithTemplateProps(t *testing.T) {
 	}
 }
 
-func Test_templateDataFromContext(t *testing.T) {
+func Test_TemplateDataFromContext(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -99,7 +99,7 @@ func Test_templateDataFromContext(t *testing.T) {
 
 			ctx := context.WithValue(context.Background(), templateDataContextKey, tt.ctxData)
 
-			got, err := templateDataFromContext(ctx)
+			got, err := TemplateDataFromContext(ctx)
 			if tt.wantErr && err == nil {
 				t.Fatal("error expected")
 			} else if !tt.wantErr && err != nil {
@@ -111,7 +111,7 @@ func Test_templateDataFromContext(t *testing.T) {
 	}
 }
 
-func Test_propsFromContext(t *testing.T) {
+func Test_PropsFromContext(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -153,7 +153,7 @@ func Test_propsFromContext(t *testing.T) {
 
 			ctx := context.WithValue(context.Background(), propsContextKey, tt.ctxData)
 
-			got, err := propsFromContext(ctx)
+			got, err := PropsFromContext(ctx)
 			if tt.wantErr && err == nil {
 				t.Fatal("error expected")
 			} else if !tt.wantErr && err != nil {
