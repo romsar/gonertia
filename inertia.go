@@ -70,7 +70,7 @@ func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, s
 	redirectResponse(w, r, url, status...)
 }
 
-// Render return response with Inertia data.
+// Render returns response with Inertia data.
 //
 // If request was made by Inertia - it will return data in JSON format.
 // Otherwise, it will return HTML with root template.
