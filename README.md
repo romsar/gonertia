@@ -18,7 +18,7 @@ This package based on the official Laravel adapter for Inertia.js: [inertiajs/in
 ## Roadmap
 - [x] Tests
 - [x] Helpers for testing
-- [ ] Helpers for validation errors
+- [x] Helpers for validation errors
 - [ ] SSR
 - [ ] CLI
 
@@ -179,7 +179,7 @@ func homeHandler(i *inertia.Inertia) http.Handler {
 NOTES:
 If response is empty - user will be redirected to the previous url.
 
-In addition, there is a helper for redirecting back manually:
+To redirect back, you can use `Back` helper:
 
 ```go
 i.Back(w, r)
@@ -223,6 +223,16 @@ i.ShareProp("name", "Roman")
 
 ```go
 ctx := i.WithProp(r.Context(), "name", "Roman")
+// or i.WithProps(r.Context(), inertia.Props{"name": "Roman"})
+
+// pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
+```
+
+#### Validation errors ([learn more](https://inertiajs.com/validation))
+
+```go
+ctx := i.WithValidationError(r.Context(), "some_field", "some error")
+// or i.WithValidationErrors(r.Context(), inertia.ValidationErrors{"some_field": "some error"})
 
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```

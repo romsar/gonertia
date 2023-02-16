@@ -10,6 +10,7 @@ type contextKey int
 const (
 	templateDataContextKey = contextKey(iota + 1)
 	propsContextKey
+	validationErrorsContextKey
 )
 
 // WithTemplateData appends template data value to the passed context.Context.
@@ -26,6 +27,22 @@ func (i *Inertia) WithTemplateData(ctx context.Context, key string, val any) con
 	return context.WithValue(ctx, templateDataContextKey, TemplateData{
 		key: val,
 	})
+}
+
+// TemplateDataFromContext returns template data from the context.
+func TemplateDataFromContext(ctx context.Context) (TemplateData, error) {
+	ctxData := ctx.Value(templateDataContextKey)
+
+	if ctxData != nil {
+		data, ok := ctxData.(TemplateData)
+		if !ok {
+			return nil, fmt.Errorf("template data in the context has invalid type")
+		}
+
+		return data, nil
+	}
+
+	return TemplateData{}, nil
 }
 
 // WithProp appends prop value to the passed context.Context.
@@ -61,22 +78,6 @@ func (i *Inertia) WithProps(ctx context.Context, props Props) context.Context {
 	return context.WithValue(ctx, propsContextKey, props)
 }
 
-// TemplateDataFromContext returns template data from the context.
-func TemplateDataFromContext(ctx context.Context) (TemplateData, error) {
-	ctxData := ctx.Value(templateDataContextKey)
-
-	if ctxData != nil {
-		data, ok := ctxData.(TemplateData)
-		if !ok {
-			return nil, fmt.Errorf("template data in the context has invalid type")
-		}
-
-		return data, nil
-	}
-
-	return nil, nil
-}
-
 // PropsFromContext returns props from the context.
 func PropsFromContext(ctx context.Context) (Props, error) {
 	ctxData := ctx.Value(propsContextKey)
@@ -90,5 +91,54 @@ func PropsFromContext(ctx context.Context) (Props, error) {
 		return props, nil
 	}
 
-	return nil, nil
+	return Props{}, nil
+}
+
+// WithValidationError appends validation error to the passed context.Context.
+func (i *Inertia) WithValidationError(ctx context.Context, key string, msg any) context.Context {
+	if ctxData := ctx.Value(validationErrorsContextKey); ctxData != nil {
+		ctxData, ok := ctxData.(ValidationErrors)
+
+		if ok {
+			ctxData[key] = msg
+			return context.WithValue(ctx, validationErrorsContextKey, ctxData)
+		}
+	}
+
+	return context.WithValue(ctx, validationErrorsContextKey, ValidationErrors{
+		key: msg,
+	})
+}
+
+// WithValidationErrors appends validation errors to the passed context.Context.
+func (i *Inertia) WithValidationErrors(ctx context.Context, errors ValidationErrors) context.Context {
+	if ctxData := ctx.Value(validationErrorsContextKey); ctxData != nil {
+		ctxData, ok := ctxData.(ValidationErrors)
+
+		if ok {
+			for key, msg := range errors {
+				ctxData[key] = msg
+			}
+
+			return context.WithValue(ctx, validationErrorsContextKey, ctxData)
+		}
+	}
+
+	return context.WithValue(ctx, validationErrorsContextKey, errors)
+}
+
+// ValidationErrorsFromContext returns validation errors from the context.
+func ValidationErrorsFromContext(ctx context.Context) (ValidationErrors, error) {
+	ctxData := ctx.Value(validationErrorsContextKey)
+
+	if ctxData != nil {
+		validationErrors, ok := ctxData.(ValidationErrors)
+		if !ok {
+			return nil, fmt.Errorf("validation errors in the context have invalid type")
+		}
+
+		return validationErrors, nil
+	}
+
+	return ValidationErrors{}, nil
 }

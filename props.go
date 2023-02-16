@@ -5,8 +5,8 @@ import (
 	"net/http"
 )
 
-// Props are key-value data structure, that will
-// be available in your front-end component.
+// Props are the data that will be transferred
+// and will be available in the front-end component.
 type Props map[string]any
 
 // LazyProp is a property value that will only evaluated then needed.
@@ -16,6 +16,13 @@ type LazyProp func() (any, error)
 
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
+
+	// Add validation errors from context.
+	ctxValidationErrors, err := ValidationErrorsFromContext(r.Context())
+	if err != nil {
+		return nil, fmt.Errorf("getting validation errors from context error: %w", err)
+	}
+	result["errors"] = ctxValidationErrors
 
 	// Add shared props to the result.
 	for key, val := range i.sharedProps {

@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+// TemplateData are the data that will be transferred
+// and will be available in the root template.
 type TemplateData map[string]any
 
 func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, error) {

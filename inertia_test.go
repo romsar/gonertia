@@ -174,7 +174,7 @@ func TestInertia_Render(t *testing.T) {
 
 			assertable := AssertFromString(t, w.Body.String())
 			assertable.AssertComponent("Some/Component")
-			assertable.AssertProps(Props{"foo": "bar"})
+			assertable.AssertProps(Props{"foo": "bar", "errors": map[string]any{}})
 			assertable.AssertVersion("f8v01xv4h4")
 			assertable.AssertURL("/home")
 
@@ -203,7 +203,39 @@ func TestInertia_Render(t *testing.T) {
 			}
 
 			assertable := AssertFromString(t, w.Body.String())
-			assertable.AssertProps(Props{"abc": "456", "ctx": "prop", "foo": "zzz", "shared": "prop"})
+			assertable.AssertProps(Props{
+				"abc":    "456",
+				"ctx":    "prop",
+				"foo":    "zzz",
+				"shared": "prop",
+				"errors": map[string]any{},
+			})
+		})
+
+		t.Run("validation errors", func(t *testing.T) {
+			t.Parallel()
+
+			i := I()
+
+			w, r := requestMock(http.MethodGet, "/home")
+			asInertiaRequest(r)
+
+			ctx := i.WithValidationErrors(r.Context(), ValidationErrors{"foo": "bar"})
+
+			err := i.Render(w, r.WithContext(ctx), "Some/Component", Props{
+				"abc": "123",
+			})
+			if err != nil {
+				t.Fatalf("unexpected error: %#v", err)
+			}
+
+			assertable := AssertFromString(t, w.Body.String())
+			assertable.AssertProps(Props{
+				"abc": "123",
+				"errors": map[string]any{
+					"foo": "bar",
+				},
+			})
 		})
 
 		t.Run("props value resolving", func(t *testing.T) {
@@ -225,7 +257,11 @@ func TestInertia_Render(t *testing.T) {
 				}
 
 				assertable := AssertFromString(t, w.Body.String())
-				assertable.AssertProps(Props{"foo": "bar", "closure": "prop"})
+				assertable.AssertProps(Props{
+					"foo":     "bar",
+					"closure": "prop",
+					"errors":  map[string]any{},
+				})
 			})
 
 			t.Run("only", func(t *testing.T) {
@@ -250,7 +286,11 @@ func TestInertia_Render(t *testing.T) {
 					}
 
 					assertable := AssertFromString(t, w.Body.String())
-					assertable.AssertProps(Props{"foo": "bar", "closure": "prop", "lazy": "prop"})
+					assertable.AssertProps(Props{
+						"foo":     "bar",
+						"closure": "prop",
+						"lazy":    "prop",
+					})
 				})
 
 				t.Run("resolve lazy props, other component", func(t *testing.T) {
@@ -271,7 +311,12 @@ func TestInertia_Render(t *testing.T) {
 					}
 
 					assertable := AssertFromString(t, w.Body.String())
-					assertable.AssertProps(Props{"foo": "bar", "abc": "123", "closure": "prop"})
+					assertable.AssertProps(Props{
+						"foo":     "bar",
+						"abc":     "123",
+						"closure": "prop",
+						"errors":  map[string]any{},
+					})
 				})
 			})
 		})
@@ -292,7 +337,7 @@ func assertRootTemplateSuccess(t *testing.T, i *Inertia) {
 
 	assertable := Assert(t, w.Body)
 	assertable.AssertComponent("Some/Component")
-	assertable.AssertProps(Props{"foo": "bar"})
+	assertable.AssertProps(Props{"foo": "bar", "errors": map[string]any{}})
 	assertable.AssertVersion("f8v01xv4h4")
 	assertable.AssertURL("/home")
 
