@@ -179,6 +179,12 @@ func homeHandler(i *inertia.Inertia) http.Handler {
 NOTES:
 If response is empty - user will be redirected to the previous url.
 
+In addition, there is a helper for redirecting back manually:
+
+```go
+i.Back(w, r)
+```
+
 #### Share template data ([learn more](https://inertiajs.com/responses#root-template-data))
 
 ```go

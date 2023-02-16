@@ -70,6 +70,11 @@ func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, s
 	redirectResponse(w, r, url, status...)
 }
 
+// Back creates redirect response to the previous url.
+func (i *Inertia) Back(w http.ResponseWriter, r *http.Request, status ...int) {
+	i.Location(w, r, i.backURL(r), status...)
+}
+
 // Render return response with Inertia data.
 //
 // If request was made by Inertia - it will return data in JSON format.
