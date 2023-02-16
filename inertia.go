@@ -75,7 +75,7 @@ func (i *Inertia) Back(w http.ResponseWriter, r *http.Request, status ...int) {
 	i.Location(w, r, i.backURL(r), status...)
 }
 
-// Render return response with Inertia data.
+// Render returns response with Inertia data.
 //
 // If request was made by Inertia - it will return data in JSON format.
 // Otherwise, it will return HTML with root template.
