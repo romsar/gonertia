@@ -41,7 +41,7 @@ func New(rootTemplatePath string, opts ...Option) (*Inertia, error) {
 
 	for _, opt := range opts {
 		if err := opt(i); err != nil {
-			return nil, fmt.Errorf("initialize inertia error: %w", err)
+			return nil, fmt.Errorf("initialize inertia: %w", err)
 		}
 	}
 
@@ -82,19 +82,19 @@ func (i *Inertia) Back(w http.ResponseWriter, r *http.Request, status ...int) {
 func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component string, props ...Props) (err error) {
 	page, err := i.buildPage(r, component, firstOr[Props](props, nil))
 	if err != nil {
-		return fmt.Errorf("build page error: %w", err)
+		return fmt.Errorf("build page: %w", err)
 	}
 
 	if IsInertiaRequest(r) {
 		if err := i.doInertiaResponse(w, page); err != nil {
-			return fmt.Errorf("inertia response error: %w", err)
+			return fmt.Errorf("inertia response: %w", err)
 		}
 
 		return
 	}
 
 	if err := i.doHTMLResponse(w, r, page); err != nil {
-		return fmt.Errorf("html response error: %w", err)
+		return fmt.Errorf("html response: %w", err)
 	}
 
 	return nil
@@ -103,7 +103,7 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
 	pageJSON, err := i.marshallJSON(page)
 	if err != nil {
-		return fmt.Errorf("marshal page into json error: %w", err)
+		return fmt.Errorf("marshal page into json: %w", err)
 	}
 
 	setInertiaInResponse(w)
@@ -111,7 +111,7 @@ func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
 	setResponseStatus(w, http.StatusOK)
 
 	if _, err := w.Write(pageJSON); err != nil {
-		return fmt.Errorf("write bytes to response error: %w", err)
+		return fmt.Errorf("write bytes to response: %w", err)
 	}
 
 	return nil
@@ -122,19 +122,19 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 	if i.rootTemplate == nil {
 		i.rootTemplate, err = i.buildRootTemplate()
 		if err != nil {
-			return fmt.Errorf("build root template error: %w", err)
+			return fmt.Errorf("build root template: %w", err)
 		}
 	}
 
 	templateData, err := i.buildTemplateData(r, page)
 	if err != nil {
-		return fmt.Errorf("build template data error: %w", err)
+		return fmt.Errorf("build template data: %w", err)
 	}
 
 	setHTMLResponse(w)
 
 	if err := i.rootTemplate.Execute(w, templateData); err != nil {
-		return fmt.Errorf("execute root template error: %w", err)
+		return fmt.Errorf("execute root template: %w", err)
 	}
 
 	return nil

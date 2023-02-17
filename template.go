@@ -12,13 +12,13 @@ type TemplateData map[string]any
 func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, error) {
 	pageJSON, err := i.marshallJSON(page)
 	if err != nil {
-		return nil, fmt.Errorf("marshal page into json error: %w", err)
+		return nil, fmt.Errorf("marshal page into json: %w", err)
 	}
 
 	// Get template data from context.
 	ctxTemplateData, err := TemplateDataFromContext(r.Context())
 	if err != nil {
-		return nil, fmt.Errorf("getting template data from context error: %w", err)
+		return nil, fmt.Errorf("getting template data from context: %w", err)
 	}
 
 	result := TemplateData{

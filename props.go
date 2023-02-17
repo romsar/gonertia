@@ -20,7 +20,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	// Add validation errors from context.
 	ctxValidationErrors, err := ValidationErrorsFromContext(r.Context())
 	if err != nil {
-		return nil, fmt.Errorf("getting validation errors from context error: %w", err)
+		return nil, fmt.Errorf("getting validation errors from context: %w", err)
 	}
 	result["errors"] = ctxValidationErrors
 
@@ -32,7 +32,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	// Add props from context to the result.
 	ctxProps, err := PropsFromContext(r.Context())
 	if err != nil {
-		return nil, fmt.Errorf("getting props from context error: %w", err)
+		return nil, fmt.Errorf("getting props from context: %w", err)
 	}
 
 	for key, val := range ctxProps {
@@ -66,7 +66,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	for key, val := range result {
 		val, err := resolvePropVal(val)
 		if err != nil {
-			return nil, fmt.Errorf("resolve prop value error: %w", err)
+			return nil, fmt.Errorf("resolve prop value: %w", err)
 		}
 		result[key] = val
 	}
@@ -90,13 +90,13 @@ func resolvePropVal(val any) (_ any, err error) {
 		val, err = closure()
 
 		if err != nil {
-			return nil, fmt.Errorf("closure prop resolving error: %w", err)
+			return nil, fmt.Errorf("closure prop resolving: %w", err)
 		}
 	} else if lazy, ok := val.(LazyProp); ok {
 		val, err = lazy()
 
 		if err != nil {
-			return nil, fmt.Errorf("lazy prop resolving error: %w", err)
+			return nil, fmt.Errorf("lazy prop resolving: %w", err)
 		}
 	}
 

@@ -39,7 +39,7 @@ func WithManifestFile(path string) Option {
 	}
 
 	return func(i *Inertia) error {
-		return fmt.Errorf("calculating md5 hash of manifest file error: %w", err)
+		return fmt.Errorf("calculating md5 hash of manifest file: %w", err)
 	}
 }
 

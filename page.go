@@ -15,7 +15,7 @@ type page struct {
 func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*page, error) {
 	props, err := i.prepareProps(r, component, props)
 	if err != nil {
-		return nil, fmt.Errorf("prepare props error: %w", err)
+		return nil, fmt.Errorf("prepare props: %w", err)
 	}
 
 	return &page{
