@@ -55,7 +55,7 @@ func main() {
     // but you are free to use some frameworks like Gorilla Mux or Chi.
     mux := http.NewServeMux()
 
-    mux.Handle("/", i.Middleware(homeHandler(i)))
+    mux.Handle("/home", i.Middleware(homeHandler(i)))
 }
 
 func homeHandler(i *inertia.Inertia) http.Handler {
@@ -92,7 +92,7 @@ Create `root.html` template:
 </html>
 ```
 
-You can also find more examples in an [examples folder](./examples) or in section above.
+You can also find more examples and starter kits in [examples folder](./examples) or in section above.
 
 ### More examples
 

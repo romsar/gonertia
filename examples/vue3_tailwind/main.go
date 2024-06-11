@@ -16,7 +16,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/", i.Middleware(homeHandler(i)))
+
+	mux.Handle("/home", i.Middleware(homeHandler(i)))
+	mux.Handle("/secondary", i.Middleware(secondaryHandler(i)))
 	mux.Handle("/build/", http.StripPrefix("/build/", http.FileServer(http.Dir("./public/build"))))
 
 	http.ListenAndServe(":3000", mux)
@@ -27,6 +29,19 @@ func homeHandler(i *inertia.Inertia) http.Handler {
 		err := i.Render(w, r, "Home/Index", inertia.Props{
 			"text": "world",
 		})
+
+		if err != nil {
+			handleServerErr(w, err)
+			return
+		}
+	}
+
+	return http.HandlerFunc(fn)
+}
+
+func secondaryHandler(i *inertia.Inertia) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		err := i.Render(w, r, "Home/Secondary")
 
 		if err != nil {
 			handleServerErr(w, err)

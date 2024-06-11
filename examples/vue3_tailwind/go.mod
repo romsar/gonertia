@@ -1,4 +1,4 @@
-module github.com/romsar/gonertia/examples/vue3
+module github.com/romsar/gonertia/examples/vue3_tailwind
 
 go 1.22
 

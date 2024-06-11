@@ -44,11 +44,11 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 func (i *Inertia) buildSharedTemplateFuncs() template.FuncMap {
 	// Defaults.
 	result := template.FuncMap{
-		"mix": func(path string) string {
+		"mix": func(path string) (string, error) {
 			if val, ok := i.mixManifestData[path]; ok {
-				return val
+				return val, nil
 			}
-			return path
+			return path, fmt.Errorf("file %q not found in mix manifest file", path)
 		},
 	}
 
