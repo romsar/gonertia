@@ -39,7 +39,7 @@ jobs:
           install-go: false
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3.4.0
+        uses: golangci/golangci-lint-action@v6.0.1
         with:
           skip-pkg-cache: true
           skip-build-cache: true

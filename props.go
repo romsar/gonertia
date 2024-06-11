@@ -88,13 +88,11 @@ func (i *Inertia) propsKeysToReturn(r *http.Request, component string) map[strin
 func resolvePropVal(val any) (_ any, err error) {
 	if closure, ok := val.(func() (any, error)); ok {
 		val, err = closure()
-
 		if err != nil {
 			return nil, fmt.Errorf("closure prop resolving: %w", err)
 		}
 	} else if lazy, ok := val.(LazyProp); ok {
 		val, err = lazy()
-
 		if err != nil {
 			return nil, fmt.Errorf("lazy prop resolving: %w", err)
 		}
