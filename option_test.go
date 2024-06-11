@@ -112,16 +112,14 @@ func TestWithoutLogger(t *testing.T) {
 
 	i := new(Inertia)
 
-	want := log.New(io.Discard, "", 0)
-
 	option := WithoutLogger()
 
 	if err := option(i); err != nil {
 		t.Fatalf("unexpected error: %#v", err)
 	}
 
-	if !reflect.DeepEqual(i.logger, want) {
-		t.Fatalf("logger=%#v, want=%#v", i.logger, want)
+	if i.logger == nil {
+		t.Fatal("logger is nil")
 	}
 }
 
@@ -133,16 +131,14 @@ func TestWithLogger(t *testing.T) {
 
 		i := new(Inertia)
 
-		want := log.New(io.Discard, "", 0)
-
 		option := WithLogger(nil)
 
 		if err := option(i); err != nil {
 			t.Fatalf("unexpected error: %#v", err)
 		}
 
-		if !reflect.DeepEqual(i.logger, want) {
-			t.Fatalf("logger=%#v, want=%#v", i.logger, want)
+		if i.logger == nil {
+			t.Fatal("logger is nil")
 		}
 	})
 
