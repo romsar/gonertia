@@ -114,6 +114,9 @@ var rootTemplate = `<html>
 	<body>{{ .inertia }}</body>
 </html>`
 
+var mixTemplate = `{{ mix "/build/assets/app.js" }}`
+
+//nolint:gocognit
 func TestInertia_Render(t *testing.T) {
 	t.Parallel()
 
@@ -318,6 +321,42 @@ func TestInertia_Render(t *testing.T) {
 						"errors":  map[string]any{},
 					})
 				})
+			})
+		})
+
+		t.Run("shared funcs", func(t *testing.T) {
+			t.Parallel()
+
+			t.Run("mix", func(t *testing.T) {
+				t.Parallel()
+
+				fs := fstest.MapFS{
+					"app.html": {
+						Data: []byte(mixTemplate),
+					},
+				}
+
+				i := I(func(i *Inertia) {
+					i.rootTemplatePath = "app.html"
+					i.templateFS = fs
+					i.mixManifestData = map[string]string{
+						"/build/assets/app.js": "/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06",
+					}
+				})
+
+				w, r := requestMock(http.MethodGet, "/home")
+
+				err := i.Render(w, r, "Some/Component", Props{
+					"foo": "bar",
+				})
+				if err != nil {
+					t.Fatalf("unexpected error: %#v", err)
+				}
+
+				want := "/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"
+				if w.Body.String() != want {
+					t.Fatalf("mix result=%#v, want=%#v", w.Body.String(), want)
+				}
 			})
 		})
 	})

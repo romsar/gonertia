@@ -82,6 +82,35 @@ func TestWithManifestFile(t *testing.T) {
 	}
 }
 
+func TestWithMixManifestFile(t *testing.T) {
+	t.Parallel()
+
+	i := new(Inertia)
+
+	manifest := `{"/build/assets/app.js": "/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"}`
+
+	f := tmpFile(t, manifest)
+
+	option := WithMixManifestFile(f.Name())
+
+	wantVersion := "9d3bd20f13c658f1d3d2a3985946e8b9"
+	wantMixManifestData := map[string]string{
+		"/build/assets/app.js": "/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06",
+	}
+
+	if err := option(i); err != nil {
+		t.Fatalf("unexpected error: %#v", err)
+	}
+
+	if i.version != wantVersion {
+		t.Fatalf("version=%s, want=%s", i.version, wantVersion)
+	}
+
+	if !reflect.DeepEqual(i.mixManifestData, wantMixManifestData) {
+		t.Fatalf("mix manifest data=%#v, want=%#v", i.logger, wantMixManifestData)
+	}
+}
+
 func TestWithMarshalJSON(t *testing.T) {
 	t.Parallel()
 

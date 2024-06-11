@@ -53,7 +53,7 @@ func main() {
     // but you are free to use some frameworks like Gorilla Mux or Chi.
     mux := http.NewServeMux()
 
-    mux.Handle("/home", i.Middleware(homeHandler(i)))
+    mux.Handle("/", i.Middleware(homeHandler(i)))
 }
 
 func homeHandler(i *inertia.Inertia) http.Handler {
@@ -90,6 +90,10 @@ Create `root.html` template:
 </html>
 ```
 
+### Example boilerplate application
+
+[See in examples folder](./examples)
+
 ### More examples
 
 #### Load root template using embed
@@ -113,8 +117,9 @@ i, err := inertia.New(
 i, err := inertia.New(
     /* ... */
     inertia.WithVersion("some-version"), // by any string
-    inertia.WithAssetURL("/build/1f0f8sc6.js"), // by asset url
-    inertia.WithManifestFile("./build/manifest.json"), // by manifest file
+    inertia.WithAssetURL("/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"), // by asset url
+    inertia.WithManifestFile("./public/manifest.json"), // by manifest file
+    inertia.WithMixManifestFile("./public/mix-manifest.json"), // by laravel-mix manifest file
 )
 ```
 
@@ -236,6 +241,37 @@ ctx := i.WithValidationError(r.Context(), "some_field", "some error")
 
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
+
+#### Laravel like `mix` helper
+
+If you are familiar with Laravel, then you already know about awesome [mix](https://laravel.com/docs/8.x/mix#versioning-and-cache-busting) helper.
+
+So, Gonertia also supports it:
+
+```json
+{
+  "/build/assets/app.js": "/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"
+}
+```
+
+```go
+i, err := inertia.New(
+    /* ... */
+    inertia.WithMixManifestFile("./public/mix-manifest.json"),
+)
+```
+
+```html
+<script type="module" src="{{ mix "/build/assets/app.js" }}"></script>
+```
+
+Render result will be:
+
+```html
+<script type="module" src="/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"></script>
+```
+
+Besides asset versioning, that will also support [inertia versioning](https://inertiajs.com/asset-versioning) using mix manifest file checksum.
 
 #### Testing
 

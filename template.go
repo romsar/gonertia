@@ -2,6 +2,7 @@ package gonertia
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 )
 
@@ -21,6 +22,7 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 		return nil, fmt.Errorf("getting template data from context: %w", err)
 	}
 
+	// Defaults.
 	result := TemplateData{
 		"inertiaHead": "", // todo reserved for SSR.
 		"inertia":     i.inertiaContainerHTML(pageJSON),
@@ -37,4 +39,23 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 	}
 
 	return result, nil
+}
+
+func (i *Inertia) buildSharedTemplateFuncs() template.FuncMap {
+	// Defaults.
+	result := template.FuncMap{
+		"mix": func(path string) string {
+			if val, ok := i.mixManifestData[path]; ok {
+				return val
+			}
+			return path
+		},
+	}
+
+	// Add the shared template funcs to the result.
+	for key, val := range i.sharedTemplateFuncs {
+		result[key] = val
+	}
+
+	return result
 }

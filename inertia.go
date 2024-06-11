@@ -21,10 +21,11 @@ type Inertia struct {
 	sharedTemplateData  TemplateData
 	sharedTemplateFuncs template.FuncMap
 
-	containerID  string
-	version      string
-	marshallJSON marshallJSON
-	logger       logger
+	mixManifestData map[string]string
+	containerID     string
+	version         string
+	marshallJSON    marshallJSON
+	logger          logger
 }
 
 // New initializes and returns Inertia.
@@ -37,6 +38,7 @@ func New(rootTemplatePath string, opts ...Option) (*Inertia, error) {
 		sharedProps:         make(Props),
 		sharedTemplateData:  make(TemplateData),
 		sharedTemplateFuncs: make(template.FuncMap),
+		mixManifestData:     nil,
 	}
 
 	for _, opt := range opts {
@@ -141,7 +143,7 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 }
 
 func (i *Inertia) buildRootTemplate() (*template.Template, error) {
-	tmpl := template.New(filepath.Base(i.rootTemplatePath)).Funcs(i.sharedTemplateFuncs)
+	tmpl := template.New(filepath.Base(i.rootTemplatePath)).Funcs(i.buildSharedTemplateFuncs())
 
 	if i.templateFS != nil {
 		return tmpl.ParseFS(i.templateFS, i.rootTemplatePath)
