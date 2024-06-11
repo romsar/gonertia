@@ -19,6 +19,8 @@ This package based on the official Laravel adapter for Inertia.js: [inertiajs/in
 - [x] Tests
 - [x] Helpers for testing
 - [x] Helpers for validation errors
+- [x] Laravel like `mix` helper
+- [x] Examples
 - [ ] SSR
 
 ## Installation
@@ -90,9 +92,7 @@ Create `root.html` template:
 </html>
 ```
 
-### Example boilerplate application
-
-[See in examples folder](./examples)
+You can also find more examples in an [examples folder](./examples) or in section above.
 
 ### More examples
 
@@ -182,9 +182,9 @@ func homeHandler(i *inertia.Inertia) http.Handler {
 ```
 
 NOTES:
-If response is empty - user will be redirected to the previous url.
+If response is empty - user will be redirected to the previous url, just like in Laravel official adapter.
 
-To redirect back, you can use `Back` helper:
+To manually redirect back, you can use `Back` helper:
 
 ```go
 i.Back(w, r)
