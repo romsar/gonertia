@@ -36,14 +36,14 @@ package main
 
 import (
     "log"
-    "http"
+    "net/http"
     "time"
     
     inertia "github.com/romsar/gonertia"
 )
 
 func main() {
-    i, err := inertia.New("./ui/templates/root.html")
+    i, err := inertia.New("./resources/views/root.html")
     if err != nil {
         log.Fatal(err)
     }
@@ -63,7 +63,8 @@ func homeHandler(i *inertia.Inertia) http.Handler {
         })
 		
         if err != nil {
-           handleServerErr(w, err)
+            handleServerErr(w, err)
+            return
         }
     }
 
@@ -84,7 +85,7 @@ Create `root.html` template:
 
 <body>
 {{ .inertia }}
-<script src="/static/js/app.js"></script>
+<script src="/build/app.js"></script>
 </body>
 </html>
 ```
@@ -112,8 +113,8 @@ i, err := inertia.New(
 i, err := inertia.New(
     /* ... */
     inertia.WithVersion("some-version"), // by any string
-    inertia.WithAssetURL("/static/js/1f0f8sc6.js"), // by asset url
-    inertia.WithManifestFile("./ui/manifest.json"), // by manifest file
+    inertia.WithAssetURL("/build/1f0f8sc6.js"), // by asset url
+    inertia.WithManifestFile("./build/manifest.json"), // by manifest file
 )
 ```
 
@@ -268,7 +269,7 @@ func TestHomepage(t *testing.T) {
 
 ## Credits
 
-This package is based on [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel) and uses some parts of [petaki/inertia-go](https://github.com/petaki/inertia-go).
+This package is based on [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel) and uses some ideas of [petaki/inertia-go](https://github.com/petaki/inertia-go).
 
 ## License
 
