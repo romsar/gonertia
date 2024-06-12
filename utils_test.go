@@ -5,69 +5,69 @@ import (
 	"testing"
 )
 
-func Test_set(t *testing.T) {
+func Test_setOf(t *testing.T) {
 	t.Parallel()
 
 	t.Run("nil", func(t *testing.T) {
 		t.Parallel()
 
-		got := set[string](nil)
+		got := setOf[string](nil)
 		var want map[string]struct{}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("set()=%#v, want=%#v", got, want)
+			t.Fatalf("setOf()=%#v, want=%#v", got, want)
 		}
 	})
 
 	t.Run("empty", func(t *testing.T) {
 		t.Parallel()
 
-		got := set[string]([]string{})
+		got := setOf[string]([]string{})
 		var want map[string]struct{}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("set()=%#v, want=%#v", got, want)
+			t.Fatalf("setOf()=%#v, want=%#v", got, want)
 		}
 	})
 
 	t.Run("duplicates", func(t *testing.T) {
 		t.Parallel()
 
-		got := set[string]([]string{"foo", "foo"})
+		got := setOf[string]([]string{"foo", "foo"})
 		want := map[string]struct{}{
 			"foo": {},
 		}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("set()=%#v, want=%#v", got, want)
+			t.Fatalf("setOf()=%#v, want=%#v", got, want)
 		}
 	})
 
 	t.Run("strings", func(t *testing.T) {
 		t.Parallel()
 
-		got := set[string]([]string{"foo", "bar"})
+		got := setOf[string]([]string{"foo", "bar"})
 		want := map[string]struct{}{
 			"foo": {},
 			"bar": {},
 		}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("set()=%#v, want=%#v", got, want)
+			t.Fatalf("setOf()=%#v, want=%#v", got, want)
 		}
 	})
 
 	t.Run("integers", func(t *testing.T) {
 		t.Parallel()
 
-		got := set[int]([]int{123, 456})
+		got := setOf[int]([]int{123, 456})
 		want := map[int]struct{}{
 			123: {},
 			456: {},
 		}
 
 		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("set()=%#v, want=%#v", got, want)
+			t.Fatalf("setOf()=%#v, want=%#v", got, want)
 		}
 	})
 }

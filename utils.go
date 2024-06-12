@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func set[T comparable](data []T) map[T]struct{} {
+func setOf[T comparable](data []T) map[T]struct{} {
 	if len(data) == 0 {
 		return nil
 	}
