@@ -160,7 +160,8 @@ i, err := inertia.New(
 ```go
 props := inertia.Props{
     "regular": "prop",
-    "closure": func () (any, error) { return "prop", nil },
+    "closure": func () (any) { return "prop" },
+    "closure_with_err": func () (any, error) { return "prop", nil },
     "lazy": inertia.LazyProp(func () (any, error) {
         return "prop", nil
     },

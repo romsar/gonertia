@@ -98,7 +98,7 @@ func (i *Inertia) propsKeysToReturn(r *http.Request, component string) map[strin
 func resolvePropVal(val any) (_ any, err error) {
 	switch typed := val.(type) {
 	case func() any:
-		return typed, nil
+		return typed(), nil
 	case AlwaysProp:
 		return typed(), nil
 	case func() (any, error):
