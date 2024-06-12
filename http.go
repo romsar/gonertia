@@ -27,8 +27,17 @@ func setResponseStatus(w http.ResponseWriter, status int) {
 	w.WriteHeader(status)
 }
 
-func partialDataFromRequest(r *http.Request) []string {
+func onlyFromRequest(r *http.Request) []string {
 	header := r.Header.Get("X-Inertia-Partial-Data")
+	if header == "" {
+		return nil
+	}
+
+	return strings.Split(header, ",")
+}
+
+func exceptFromRequest(r *http.Request) []string {
+	header := r.Header.Get("X-Inertia-Partial-Except")
 	if header == "" {
 		return nil
 	}
