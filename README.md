@@ -51,8 +51,8 @@ func main() {
     }
 
     // Now create your HTTP server.
-    // Gonertia works well with standard http handlers,
-    // but you are free to use some frameworks like Gorilla Mux or Chi.
+    // Gonertia works well with standard http server library,
+    // but you are free to use some external routers like Gorilla Mux or Chi.
     mux := http.NewServeMux()
 
     mux.Handle("/home", i.Middleware(homeHandler(i)))
