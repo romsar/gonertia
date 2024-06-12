@@ -281,7 +281,7 @@ Render result will be:
 <script type="module" src="/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"></script>
 ```
 
-Besides asset versioning, that will also support [Inertia versioning](https://inertiajs.com/asset-versioning) using mix manifest file checksum.
+Besides asset versioning, that will also support [Inertia versioning](https://inertiajs.com/asset-versioning) using file checksum. Very convenient!
 
 #### Testing
 
