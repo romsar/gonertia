@@ -35,8 +35,12 @@ func asInertiaRequest(r *http.Request) {
 	r.Header.Set("X-Inertia", "true")
 }
 
-func withPartialData(r *http.Request, data []string) {
+func withOnly(r *http.Request, data []string) {
 	r.Header.Set("X-Inertia-Partial-Data", strings.Join(data, ","))
+}
+
+func withExcept(r *http.Request, data []string) {
+	r.Header.Set("X-Inertia-Partial-Except", strings.Join(data, ","))
 }
 
 func withPartialComponent(r *http.Request, component string) {

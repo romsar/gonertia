@@ -49,26 +49,31 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 		result[key] = val
 	}
 
-	// Get props keys to return. If len == 0, then return all.
-	only := i.propsKeysToReturn(r, component)
+	{
+		// Only (include keys) and except (exclude keys) logic.
+		only, except := i.getOnlyAndExcept(r, component)
 
-	// Filter props.
-	if len(only) > 0 {
-		for key, val := range result {
-			if _, ok := only[key]; ok {
-				continue
-			}
-			if _, ok := val.(AlwaysProp); ok {
-				continue
-			}
+		// Filter props.
+		if len(only) > 0 {
+			for key, val := range result {
+				if _, ok := only[key]; ok {
+					continue
+				}
+				if _, ok := val.(AlwaysProp); ok {
+					continue
+				}
 
-			delete(result, key)
-		}
-	} else {
-		for key, val := range result {
-			if _, ok := val.(LazyProp); ok {
 				delete(result, key)
 			}
+		} else {
+			for key, val := range result {
+				if _, ok := val.(LazyProp); ok {
+					delete(result, key)
+				}
+			}
+		}
+		for key := range except {
+			delete(result, key)
 		}
 	}
 
@@ -84,15 +89,15 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	return result, nil
 }
 
-func (i *Inertia) propsKeysToReturn(r *http.Request, component string) map[string]struct{} {
+func (i *Inertia) getOnlyAndExcept(r *http.Request, component string) (only, except map[string]struct{}) {
 	// Partial reloads only work for visits made to the same page component.
 	//
 	// https://inertiajs.com/partial-reloads
-	if partialComponentFromRequest(r) == component {
-		return setOf[string](partialDataFromRequest(r))
+	if partialComponentFromRequest(r) != component {
+		return nil, nil
 	}
 
-	return nil
+	return setOf[string](onlyFromRequest(r)), setOf[string](exceptFromRequest(r))
 }
 
 func resolvePropVal(val any) (_ any, err error) {
