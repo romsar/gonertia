@@ -39,9 +39,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		//
 		// Don't forget to copy all data to the original
 		// response writer before end!
-		defer func() {
-			i.copyWrapperResponse(w, w2)
-		}()
+		defer i.copyWrapperResponse(w, w2)
 
 		// Determines what to do when the Inertia asset version has changed.
 		// By default, we'll initiate a client-side location visit to force an update.
