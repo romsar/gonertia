@@ -14,6 +14,11 @@ type Props map[string]any
 // https://inertiajs.com/partial-reloads
 type LazyProp func() (any, error)
 
+// AlwaysProp is a property value that will always evaluated.
+//
+// https://github.com/inertiajs/inertia-laravel/pull/627
+type AlwaysProp func() any
+
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 
@@ -22,7 +27,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	if err != nil {
 		return nil, fmt.Errorf("getting validation errors from context: %w", err)
 	}
-	result["errors"] = ctxValidationErrors
+	result["errors"] = AlwaysProp(func() any { return ctxValidationErrors })
 
 	// Add shared props to the result.
 	for key, val := range i.sharedProps {
@@ -49,10 +54,15 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 
 	// Filter props.
 	if len(only) > 0 {
-		for key := range result {
-			if _, ok := only[key]; !ok {
-				delete(result, key)
+		for key, val := range result {
+			if _, ok := only[key]; ok {
+				continue
 			}
+			if _, ok := val.(AlwaysProp); ok {
+				continue
+			}
+
+			delete(result, key)
 		}
 	} else {
 		for key, val := range result {
@@ -64,7 +74,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 
 	// Resolve props values.
 	for key, val := range result {
-		val, err := resolvePropVal(val)
+		val, err = resolvePropVal(val)
 		if err != nil {
 			return nil, fmt.Errorf("resolve prop value: %w", err)
 		}
@@ -79,20 +89,25 @@ func (i *Inertia) propsKeysToReturn(r *http.Request, component string) map[strin
 	//
 	// https://inertiajs.com/partial-reloads
 	if partialComponentFromRequest(r) == component {
-		return set[string](partialDataFromRequest(r))
+		return setOf[string](partialDataFromRequest(r))
 	}
 
 	return nil
 }
 
 func resolvePropVal(val any) (_ any, err error) {
-	if closure, ok := val.(func() (any, error)); ok {
-		val, err = closure()
+	switch typed := val.(type) {
+	case func() any:
+		return typed, nil
+	case AlwaysProp:
+		return typed(), nil
+	case func() (any, error):
+		val, err = typed()
 		if err != nil {
 			return nil, fmt.Errorf("closure prop resolving: %w", err)
 		}
-	} else if lazy, ok := val.(LazyProp); ok {
-		val, err = lazy()
+	case LazyProp:
+		val, err = typed()
 		if err != nil {
 			return nil, fmt.Errorf("lazy prop resolving: %w", err)
 		}

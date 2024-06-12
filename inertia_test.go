@@ -251,9 +251,10 @@ func TestInertia_Render(t *testing.T) {
 				asInertiaRequest(r)
 
 				err := I().Render(w, r, "Some/Component", Props{
-					"foo":     "bar",
-					"closure": func() (any, error) { return "prop", nil },
-					"lazy":    LazyProp(func() (any, error) { return "prop", nil }),
+					"foo":              "bar",
+					"closure":          func() any { return "prop" },
+					"closure_with_err": func() (any, error) { return "prop", nil },
+					"lazy":             LazyProp(func() (any, error) { return "prop", nil }),
 				})
 				if err != nil {
 					t.Fatalf("unexpected error: %#v", err)
@@ -261,9 +262,10 @@ func TestInertia_Render(t *testing.T) {
 
 				assertable := AssertFromString(t, w.Body.String())
 				assertable.AssertProps(Props{
-					"foo":     "bar",
-					"closure": "prop",
-					"errors":  map[string]any{},
+					"foo":              "bar",
+					"closure":          "prop",
+					"closure_with_err": "prop",
+					"errors":           map[string]any{},
 				})
 			})
 
@@ -283,6 +285,7 @@ func TestInertia_Render(t *testing.T) {
 						"abc":     "123",
 						"closure": func() (any, error) { return "prop", nil },
 						"lazy":    LazyProp(func() (any, error) { return "prop", nil }),
+						"always":  AlwaysProp(func() any { return "prop" }),
 					})
 					if err != nil {
 						t.Fatalf("unexpected error: %#v", err)
@@ -293,6 +296,8 @@ func TestInertia_Render(t *testing.T) {
 						"foo":     "bar",
 						"closure": "prop",
 						"lazy":    "prop",
+						"always":  "prop",
+						"errors":  map[string]interface{}{},
 					})
 				})
 

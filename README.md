@@ -169,6 +169,14 @@ props := inertia.Props{
 i.Render(w, r, "Some/Page", props)
 ```
 
+Also, Gonertia have support for `always` props ([learn more](https://github.com/inertiajs/inertia-laravel/pull/627)):
+
+```go
+props := inertia.Props{
+    "foo": AlwaysProp(func() any { return "bar" }),
+}
+```
+
 #### Redirects ([learn more](https://inertiajs.com/redirects))
 
 ```go
