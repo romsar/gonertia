@@ -332,13 +332,15 @@ func TestInertia_Render(t *testing.T) {
 				w, r := requestMock(http.MethodGet, "/home")
 				asInertiaRequest(r)
 				withOnly(r, []string{"foo", "baz"})
-				withExcept(r, []string{"foo"})
+				withExcept(r, []string{"foo", "abc", "lazy", "always"})
 				withPartialComponent(r, "Some/Component")
 
 				err := I().Render(w, r, "Some/Component", Props{
-					"foo": "bar",
-					"baz": "quz",
-					"bez": "bee",
+					"foo":    "bar",
+					"baz":    "quz",
+					"bez":    "bee",
+					"lazy":   LazyProp(func() (any, error) { return "prop", nil }),
+					"always": AlwaysProp(func() any { return "prop" }),
 				})
 				if err != nil {
 					t.Fatalf("unexpected error: %#v", err)
