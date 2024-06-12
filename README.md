@@ -82,12 +82,13 @@ Create `root.html` template:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>title</title>
+    /* your styles, meta, etc. */
     {{ .inertiaHead }}
 </head>
 
 <body>
 {{ .inertia }}
-<script src="/build/app.js"></script>
+<script type="module" src="/build/assets/app.js"></script>
 </body>
 </html>
 ```
