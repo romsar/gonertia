@@ -82,7 +82,7 @@ Create `root.html` template:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>title</title>
-    /* your styles, meta, etc. */
+    <!-- Put here your styles, meta and other stuff -->
     {{ .inertiaHead }}
 </head>
 
