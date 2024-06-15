@@ -19,6 +19,9 @@ type LazyProp func() (any, error)
 // https://github.com/inertiajs/inertia-laravel/pull/627
 type AlwaysProp func() any
 
+// ValidationErrors are messages, that will be stored in the "errors" prop.
+type ValidationErrors map[string]any
+
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 

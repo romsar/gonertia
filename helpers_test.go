@@ -2,6 +2,8 @@ package gonertia
 
 import (
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,6 +17,7 @@ func I(opts ...func(i *Inertia)) *Inertia {
 		marshallJSON:       json.Marshal,
 		sharedProps:        make(Props),
 		sharedTemplateData: make(TemplateData),
+		logger:             log.New(io.Discard, "", 0),
 	}
 
 	for _, opt := range opts {
@@ -151,17 +154,17 @@ func tmpFile(t *testing.T, content string) *os.File {
 
 	f, err := os.CreateTemp("", "gonertia")
 	if err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	closed := false
 
 	if _, err := f.WriteString(content); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if err := f.Close(); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	closed = true
@@ -169,12 +172,12 @@ func tmpFile(t *testing.T, content string) *os.File {
 	t.Cleanup(func() {
 		if !closed {
 			if err := f.Close(); err != nil {
-				t.Fatalf("unexpected error: %#v", err)
+				t.Fatalf("unexpected error: %s", err)
 			}
 		}
 
 		if err := os.Remove(f.Name()); err != nil {
-			t.Fatalf("unexpected error: %#v", err)
+			t.Fatalf("unexpected error: %s", err)
 		}
 	})
 

@@ -17,7 +17,7 @@ func TestWithTemplateFS(t *testing.T) {
 	option := WithTemplateFS(fs)
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if !reflect.DeepEqual(i.templateFS, fs) {
@@ -35,7 +35,7 @@ func TestWithVersion(t *testing.T) {
 	option := WithVersion("foo bar")
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if i.version != want {
@@ -55,7 +55,7 @@ func TestWithVersionFromFile(t *testing.T) {
 	want := "acbd18db4cc2f85cedef654fccc4a4d8"
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if i.version != want {
@@ -75,32 +75,16 @@ func TestWithMarshalJSON(t *testing.T) {
 	})
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	got, err := i.marshallJSON([]byte{})
 	if err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if string(got) != want {
 		t.Fatalf("marshallJSON()=%s, want=%s", string(got), want)
-	}
-}
-
-func TestWithoutLogger(t *testing.T) {
-	t.Parallel()
-
-	i := I()
-
-	option := WithoutLogger()
-
-	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
-	}
-
-	if i.logger == nil {
-		t.Fatal("logger is nil")
 	}
 }
 
@@ -115,7 +99,7 @@ func TestWithLogger(t *testing.T) {
 		option := WithLogger(nil)
 
 		if err := option(i); err != nil {
-			t.Fatalf("unexpected error: %#v", err)
+			t.Fatalf("unexpected error: %s", err)
 		}
 
 		if i.logger == nil {
@@ -123,7 +107,23 @@ func TestWithLogger(t *testing.T) {
 		}
 	})
 
-	t.Run("with logger", func(t *testing.T) {
+	t.Run("with default", func(t *testing.T) {
+		t.Parallel()
+
+		i := I()
+
+		option := WithLogger()
+
+		if err := option(i); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if i.logger == nil {
+			t.Fatal("logger is nil")
+		}
+	})
+
+	t.Run("with custom", func(t *testing.T) {
 		t.Parallel()
 
 		i := I()
@@ -133,7 +133,7 @@ func TestWithLogger(t *testing.T) {
 		option := WithLogger(want)
 
 		if err := option(i); err != nil {
-			t.Fatalf("unexpected error: %#v", err)
+			t.Fatalf("unexpected error: %s", err)
 		}
 
 		if !reflect.DeepEqual(i.logger, want) {
@@ -152,10 +152,58 @@ func TestWithContainerID(t *testing.T) {
 	option := WithContainerID(want)
 
 	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if i.containerID != want {
 		t.Fatalf("containerID=%s, want=%s", i.containerID, want)
 	}
+}
+
+func TestWithSSR(t *testing.T) {
+	t.Parallel()
+
+	t.Run("with default url", func(t *testing.T) {
+		t.Parallel()
+
+		i := I()
+
+		wantURL := "http://127.0.0.1:13714"
+
+		option := WithSSR()
+
+		if err := option(i); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if i.ssrHTTPClient == nil {
+			t.Fatal("ssr http client is nil")
+		}
+
+		if i.ssrURL != wantURL {
+			t.Fatalf("ssrURL=%s, want=%s", i.containerID, wantURL)
+		}
+	})
+
+	t.Run("with specified url", func(t *testing.T) {
+		t.Parallel()
+
+		i := I()
+
+		wantURL := "https://foo.bar/baz/quz"
+
+		option := WithSSR(wantURL)
+
+		if err := option(i); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if i.ssrHTTPClient == nil {
+			t.Fatal("ssr http client is nil")
+		}
+
+		if i.ssrURL != wantURL {
+			t.Fatalf("ssrURL=%s, want=%s", i.containerID, wantURL)
+		}
+	})
 }

@@ -154,7 +154,7 @@ func Test_md5File(t *testing.T) {
 
 	got, err := md5File(f.Name())
 	if err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if want := md5("foo"); got != want {

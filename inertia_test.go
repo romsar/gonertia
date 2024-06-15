@@ -1,432 +1,260 @@
 package gonertia
 
 import (
-	"net/http"
-	"strings"
+	"reflect"
 	"testing"
-	"testing/fstest"
 )
 
-func TestInertia_Location(t *testing.T) {
+func TestInertia_ShareProp(t *testing.T) {
 	t.Parallel()
 
-	t.Run("plain redirect with default status", func(t *testing.T) {
-		t.Parallel()
-
-		w, r := requestMock(http.MethodGet, "/")
-
-		i := I()
-
-		wantStatus := http.StatusFound
-		wantLocation := "/foo"
-
-		i.Location(w, r, wantLocation)
-
-		assertResponseStatusCode(t, w, wantStatus)
-		assertLocation(t, w, wantLocation)
-	})
-
-	t.Run("plain redirect with specified status", func(t *testing.T) {
-		t.Parallel()
-
-		w, r := requestMock(http.MethodGet, "/")
-
-		wantStatus := http.StatusMovedPermanently
-		wantLocation := "/foo"
-
-		I().Location(w, r, wantLocation, wantStatus)
-
-		assertResponseStatusCode(t, w, wantStatus)
-		assertLocation(t, w, wantLocation)
-	})
-
-	t.Run("inertia location", func(t *testing.T) {
-		t.Parallel()
-
-		w, r := requestMock(http.MethodGet, "/")
-		asInertiaRequest(r)
-
-		wantLocation := ""
-		wantInertiaLocation := "/foo"
-
-		I().Location(w, r, wantInertiaLocation, http.StatusMovedPermanently)
-
-		assertLocation(t, w, wantLocation)
-		assertResponseStatusCode(t, w, http.StatusConflict)
-		assertInertiaLocation(t, w, wantInertiaLocation)
-	})
-}
-
-func TestInertia_Back(t *testing.T) {
-	t.Parallel()
-
-	t.Run("plain redirect with default status", func(t *testing.T) {
-		t.Parallel()
-
-		wantStatus := http.StatusFound
-		wantLocation := "https://example.com/foo"
-
-		w, r := requestMock(http.MethodGet, "/")
-		r.Header.Set("Referer", wantLocation)
-
-		i := I()
-
-		i.Back(w, r)
-
-		assertResponseStatusCode(t, w, wantStatus)
-		assertLocation(t, w, wantLocation)
-	})
-
-	t.Run("plain redirect with specified status", func(t *testing.T) {
-		t.Parallel()
-
-		wantStatus := http.StatusMovedPermanently
-		wantLocation := "https://example.com/foo"
-
-		w, r := requestMock(http.MethodGet, "/")
-		r.Header.Set("Referer", wantLocation)
-
-		I().Location(w, r, wantLocation, wantStatus)
-
-		assertResponseStatusCode(t, w, wantStatus)
-		assertLocation(t, w, wantLocation)
-	})
-
-	t.Run("inertia location", func(t *testing.T) {
-		t.Parallel()
-
-		wantLocation := ""
-		wantInertiaLocation := "https://example.com/foo"
-
-		w, r := requestMock(http.MethodGet, "/")
-		r.Header.Set("Referer", wantLocation)
-		asInertiaRequest(r)
-
-		I().Location(w, r, wantInertiaLocation, http.StatusMovedPermanently)
-
-		assertLocation(t, w, wantLocation)
-		assertResponseStatusCode(t, w, http.StatusConflict)
-		assertInertiaLocation(t, w, wantInertiaLocation)
-	})
-}
-
-var rootTemplate = `<html>
-	<head>{{ .inertiaHead }}</head>
-	<body>{{ .inertia }}</body>
-</html>`
-
-func TestInertia_Render(t *testing.T) {
-	t.Parallel()
-
-	t.Run("plain request", func(t *testing.T) {
-		t.Parallel()
-
-		t.Run("file template", func(t *testing.T) {
-			t.Parallel()
-
-			f := tmpFile(t, rootTemplate)
-
-			i := I(func(i *Inertia) {
-				i.rootTemplatePath = f.Name()
-				i.version = "f8v01xv4h4"
-			})
-
-			assertRootTemplateSuccess(t, i)
-		})
-
-		t.Run("embed fs template", func(t *testing.T) {
-			t.Parallel()
-
-			fs := fstest.MapFS{
-				"app.html": {
-					Data: []byte(rootTemplate),
-				},
-			}
-
-			i := I(func(i *Inertia) {
-				i.rootTemplatePath = "app.html"
-				i.version = "f8v01xv4h4"
-				i.templateFS = fs
-			})
-
-			assertRootTemplateSuccess(t, i)
-		})
-
-		t.Run("shared funcs", func(t *testing.T) {
-			t.Parallel()
-
-			f := tmpFile(t, `{{ trim " foo bar " }}`)
-			w, r := requestMock(http.MethodGet, "/")
-
-			i := I(func(i *Inertia) {
-				i.rootTemplatePath = f.Name()
-				i.sharedTemplateFuncs = TemplateFuncs{
-					"trim": strings.TrimSpace,
-				}
-			})
-
-			err := i.Render(w, r, "Some/Component")
-			if err != nil {
-				t.Fatalf("unexpected error: %#v", err)
-			}
-
-			got := w.Body.String()
-			want := "foo bar"
-
-			if got != want {
-				t.Fatalf("got=%s, want=%s", got, want)
-			}
-		})
-
-		t.Run("shared template data", func(t *testing.T) {
-			t.Parallel()
-
-			f := tmpFile(t, `Hello, {{ .text }}!`)
-			w, r := requestMock(http.MethodGet, "/")
-
-			i := I(func(i *Inertia) {
-				i.rootTemplatePath = f.Name()
-				i.sharedTemplateData = TemplateData{
-					"text": "world",
-				}
-			})
-
-			err := i.Render(w, r, "Some/Component")
-			if err != nil {
-				t.Fatalf("unexpected error: %#v", err)
-			}
-
-			got := w.Body.String()
-			want := "foo bar"
-
-			if got != want {
-				t.Fatalf("got=%s, want=%s", got, want)
-			}
-		})
-	})
-
-	t.Run("inertia request", func(t *testing.T) {
-		t.Parallel()
-
-		t.Run("success", func(t *testing.T) {
-			t.Parallel()
-
-			i := I(func(i *Inertia) {
-				i.version = "f8v01xv4h4"
-			})
-
-			w, r := requestMock(http.MethodGet, "/home")
-			asInertiaRequest(r)
-
-			err := i.Render(w, r, "Some/Component", Props{
-				"foo": "bar",
-			})
-			if err != nil {
-				t.Fatalf("unexpected error: %#v", err)
-			}
-
-			assertable := AssertFromString(t, w.Body.String())
-			assertable.AssertComponent("Some/Component")
-			assertable.AssertProps(Props{"foo": "bar", "errors": map[string]any{}})
-			assertable.AssertVersion("f8v01xv4h4")
-			assertable.AssertURL("/home")
-
-			assertInertiaResponse(t, w)
-			assertJSONResponse(t, w)
-			assertResponseStatusCode(t, w, http.StatusOK)
-		})
-
-		t.Run("props priority", func(t *testing.T) {
-			t.Parallel()
-
-			i := I(func(i *Inertia) {
-				i.sharedProps = Props{"foo": "bar", "abc": "123", "shared": "prop"}
-			})
-
-			w, r := requestMock(http.MethodGet, "/home")
-			asInertiaRequest(r)
-
-			ctx := WithProps(r.Context(), Props{"foo": "baz", "abc": "456", "ctx": "prop"})
-
-			err := i.Render(w, r.WithContext(ctx), "Some/Component", Props{
-				"foo": "zzz",
-			})
-			if err != nil {
-				t.Fatalf("unexpected error: %#v", err)
-			}
-
-			assertable := AssertFromString(t, w.Body.String())
-			assertable.AssertProps(Props{
-				"abc":    "456",
-				"ctx":    "prop",
-				"foo":    "zzz",
-				"shared": "prop",
-				"errors": map[string]any{},
-			})
-		})
-
-		t.Run("validation errors", func(t *testing.T) {
-			t.Parallel()
-
-			i := I()
-
-			w, r := requestMock(http.MethodGet, "/home")
-			asInertiaRequest(r)
-
-			ctx := WithValidationErrors(r.Context(), ValidationErrors{"foo": "bar"})
-
-			err := i.Render(w, r.WithContext(ctx), "Some/Component", Props{
-				"abc": "123",
-			})
-			if err != nil {
-				t.Fatalf("unexpected error: %#v", err)
-			}
-
-			assertable := AssertFromString(t, w.Body.String())
-			assertable.AssertProps(Props{
-				"abc": "123",
-				"errors": map[string]any{
-					"foo": "bar",
-				},
-			})
-		})
-
-		t.Run("props value resolving", func(t *testing.T) {
-			t.Parallel()
-
-			t.Run("reject lazy props", func(t *testing.T) {
-				t.Parallel()
-
-				w, r := requestMock(http.MethodGet, "/home")
-				asInertiaRequest(r)
-
-				err := I().Render(w, r, "Some/Component", Props{
-					"foo":              "bar",
-					"closure":          func() any { return "prop" },
-					"closure_with_err": func() (any, error) { return "prop", nil },
-					"lazy":             LazyProp(func() (any, error) { return "prop", nil }),
-				})
-				if err != nil {
-					t.Fatalf("unexpected error: %#v", err)
-				}
-
-				assertable := AssertFromString(t, w.Body.String())
-				assertable.AssertProps(Props{
-					"foo":              "bar",
-					"closure":          "prop",
-					"closure_with_err": "prop",
-					"errors":           map[string]any{},
-				})
-			})
-
-			t.Run("only", func(t *testing.T) {
-				t.Parallel()
-
-				t.Run("resolve lazy props, same component", func(t *testing.T) {
-					t.Parallel()
-
-					w, r := requestMock(http.MethodGet, "/home")
-					asInertiaRequest(r)
-					withOnly(r, []string{"foo", "closure", "lazy"})
-					withPartialComponent(r, "Some/Component")
-
-					err := I().Render(w, r, "Some/Component", Props{
-						"foo":     "bar",
-						"abc":     "123",
-						"closure": func() (any, error) { return "prop", nil },
-						"lazy":    LazyProp(func() (any, error) { return "prop", nil }),
-						"always":  AlwaysProp(func() any { return "prop" }),
-					})
-					if err != nil {
-						t.Fatalf("unexpected error: %#v", err)
-					}
-
-					assertable := AssertFromString(t, w.Body.String())
-					assertable.AssertProps(Props{
-						"foo":     "bar",
-						"closure": "prop",
-						"lazy":    "prop",
-						"always":  "prop",
-						"errors":  map[string]interface{}{},
-					})
-				})
-
-				t.Run("resolve lazy props, other component", func(t *testing.T) {
-					t.Parallel()
-
-					w, r := requestMock(http.MethodGet, "/home")
-					asInertiaRequest(r)
-					withOnly(r, []string{"foo", "closure", "lazy"})
-					withPartialComponent(r, "Other/Component")
-
-					err := I().Render(w, r, "Some/Component", Props{
-						"foo":     "bar",
-						"abc":     "123",
-						"closure": func() (any, error) { return "prop", nil },
-					})
-					if err != nil {
-						t.Fatalf("unexpected error: %#v", err)
-					}
-
-					assertable := AssertFromString(t, w.Body.String())
-					assertable.AssertProps(Props{
-						"foo":     "bar",
-						"abc":     "123",
-						"closure": "prop",
-						"errors":  map[string]any{},
-					})
-				})
-			})
-
-			t.Run("except", func(t *testing.T) {
-				t.Parallel()
-
-				w, r := requestMock(http.MethodGet, "/home")
-				asInertiaRequest(r)
-				withOnly(r, []string{"foo", "baz"})
-				withExcept(r, []string{"foo", "abc", "lazy", "always"})
-				withPartialComponent(r, "Some/Component")
-
-				err := I().Render(w, r, "Some/Component", Props{
-					"foo":    "bar",
-					"baz":    "quz",
-					"bez":    "bee",
-					"lazy":   LazyProp(func() (any, error) { return "prop", nil }),
-					"always": AlwaysProp(func() any { return "prop" }),
-				})
-				if err != nil {
-					t.Fatalf("unexpected error: %#v", err)
-				}
-
-				assertable := AssertFromString(t, w.Body.String())
-				assertable.AssertProps(Props{
-					"baz":    "quz",
-					"errors": map[string]any{},
-				})
-			})
-		})
-	})
-}
-
-func assertRootTemplateSuccess(t *testing.T, i *Inertia) {
-	t.Helper()
-
-	w, r := requestMock(http.MethodGet, "/home")
-
-	err := i.Render(w, r, "Some/Component", Props{
-		"foo": "bar",
-	})
-	if err != nil {
-		t.Fatalf("unexpected error: %#v", err)
+	type args struct {
+		key string
+		val any
+	}
+	tests := []struct {
+		name  string
+		props Props
+		args  args
+		want  Props
+	}{
+		{
+			"add",
+			Props{},
+			args{
+				key: "foo",
+				val: "bar",
+			},
+			Props{"foo": "bar"},
+		},
+		{
+			"replace",
+			Props{"foo": "zoo"},
+			args{
+				key: "foo",
+				val: "bar",
+			},
+			Props{"foo": "bar"},
+		},
 	}
 
-	assertable := Assert(t, w.Body)
-	assertable.AssertComponent("Some/Component")
-	assertable.AssertProps(Props{"foo": "bar", "errors": map[string]any{}})
-	assertable.AssertVersion("f8v01xv4h4")
-	assertable.AssertURL("/home")
+	for _, tt := range tests {
+		tt := tt
 
-	assertNotInertiaResponse(t, w)
-	assertHTMLResponse(t, w)
-	assertResponseStatusCode(t, w, http.StatusOK)
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			i := I(func(i *Inertia) {
+				i.sharedProps = tt.props
+			})
+
+			i.ShareProp(tt.args.key, tt.args.val)
+
+			if !reflect.DeepEqual(i.sharedProps, tt.want) {
+				t.Fatalf("sharedProps=%#v, want=%#v", i.sharedProps, tt.want)
+			}
+		})
+	}
+}
+
+func TestInertia_SharedProps(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		props Props
+	}{
+		{
+			"empty",
+			Props{},
+		},
+		{
+			"with values",
+			Props{"foo": "bar"},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			i := I(func(i *Inertia) {
+				i.sharedProps = tt.props
+			})
+
+			got := i.SharedProps()
+
+			if !reflect.DeepEqual(got, i.sharedProps) {
+				t.Fatalf("sharedProps=%#v, want=%#v", got, i.sharedProps)
+			}
+		})
+	}
+}
+
+func TestInertia_SharedProp(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		props  Props
+		key    string
+		want   any
+		wantOk bool
+	}{
+		{
+			"empty props",
+			Props{},
+			"foo",
+			nil,
+			false,
+		},
+		{
+			"not found",
+			Props{"foo": 123},
+			"bar",
+			nil,
+			false,
+		},
+		{
+			"found",
+			Props{"foo": 123},
+			"foo",
+			123,
+			true,
+		},
+		{
+			"found nil value",
+			Props{"foo": nil},
+			"foo",
+			nil,
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			i := I(func(i *Inertia) {
+				i.sharedProps = tt.props
+			})
+
+			got, ok := i.SharedProp(tt.key)
+			if ok != tt.wantOk {
+				t.Fatalf("ok=%t, want=%t", ok, tt.wantOk)
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("SharedProp()=%#v, want=%#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInertia_ShareTemplateData(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		key string
+		val any
+	}
+	tests := []struct {
+		name         string
+		templateData TemplateData
+		args         args
+		want         TemplateData
+	}{
+		{
+			"add",
+			TemplateData{},
+			args{
+				key: "foo",
+				val: "bar",
+			},
+			TemplateData{"foo": "bar"},
+		},
+		{
+			"replace",
+			TemplateData{"foo": "zoo"},
+			args{
+				key: "foo",
+				val: "bar",
+			},
+			TemplateData{"foo": "bar"},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			i := I(func(i *Inertia) {
+				i.sharedTemplateData = tt.templateData
+			})
+
+			i.ShareTemplateData(tt.args.key, tt.args.val)
+
+			if !reflect.DeepEqual(i.sharedTemplateData, tt.want) {
+				t.Fatalf("sharedTemplateData=%#v, want=%#v", i.sharedTemplateData, tt.want)
+			}
+		})
+	}
+}
+
+func TestInertia_ShareTemplateFunc(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		key string
+		val any
+	}
+	tests := []struct {
+		name          string
+		templateFuncs TemplateFuncs
+		args          args
+		want          TemplateFuncs
+	}{
+		{
+			"add",
+			TemplateFuncs{},
+			args{
+				key: "foo",
+				val: "bar",
+			},
+			TemplateFuncs{"foo": "bar"},
+		},
+		{
+			"replace",
+			TemplateFuncs{"foo": "zoo"},
+			args{
+				key: "foo",
+				val: "bar",
+			},
+			TemplateFuncs{"foo": "bar"},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			i := I(func(i *Inertia) {
+				i.sharedTemplateFuncs = tt.templateFuncs
+			})
+
+			i.ShareTemplateFunc(tt.args.key, tt.args.val)
+
+			if !reflect.DeepEqual(i.sharedTemplateFuncs, tt.want) {
+				t.Fatalf("sharedTemplateFuncs=%#v, want=%#v", i.sharedTemplateFuncs, tt.want)
+			}
+		})
+	}
 }

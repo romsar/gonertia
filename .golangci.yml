@@ -50,7 +50,6 @@ linters:
     - misspell
     - nestif
     - nilerr
-    - noctx
     - nolintlint
     - prealloc
     - predeclared

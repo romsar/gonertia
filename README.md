@@ -20,7 +20,7 @@ This package based on the official Laravel adapter for Inertia.js: [inertiajs/in
 - [x] Helpers for testing
 - [x] Helpers for validation errors
 - [x] Examples
-- [ ] SSR
+- [x] SSR
 
 ## Installation
 Install using `go get` command:
@@ -139,8 +139,8 @@ i, err := inertia.New(
 ```go
 i, err := inertia.New(
     /* ... */
-    inertia.WithLogger(somelogger.New()),
-    // or inertia.WithoutLogger(),
+    inertia.WithLogger(), // default logger
+    inertia.WithLogger(somelogger.New()), // custom logger
 )
 ```
 
@@ -249,6 +249,20 @@ ctx := inertia.WithValidationError(r.Context(), "some_field", "some error")
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
 
+#### SSR (Server Side Rendering) ([learn more](https://inertiajs.com/server-side-rendering))
+
+To enable server side rendering you have provide an option on place where you initialize Gonertia:
+
+```go
+i, err := inertia.New(
+/* ... */
+    inertia.WithSSR(), // if Node process is running on http://127.0.0.1:13714
+    inertia.WithSSR("http://127.0.0.1:1234"), // custom url
+)
+```
+
+Also, you have to use asset bundling tools like [Vite](https://vitejs.dev/) or [Webpack](https://webpack.js.org/) (especially with [Laravel Mix](https://laravel-mix.com/)). The setup will vary depending on this choice, you can read more about it in [official docs](https://inertiajs.com/server-side-rendering) or check an example that works on [Vite](./examples/vue3_tailwind). 
+
 #### Testing
 
 Of course, this package provides convenient interfaces for testing!
@@ -259,11 +273,11 @@ func TestHomepage(t *testing.T) {
 	
     // ...
 	
-    assertable := inertia.Assert(t, body) // io.Reader body
+    assertable := inertia.Assert(t, body) // from io.Reader body
     // OR
-    assertable := inertia.AssertFromBytes(t, body) // []byte body
+    assertable := inertia.AssertFromBytes(t, body) // from []byte body
     // OR
-    assertable := inertia.AssertFromString(t, body) // string body
+    assertable := inertia.AssertFromString(t, body) // from string body
 	
     // now you can do assertions using assertable.Assert[...] methods:
     assertable.AssertComponent("Foo/Bar")
@@ -276,6 +290,7 @@ func TestHomepage(t *testing.T) {
     assertable.Version // foo bar
     assertable.URL // https://example.com
     assertable.Props // inertia.Props{"foo": "bar"}
+    assertable.Body // full response body
 }
 ```
 
