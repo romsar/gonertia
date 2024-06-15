@@ -114,7 +114,6 @@ var rootTemplate = `<html>
 	<body>{{ .inertia }}</body>
 </html>`
 
-//nolint:gocognit
 func TestInertia_Render(t *testing.T) {
 	t.Parallel()
 
