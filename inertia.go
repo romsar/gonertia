@@ -30,16 +30,13 @@ type Inertia struct {
 
 // New initializes and returns Inertia.
 func New(rootTemplate string, opts ...Option) (*Inertia, error) {
-	if f, err := os.Open(rootTemplate); err == nil {
-		defer f.Close()
+	rootTemplate, err := tryGetRootTemplateHTMLFromPath(rootTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("try get root template html from path: %w", err)
+	}
 
-		var bs []byte
-		bs, err = io.ReadAll(f)
-		if err != nil {
-			return nil, fmt.Errorf("cannot read root template file %q: %w", rootTemplate, err)
-		}
-
-		rootTemplate = string(bs)
+	if rootTemplate == "" {
+		return nil, fmt.Errorf("blank root template")
 	}
 
 	i := &Inertia{
@@ -53,12 +50,25 @@ func New(rootTemplate string, opts ...Option) (*Inertia, error) {
 	}
 
 	for _, opt := range opts {
-		if err := opt(i); err != nil {
+		if err = opt(i); err != nil {
 			return nil, fmt.Errorf("initialize inertia: %w", err)
 		}
 	}
 
 	return i, nil
+}
+
+func tryGetRootTemplateHTMLFromPath(rootTemplate string) (string, error) {
+	bs, err := os.ReadFile(rootTemplate)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return rootTemplate, nil
+		}
+
+		return "", fmt.Errorf("read file: %w", err)
+	}
+
+	return string(bs), nil
 }
 
 type marshallJSON func(v any) ([]byte, error)
