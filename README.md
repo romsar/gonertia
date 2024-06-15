@@ -293,6 +293,12 @@ func TestHomepage(t *testing.T) {
 }
 ```
 
+## More community adapters
+
+Also, you can check one more golang adapter called [petaki/inertia-go](https://github.com/petaki/inertia-go).
+
+Full list of community adapters is located on [inertiajs.com](https://inertiajs.com/community-adapters).
+
 ## Credits
 
 This package is based on [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel) and uses some ideas of [petaki/inertia-go](https://github.com/petaki/inertia-go).
