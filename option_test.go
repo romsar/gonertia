@@ -1,29 +1,11 @@
 package gonertia
 
 import (
-	"embed"
 	"io"
 	"log"
 	"reflect"
 	"testing"
 )
-
-func TestWithTemplateFS(t *testing.T) {
-	t.Parallel()
-
-	i := I()
-	fs := embed.FS{}
-
-	option := WithTemplateFS(fs)
-
-	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-
-	if !reflect.DeepEqual(i.templateFS, fs) {
-		t.Fatalf("templateFS=%#v, want=%#v", i.templateFS, fs)
-	}
-}
 
 func TestWithVersion(t *testing.T) {
 	t.Parallel()

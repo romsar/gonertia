@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/fs"
 	"log"
 	"net/http"
+	"os"
 )
 
 // Inertia is a main Gonertia structure, which contains all the logic for being an Inertia adapter.
 type Inertia struct {
-	templateFS       fs.FS
 	rootTemplate     *template.Template
-	rootTemplatePath string
+	rootTemplateHTML string
 
 	sharedProps         Props
 	sharedTemplateData  TemplateData
@@ -30,9 +29,21 @@ type Inertia struct {
 }
 
 // New initializes and returns Inertia.
-func New(rootTemplatePath string, opts ...Option) (*Inertia, error) {
+func New(rootTemplate string, opts ...Option) (*Inertia, error) {
+	if f, err := os.Open(rootTemplate); err == nil {
+		defer f.Close()
+
+		var bs []byte
+		bs, err = io.ReadAll(f)
+		if err != nil {
+			return nil, fmt.Errorf("cannot read root template file %q: %w", rootTemplate, err)
+		}
+
+		rootTemplate = string(bs)
+	}
+
 	i := &Inertia{
-		rootTemplatePath:    rootTemplatePath,
+		rootTemplateHTML:    rootTemplate,
 		marshallJSON:        json.Marshal,
 		containerID:         "app",
 		logger:              log.New(io.Discard, "", 0),

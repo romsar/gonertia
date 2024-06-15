@@ -10,13 +10,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-	"testing/fstest"
 )
-
-var rootTemplate = `<html>
-<head>{{ .inertiaHead }}</head>
-<body>{{ .inertia }}</body>
-</html>`
 
 //nolint:gocognit
 func TestInertia_Render(t *testing.T) {
@@ -25,32 +19,12 @@ func TestInertia_Render(t *testing.T) {
 	t.Run("plain request", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("file template", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
 			t.Parallel()
 
-			f := tmpFile(t, rootTemplate)
-
 			i := I(func(i *Inertia) {
-				i.rootTemplatePath = f.Name()
+				i.rootTemplateHTML = rootTemplate
 				i.version = "f8v01xv4h4"
-			})
-
-			assertRootTemplateSuccess(t, i)
-		})
-
-		t.Run("embed fs template", func(t *testing.T) {
-			t.Parallel()
-
-			fs := fstest.MapFS{
-				"app.html": {
-					Data: []byte(rootTemplate),
-				},
-			}
-
-			i := I(func(i *Inertia) {
-				i.rootTemplatePath = "app.html"
-				i.version = "f8v01xv4h4"
-				i.templateFS = fs
 			})
 
 			assertRootTemplateSuccess(t, i)
@@ -61,8 +35,6 @@ func TestInertia_Render(t *testing.T) {
 
 			t.Run("success", func(t *testing.T) {
 				t.Parallel()
-
-				f := tmpFile(t, rootTemplate)
 
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					reqContentType := r.Header.Get("Content-Type")
@@ -102,7 +74,7 @@ func TestInertia_Render(t *testing.T) {
 				defer ts.Close()
 
 				i := I(func(i *Inertia) {
-					i.rootTemplatePath = f.Name()
+					i.rootTemplateHTML = rootTemplate
 					i.version = "f8v01xv4h4"
 					i.ssrURL = ts.URL
 					i.ssrHTTPClient = ts.Client()
@@ -135,15 +107,13 @@ func TestInertia_Render(t *testing.T) {
 			t.Run("error with fallback", func(t *testing.T) {
 				t.Parallel()
 
-				f := tmpFile(t, rootTemplate)
-
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusInternalServerError)
 				}))
 				defer ts.Close()
 
 				i := I(func(i *Inertia) {
-					i.rootTemplatePath = f.Name()
+					i.rootTemplateHTML = rootTemplate
 					i.version = "f8v01xv4h4"
 					i.ssrURL = ts.URL
 					i.ssrHTTPClient = ts.Client()
@@ -169,11 +139,10 @@ func TestInertia_Render(t *testing.T) {
 		t.Run("shared funcs", func(t *testing.T) {
 			t.Parallel()
 
-			f := tmpFile(t, `{{ trim " foo bar " }}`)
 			w, r := requestMock(http.MethodGet, "/")
 
 			i := I(func(i *Inertia) {
-				i.rootTemplatePath = f.Name()
+				i.rootTemplateHTML = `{{ trim " foo bar " }}`
 				i.sharedTemplateFuncs = TemplateFuncs{
 					"trim": strings.TrimSpace,
 				}
@@ -195,11 +164,10 @@ func TestInertia_Render(t *testing.T) {
 		t.Run("shared template data", func(t *testing.T) {
 			t.Parallel()
 
-			f := tmpFile(t, `Hello, {{ .text }}!`)
 			w, r := requestMock(http.MethodGet, "/")
 
 			i := I(func(i *Inertia) {
-				i.rootTemplatePath = f.Name()
+				i.rootTemplateHTML = `Hello, {{ .text }}!`
 				i.sharedTemplateData = TemplateData{
 					"text": "world",
 				}

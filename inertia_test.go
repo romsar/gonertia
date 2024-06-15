@@ -5,6 +5,43 @@ import (
 	"testing"
 )
 
+var rootTemplate = `<html>
+<head>{{ .inertiaHead }}</head>
+<body>{{ .inertia }}</body>
+</html>`
+
+func TestNew(t *testing.T) {
+	t.Parallel()
+
+	t.Run("root template init", func(t *testing.T) {
+		t.Parallel()
+
+		t.Run("by html", func(t *testing.T) {
+			i, err := New(rootTemplate)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if i.rootTemplateHTML != rootTemplate {
+				t.Fatalf("root template html=%s, want=%s", i.rootTemplateHTML, rootTemplate)
+			}
+		})
+
+		t.Run("by path", func(t *testing.T) {
+			f := tmpFile(t, rootTemplate)
+
+			i, err := New(f.Name())
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if i.rootTemplateHTML != rootTemplate {
+				t.Fatalf("root template html=%s, want=%s", i.rootTemplateHTML, rootTemplate)
+			}
+		})
+	})
+}
+
 func TestInertia_ShareProp(t *testing.T) {
 	t.Parallel()
 

@@ -38,13 +38,12 @@ package main
 import (
     "log"
     "net/http"
-    "time"
-    
+	
     inertia "github.com/romsar/gonertia"
 )
 
 func main() {
-    i, err := inertia.New("./resources/views/root.html")
+    i, err := inertia.New("resources/views/root.html") // put here HTML or path to the root template file
     if err != nil {
         log.Fatal(err)
     }
@@ -94,21 +93,6 @@ Create `root.html` template:
 You can also find more examples and starter kits in [examples folder](./examples) or in section above.
 
 ### More examples
-
-#### Load root template using embed
-```go
-import "embed"
-
-//go:embed templates
-var templateFS embed.FS
-
-// ...
-
-i, err := inertia.New(
-    /* ... */
-    inertia.WithTemplateFS(templateFS),
-)
-```
 
 #### Set asset version ([learn more](https://inertiajs.com/asset-versioning))
 

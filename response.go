@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"path/filepath"
 	"strings"
 )
 
@@ -97,7 +96,7 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 
 	setHTMLResponse(w)
 
-	if err := i.rootTemplate.Execute(w, templateData); err != nil {
+	if err = i.rootTemplate.Execute(w, templateData); err != nil {
 		return fmt.Errorf("execute root template: %w", err)
 	}
 
@@ -105,13 +104,8 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 }
 
 func (i *Inertia) buildRootTemplate() (*template.Template, error) {
-	tmpl := template.New(filepath.Base(i.rootTemplatePath)).Funcs(template.FuncMap(i.sharedTemplateFuncs))
-
-	if i.templateFS != nil {
-		return tmpl.ParseFS(i.templateFS, i.rootTemplatePath)
-	}
-
-	return tmpl.ParseFiles(i.rootTemplatePath)
+	tmpl := template.New("").Funcs(template.FuncMap(i.sharedTemplateFuncs))
+	return tmpl.Parse(i.rootTemplateHTML)
 }
 
 func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, error) {

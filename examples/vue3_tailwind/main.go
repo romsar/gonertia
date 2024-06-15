@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	inertia "github.com/romsar/gonertia"
@@ -26,7 +27,7 @@ func initInertia() *inertia.Inertia {
 	manifestPath := "./public/build/manifest.json"
 
 	i, err := inertia.New(
-		"./resources/views/root.html",
+		"resources/views/root.html",
 		inertia.WithVersionFromFile(manifestPath),
 		inertia.WithSSR(),
 	)

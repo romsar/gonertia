@@ -3,21 +3,12 @@ package gonertia
 import (
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"net/http"
 )
 
 // Option is an option parameter that modifies Inertia.
 type Option func(i *Inertia) error
-
-// WithTemplateFS returns Option that will set Inertia's templateFS.
-func WithTemplateFS(templateFS fs.FS) Option {
-	return func(i *Inertia) error {
-		i.templateFS = templateFS
-		return nil
-	}
-}
 
 // WithVersion returns Option that will set Inertia's version.
 func WithVersion(version string) Option {
