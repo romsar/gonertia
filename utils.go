@@ -20,13 +20,20 @@ func setOf[T comparable](data []T) map[T]struct{} {
 	return set
 }
 
+func firstOr[T any](items []T, fallback T) T {
+	if len(items) > 0 {
+		return items[0]
+	}
+	return fallback
+}
+
 func md5(str string) string {
 	hash := crypto.Sum([]byte(str))
 	return hex.EncodeToString(hash[:])
 }
 
 func md5File(path string) (string, error) {
-	h := crypto.New()
+	hash := crypto.New()
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -36,16 +43,9 @@ func md5File(path string) (string, error) {
 		_ = f.Close()
 	}(f)
 
-	if _, err := io.Copy(h, f); err != nil {
+	if _, err = io.Copy(hash, f); err != nil {
 		return "", err
 	}
 
-	return hex.EncodeToString(h.Sum(nil)), nil
-}
-
-func firstOr[T any](items []T, fallback T) T {
-	if len(items) > 0 {
-		return items[0]
-	}
-	return fallback
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }

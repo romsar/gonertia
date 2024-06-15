@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strings"
 )
 
@@ -19,13 +18,12 @@ type Inertia struct {
 
 	sharedProps         Props
 	sharedTemplateData  TemplateData
-	sharedTemplateFuncs template.FuncMap
+	sharedTemplateFuncs TemplateFuncs
 
-	mixManifestData map[string]string
-	containerID     string
-	version         string
-	marshallJSON    marshallJSON
-	logger          logger
+	containerID  string
+	version      string
+	marshallJSON marshallJSON
+	logger       logger
 }
 
 // New initializes and returns Inertia.
@@ -37,8 +35,7 @@ func New(rootTemplatePath string, opts ...Option) (*Inertia, error) {
 		logger:              log.Default(),
 		sharedProps:         make(Props),
 		sharedTemplateData:  make(TemplateData),
-		sharedTemplateFuncs: make(template.FuncMap),
-		mixManifestData:     nil,
+		sharedTemplateFuncs: make(TemplateFuncs),
 	}
 
 	for _, opt := range opts {
@@ -140,16 +137,6 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 	}
 
 	return nil
-}
-
-func (i *Inertia) buildRootTemplate() (*template.Template, error) {
-	tmpl := template.New(filepath.Base(i.rootTemplatePath)).Funcs(i.buildSharedTemplateFuncs())
-
-	if i.templateFS != nil {
-		return tmpl.ParseFS(i.templateFS, i.rootTemplatePath)
-	}
-
-	return tmpl.ParseFiles(i.rootTemplatePath)
 }
 
 func (i *Inertia) inertiaContainerHTML(pageJSON []byte) template.HTML {

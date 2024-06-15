@@ -19,7 +19,6 @@ This package based on the official Laravel adapter for Inertia.js: [inertiajs/in
 - [x] Tests
 - [x] Helpers for testing
 - [x] Helpers for validation errors
-- [x] Laravel like `mix` helper
 - [x] Examples
 - [ ] SSR
 
@@ -118,9 +117,7 @@ i, err := inertia.New(
 i, err := inertia.New(
     /* ... */
     inertia.WithVersion("some-version"), // by any string
-    inertia.WithAssetURL("/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"), // by asset url
-    inertia.WithManifestFile("./public/manifest.json"), // by manifest file
-    inertia.WithMixManifestFile("./public/mix-manifest.json"), // by laravel-mix manifest file
+    inertia.WithVersionFromFile("./public/build/manifest.json"), // by file checksum
 )
 ```
 
@@ -223,7 +220,7 @@ i.ShareTemplateFunc("trim", strings.Trim)
 #### Pass template data via context (in middleware)
 
 ```go
-ctx := i.WithTemplateData(r.Context(), "title", "Home page")
+ctx := inertia.WithTemplateData(r.Context(), "title", "Home page")
 
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
@@ -237,8 +234,8 @@ i.ShareProp("name", "Roman")
 #### Pass props via context (in middleware)
 
 ```go
-ctx := i.WithProp(r.Context(), "name", "Roman")
-// or i.WithProps(r.Context(), inertia.Props{"name": "Roman"})
+ctx := inertia.WithProp(r.Context(), "name", "Roman")
+// or inertia.WithProps(r.Context(), inertia.Props{"name": "Roman"})
 
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
@@ -246,42 +243,11 @@ ctx := i.WithProp(r.Context(), "name", "Roman")
 #### Validation errors ([learn more](https://inertiajs.com/validation))
 
 ```go
-ctx := i.WithValidationError(r.Context(), "some_field", "some error")
-// or i.WithValidationErrors(r.Context(), inertia.ValidationErrors{"some_field": "some error"})
+ctx := inertia.WithValidationError(r.Context(), "some_field", "some error")
+// or inertia.WithValidationErrors(r.Context(), inertia.ValidationErrors{"some_field": "some error"})
 
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
-
-#### Laravel like `mix` helper
-
-If you are familiar with Laravel, then you already know about awesome [mix](https://laravel.com/docs/8.x/mix#versioning-and-cache-busting) helper.
-
-So, Gonertia also supports it:
-
-```json
-{
-  "/build/assets/app.js": "/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"
-}
-```
-
-```go
-i, err := inertia.New(
-    /* ... */
-    inertia.WithMixManifestFile("./public/mix-manifest.json"),
-)
-```
-
-```html
-<script type="module" src="{{ mix "/build/assets/app.js" }}"></script>
-```
-
-Render result will be:
-
-```html
-<script type="module" src="/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"></script>
-```
-
-Besides asset versioning, that will also support [Inertia's versioning](https://inertiajs.com/asset-versioning) using file checksum. Very convenient!
 
 #### Testing
 

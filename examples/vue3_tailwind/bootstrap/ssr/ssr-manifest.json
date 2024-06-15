@@ -1,0 +1,13 @@
+{
+  "node_modules/laravel-vite-plugin/inertia-helpers/index.js": [],
+  "resources/js/Components/Navbar.vue": [
+    "/build/assets/Navbar-D1KJP_4P.js"
+  ],
+  "resources/js/Pages/Home/Index.vue": [
+    "/build/assets/Index-BR6qyg05.js"
+  ],
+  "resources/js/Pages/Home/Secondary.vue": [
+    "/build/assets/Secondary-8nZPUrmp.js"
+  ],
+  "resources/js/ssr.js": []
+}

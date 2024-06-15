@@ -11,7 +11,7 @@ import (
 func TestWithTemplateFS(t *testing.T) {
 	t.Parallel()
 
-	i := new(Inertia)
+	i := I()
 	fs := embed.FS{}
 
 	option := WithTemplateFS(fs)
@@ -28,30 +28,11 @@ func TestWithTemplateFS(t *testing.T) {
 func TestWithVersion(t *testing.T) {
 	t.Parallel()
 
-	i := new(Inertia)
+	i := I()
 
-	want := "foo bar"
+	want := "327b6f07435811239bc47e1544353273"
 
-	option := WithVersion(want)
-
-	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
-	}
-
-	if i.version != want {
-		t.Fatalf("version=%s, want=%s", i.version, want)
-	}
-}
-
-func TestWithAssetURL(t *testing.T) {
-	t.Parallel()
-
-	i := new(Inertia)
-
-	url := "https://example.com/foo/bar"
-	want := md5(url)
-
-	option := WithAssetURL(url)
+	option := WithVersion("foo bar")
 
 	if err := option(i); err != nil {
 		t.Fatalf("unexpected error: %#v", err)
@@ -62,14 +43,14 @@ func TestWithAssetURL(t *testing.T) {
 	}
 }
 
-func TestWithManifestFile(t *testing.T) {
+func TestWithVersionFromFile(t *testing.T) {
 	t.Parallel()
 
-	i := new(Inertia)
+	i := I()
 
 	f := tmpFile(t, "foo")
 
-	option := WithManifestFile(f.Name())
+	option := WithVersionFromFile(f.Name())
 
 	want := "acbd18db4cc2f85cedef654fccc4a4d8"
 
@@ -82,39 +63,10 @@ func TestWithManifestFile(t *testing.T) {
 	}
 }
 
-func TestWithMixManifestFile(t *testing.T) {
-	t.Parallel()
-
-	i := new(Inertia)
-
-	manifest := `{"/build/assets/app.js": "/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06"}`
-
-	f := tmpFile(t, manifest)
-
-	option := WithMixManifestFile(f.Name())
-
-	wantVersion := "9d3bd20f13c658f1d3d2a3985946e8b9"
-	wantMixManifestData := map[string]string{
-		"/build/assets/app.js": "/build/assets/app.js?id=60a830d8589d5daeaf3d5aa6daf5dc06",
-	}
-
-	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %#v", err)
-	}
-
-	if i.version != wantVersion {
-		t.Fatalf("version=%s, want=%s", i.version, wantVersion)
-	}
-
-	if !reflect.DeepEqual(i.mixManifestData, wantMixManifestData) {
-		t.Fatalf("mix manifest data=%#v, want=%#v", i.logger, wantMixManifestData)
-	}
-}
-
 func TestWithMarshalJSON(t *testing.T) {
 	t.Parallel()
 
-	i := new(Inertia)
+	i := I()
 
 	want := "bar"
 
@@ -139,7 +91,7 @@ func TestWithMarshalJSON(t *testing.T) {
 func TestWithoutLogger(t *testing.T) {
 	t.Parallel()
 
-	i := new(Inertia)
+	i := I()
 
 	option := WithoutLogger()
 
@@ -158,7 +110,7 @@ func TestWithLogger(t *testing.T) {
 	t.Run("with nil", func(t *testing.T) {
 		t.Parallel()
 
-		i := new(Inertia)
+		i := I()
 
 		option := WithLogger(nil)
 
@@ -174,7 +126,7 @@ func TestWithLogger(t *testing.T) {
 	t.Run("with logger", func(t *testing.T) {
 		t.Parallel()
 
-		i := new(Inertia)
+		i := I()
 
 		want := log.New(io.Discard, "foo bar", 0)
 
@@ -193,7 +145,7 @@ func TestWithLogger(t *testing.T) {
 func TestWithContainerID(t *testing.T) {
 	t.Parallel()
 
-	i := new(Inertia)
+	i := I()
 
 	want := "foo"
 

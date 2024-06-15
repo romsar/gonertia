@@ -4,11 +4,24 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"path/filepath"
 )
 
-// TemplateData are the data that will be transferred
-// and will be available in the root template.
+// TemplateData are data that will be available in the root template.
 type TemplateData map[string]any
+
+// TemplateFuncs are functions that will be available in the root template.
+type TemplateFuncs map[string]any
+
+func (i *Inertia) buildRootTemplate() (*template.Template, error) {
+	tmpl := template.New(filepath.Base(i.rootTemplatePath)).Funcs(template.FuncMap(i.sharedTemplateFuncs))
+
+	if i.templateFS != nil {
+		return tmpl.ParseFS(i.templateFS, i.rootTemplatePath)
+	}
+
+	return tmpl.ParseFiles(i.rootTemplatePath)
+}
 
 func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, error) {
 	pageJSON, err := i.marshallJSON(page)
@@ -39,23 +52,4 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 	}
 
 	return result, nil
-}
-
-func (i *Inertia) buildSharedTemplateFuncs() template.FuncMap {
-	// Defaults.
-	result := template.FuncMap{
-		"mix": func(path string) (string, error) {
-			if val, ok := i.mixManifestData[path]; ok {
-				return val, nil
-			}
-			return path, fmt.Errorf("file %q not found in mix manifest file", path)
-		},
-	}
-
-	// Add the shared template funcs to the result.
-	for key, val := range i.sharedTemplateFuncs {
-		result[key] = val
-	}
-
-	return result
 }

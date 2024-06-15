@@ -14,7 +14,7 @@ const (
 )
 
 // WithTemplateData appends template data value to the passed context.Context.
-func (i *Inertia) WithTemplateData(ctx context.Context, key string, val any) context.Context {
+func WithTemplateData(ctx context.Context, key string, val any) context.Context {
 	if ctxData := ctx.Value(templateDataContextKey); ctxData != nil {
 		ctxData, ok := ctxData.(TemplateData)
 
@@ -46,7 +46,7 @@ func TemplateDataFromContext(ctx context.Context) (TemplateData, error) {
 }
 
 // WithProp appends prop value to the passed context.Context.
-func (i *Inertia) WithProp(ctx context.Context, key string, val any) context.Context {
+func WithProp(ctx context.Context, key string, val any) context.Context {
 	if ctxData := ctx.Value(propsContextKey); ctxData != nil {
 		ctxData, ok := ctxData.(Props)
 
@@ -62,7 +62,7 @@ func (i *Inertia) WithProp(ctx context.Context, key string, val any) context.Con
 }
 
 // WithProps appends props values to the passed context.Context.
-func (i *Inertia) WithProps(ctx context.Context, props Props) context.Context {
+func WithProps(ctx context.Context, props Props) context.Context {
 	if ctxData := ctx.Value(propsContextKey); ctxData != nil {
 		ctxData, ok := ctxData.(Props)
 
@@ -95,7 +95,7 @@ func PropsFromContext(ctx context.Context) (Props, error) {
 }
 
 // WithValidationError appends validation error to the passed context.Context.
-func (i *Inertia) WithValidationError(ctx context.Context, key string, msg any) context.Context {
+func WithValidationError(ctx context.Context, key string, msg any) context.Context {
 	if ctxData := ctx.Value(validationErrorsContextKey); ctxData != nil {
 		ctxData, ok := ctxData.(ValidationErrors)
 
@@ -111,7 +111,7 @@ func (i *Inertia) WithValidationError(ctx context.Context, key string, msg any) 
 }
 
 // WithValidationErrors appends validation errors to the passed context.Context.
-func (i *Inertia) WithValidationErrors(ctx context.Context, errors ValidationErrors) context.Context {
+func WithValidationErrors(ctx context.Context, errors ValidationErrors) context.Context {
 	if ctxData := ctx.Value(validationErrorsContextKey); ctxData != nil {
 		ctxData, ok := ctxData.(ValidationErrors)
 

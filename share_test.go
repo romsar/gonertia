@@ -1,7 +1,6 @@
 package gonertia
 
 import (
-	"html/template"
 	"reflect"
 	"testing"
 )
@@ -156,42 +155,6 @@ func TestInertia_SharedProp(t *testing.T) {
 	}
 }
 
-func TestInertia_FlushSharedProps(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name  string
-		props Props
-	}{
-		{
-			"empty props",
-			Props{},
-		},
-		{
-			"non-empty props",
-			Props{"foo": "bar"},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			i := I(func(i *Inertia) {
-				i.sharedProps = tt.props
-			})
-
-			i.FlushSharedProps()
-
-			if !reflect.DeepEqual(i.sharedProps, Props{}) {
-				t.Fatalf("sharedProps=%#v, want=%#v", i.sharedProps, Props{})
-			}
-		})
-	}
-}
-
 func TestInertia_ShareTemplateData(t *testing.T) {
 	t.Parallel()
 
@@ -244,42 +207,6 @@ func TestInertia_ShareTemplateData(t *testing.T) {
 	}
 }
 
-func TestInertia_FlushTemplateData(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name         string
-		templateData TemplateData
-	}{
-		{
-			"empty template data",
-			TemplateData{},
-		},
-		{
-			"non-empty template data",
-			TemplateData{"foo": "bar"},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			i := I(func(i *Inertia) {
-				i.sharedTemplateData = tt.templateData
-			})
-
-			i.FlushSharedTemplateData()
-
-			if !reflect.DeepEqual(i.sharedTemplateData, TemplateData{}) {
-				t.Fatalf("sharedTemplateData=%#v, want=%#v", i.sharedTemplateData, TemplateData{})
-			}
-		})
-	}
-}
-
 func TestInertia_ShareTemplateFunc(t *testing.T) {
 	t.Parallel()
 
@@ -288,28 +215,28 @@ func TestInertia_ShareTemplateFunc(t *testing.T) {
 		val any
 	}
 	tests := []struct {
-		name    string
-		funcMap template.FuncMap
-		args    args
-		want    template.FuncMap
+		name          string
+		templateFuncs TemplateFuncs
+		args          args
+		want          TemplateFuncs
 	}{
 		{
 			"add",
-			template.FuncMap{},
+			TemplateFuncs{},
 			args{
 				key: "foo",
 				val: "bar",
 			},
-			template.FuncMap{"foo": "bar"},
+			TemplateFuncs{"foo": "bar"},
 		},
 		{
 			"replace",
-			template.FuncMap{"foo": "zoo"},
+			TemplateFuncs{"foo": "zoo"},
 			args{
 				key: "foo",
 				val: "bar",
 			},
-			template.FuncMap{"foo": "bar"},
+			TemplateFuncs{"foo": "bar"},
 		},
 	}
 
@@ -320,49 +247,13 @@ func TestInertia_ShareTemplateFunc(t *testing.T) {
 			t.Parallel()
 
 			i := I(func(i *Inertia) {
-				i.sharedTemplateFuncs = tt.funcMap
+				i.sharedTemplateFuncs = tt.templateFuncs
 			})
 
 			i.ShareTemplateFunc(tt.args.key, tt.args.val)
 
 			if !reflect.DeepEqual(i.sharedTemplateFuncs, tt.want) {
 				t.Fatalf("sharedTemplateFuncs=%#v, want=%#v", i.sharedTemplateFuncs, tt.want)
-			}
-		})
-	}
-}
-
-func TestInertia_FlushSharedTemplateFuncs(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name    string
-		funcMap template.FuncMap
-	}{
-		{
-			"empty func map",
-			template.FuncMap{},
-		},
-		{
-			"non-empty func map",
-			template.FuncMap{"foo": "bar"},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			i := I(func(i *Inertia) {
-				i.sharedTemplateFuncs = tt.funcMap
-			})
-
-			i.FlushSharedTemplateFuncs()
-
-			if !reflect.DeepEqual(i.sharedTemplateFuncs, template.FuncMap{}) {
-				t.Fatalf("sharedTemplateFuncs=%#v, want=%#v", i.sharedTemplateFuncs, template.FuncMap{})
 			}
 		})
 	}

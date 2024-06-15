@@ -9,7 +9,7 @@ import (
 func TestInertia_WithTemplateData(t *testing.T) {
 	t.Parallel()
 
-	ctx := I().WithTemplateData(context.Background(), "foo", "bar")
+	ctx := WithTemplateData(context.Background(), "foo", "bar")
 
 	got, ok := ctx.Value(templateDataContextKey).(TemplateData)
 	if !ok {
@@ -80,7 +80,7 @@ func Test_TemplateDataFromContext(t *testing.T) {
 func TestInertia_WithProp(t *testing.T) {
 	t.Parallel()
 
-	ctx := I().WithProp(context.Background(), "foo", "bar")
+	ctx := WithProp(context.Background(), "foo", "bar")
 
 	got, ok := ctx.Value(propsContextKey).(Props)
 	if !ok {
@@ -97,7 +97,7 @@ func TestInertia_WithProp(t *testing.T) {
 func TestInertia_WithProps(t *testing.T) {
 	t.Parallel()
 
-	ctx := I().WithProps(context.Background(), Props{"foo": "bar"})
+	ctx := WithProps(context.Background(), Props{"foo": "bar"})
 
 	got, ok := ctx.Value(propsContextKey).(Props)
 	if !ok {
@@ -171,7 +171,7 @@ func TestInertia_WithValidationError(t *testing.T) {
 	t.Run("message is string", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := I().WithValidationError(context.Background(), "foo", "bar")
+		ctx := WithValidationError(context.Background(), "foo", "bar")
 
 		got, ok := ctx.Value(validationErrorsContextKey).(ValidationErrors)
 		if !ok {
@@ -188,7 +188,7 @@ func TestInertia_WithValidationError(t *testing.T) {
 	t.Run("message is validation errors", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := I().WithValidationError(context.Background(), "foo", ValidationErrors{
+		ctx := WithValidationError(context.Background(), "foo", ValidationErrors{
 			"abc": "123",
 		})
 
@@ -210,7 +210,7 @@ func TestInertia_WithValidationError(t *testing.T) {
 func TestInertia_WithValidationErrors(t *testing.T) {
 	t.Parallel()
 
-	ctx := I().WithValidationErrors(context.Background(), ValidationErrors{"foo": "bar"})
+	ctx := WithValidationErrors(context.Background(), ValidationErrors{"foo": "bar"})
 
 	got, ok := ctx.Value(validationErrorsContextKey).(ValidationErrors)
 	if !ok {
