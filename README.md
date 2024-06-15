@@ -251,7 +251,7 @@ ctx := inertia.WithValidationError(r.Context(), "some_field", "some error")
 
 #### SSR (Server Side Rendering) ([learn more](https://inertiajs.com/server-side-rendering))
 
-To enable server side rendering you have provide an option on place where you initialize Gonertia:
+To enable server side rendering you have to provide an option on place where you initialize Gonertia:
 
 ```go
 i, err := inertia.New(
