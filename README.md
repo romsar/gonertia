@@ -250,12 +250,12 @@ ctx := inertia.WithValidationError(r.Context(), "some_field", "some error")
 
 #### SSR (Server Side Rendering) ([learn more](https://inertiajs.com/server-side-rendering))
 
-To enable server side rendering you have to provide an option on place where you initialize Gonertia:
+To enable server side rendering you have to provide an option in place where you initialize Gonertia:
 
 ```go
 i, err := inertia.New(
 /* ... */
-    inertia.WithSSR(), // if Node process is running on http://127.0.0.1:13714
+    inertia.WithSSR(), // default is http://127.0.0.1:13714
     inertia.WithSSR("http://127.0.0.1:1234"), // custom url
 )
 ```
