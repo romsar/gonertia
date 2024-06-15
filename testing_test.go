@@ -1,6 +1,7 @@
 package gonertia
 
 import (
+	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -265,7 +266,7 @@ func TestAssertFromString(t *testing.T) {
 
 		assertable := AssertFromString(mock, stubJSON)
 
-		assertStubSuccess(t, mock, assertable)
+		assertStubSuccess(t, mock, stubJSON, assertable)
 	})
 
 	t.Run("success with html", func(t *testing.T) {
@@ -275,7 +276,7 @@ func TestAssertFromString(t *testing.T) {
 
 		assertable := AssertFromString(mock, stubHTML)
 
-		assertStubSuccess(t, mock, assertable)
+		assertStubSuccess(t, mock, stubHTML, assertable)
 	})
 }
 
@@ -286,7 +287,7 @@ func TestAssertFromBytes(t *testing.T) {
 
 	assertable := AssertFromBytes(mock, []byte(stubHTML))
 
-	assertStubSuccess(t, mock, assertable)
+	assertStubSuccess(t, mock, stubHTML, assertable)
 }
 
 func TestAssert(t *testing.T) {
@@ -296,10 +297,10 @@ func TestAssert(t *testing.T) {
 
 	assertable := Assert(mock, strings.NewReader(stubHTML))
 
-	assertStubSuccess(t, mock, assertable)
+	assertStubSuccess(t, mock, stubHTML, assertable)
 }
 
-func assertStubSuccess(t *testing.T, mock *tMock, assertable AssertableInertia) {
+func assertStubSuccess(t *testing.T, mock *tMock, wantBody string, assertable AssertableInertia) {
 	t.Helper()
 
 	if !mock.helperInvoked {
@@ -325,5 +326,14 @@ func assertStubSuccess(t *testing.T, mock *tMock, assertable AssertableInertia) 
 	wantProps := Props{"foo": "bar"}
 	if !reflect.DeepEqual(assertable.Props, wantProps) {
 		t.Fatalf("Props=%#v, want=%#v", assertable.Props, wantProps)
+	}
+
+	gotBody, err := io.ReadAll(assertable.Body)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if string(gotBody) != wantBody {
+		t.Fatalf("got body=%s, want=%s", gotBody, wantBody)
 	}
 }

@@ -47,22 +47,20 @@ func WithMarshalJSON(f marshallJSON) Option {
 }
 
 // WithLogger returns Option that will set Inertia's logger.
-func WithLogger(log logger) Option {
-	if log == nil {
-		return WithoutLogger()
+func WithLogger(logs ...logger) Option {
+	var l logger
+	if len(logs) > 0 {
+		l = logs[0]
+	} else {
+		l = log.Default()
+	}
+
+	if l == nil {
+		l = log.New(io.Discard, "", 0)
 	}
 
 	return func(i *Inertia) error {
-		i.logger = log
-		return nil
-	}
-}
-
-// WithoutLogger returns Option that will unset Inertia's logger.
-// Actually set a logger with io.Discard output.
-func WithoutLogger() Option {
-	return func(i *Inertia) error {
-		i.logger = log.New(io.Discard, "", 0)
+		i.logger = l
 		return nil
 	}
 }

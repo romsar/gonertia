@@ -144,17 +144,22 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 	return templateData, nil
 }
 
-func (i *Inertia) buildInertiaHTML(page *page) (inertia template.HTML, inertiaHead template.HTML, _ error) {
+func (i *Inertia) buildInertiaHTML(page *page) (inertia, inertiaHead template.HTML, _ error) {
 	pageJSON, err := i.marshallJSON(page)
 	if err != nil {
 		return "", "", fmt.Errorf("marshal page into json: %w", err)
 	}
 
 	if i.isSSREnabled() {
-		return i.htmlContainerSSR(pageJSON)
-	} else {
-		return i.htmlContainer(pageJSON)
+		inertia, inertiaHead, err = i.htmlContainerSSR(pageJSON)
+		if err == nil {
+			return inertia, inertiaHead, nil
+		}
+
+		i.logger.Printf("ssr rendering error: %s", err)
 	}
+
+	return i.htmlContainer(pageJSON)
 }
 
 func (i *Inertia) isSSREnabled() bool {
@@ -163,7 +168,7 @@ func (i *Inertia) isSSREnabled() bool {
 
 // htmlContainerSSR will send request with json marshaled page payload to ssr render endpoint.
 // That endpoint will return head and body html, which will be returned and then rendered.
-func (i *Inertia) htmlContainerSSR(pageJSON []byte) (inertia template.HTML, inertiaHead template.HTML, _ error) {
+func (i *Inertia) htmlContainerSSR(pageJSON []byte) (inertia, inertiaHead template.HTML, _ error) {
 	url := i.prepareSSRURL()
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(pageJSON))
@@ -201,7 +206,7 @@ func (i *Inertia) prepareSSRURL() string {
 	return strings.ReplaceAll(i.ssrURL, "/render", "") + "/render"
 }
 
-func (i *Inertia) htmlContainer(pageJSON []byte) (inertia template.HTML, _ template.HTML, _ error) {
+func (i *Inertia) htmlContainer(pageJSON []byte) (inertia, _ template.HTML, _ error) {
 	builder := new(strings.Builder)
 
 	// It doesn't look pretty, but fast!

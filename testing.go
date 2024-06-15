@@ -1,11 +1,13 @@
 package gonertia
 
 import (
+	"bytes"
 	"encoding/json"
 	"html"
 	"io"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -21,6 +23,7 @@ var _ t = (*testing.T)(nil)
 type AssertableInertia struct {
 	t t
 	*page
+	Body io.Reader
 }
 
 // AssertComponent verifies that component from Inertia
@@ -63,39 +66,23 @@ func (i AssertableInertia) AssertProps(want Props) {
 	}
 }
 
+var containerRe = regexp.MustCompile(` data-page="(.*?)"`)
+
 // Assert creates AssertableInertia from the io.Reader body.
 func Assert(t t, body io.Reader) AssertableInertia {
 	t.Helper()
 
-	bodyBs, err := io.ReadAll(body)
-	if err != nil {
-		t.Fatalf("read response bodyBs error: %#v", err)
-	}
-
-	return AssertFromBytes(t, bodyBs)
-}
-
-// AssertFromBytes creates AssertableInertia from the bytes body.
-func AssertFromBytes(t t, body []byte) AssertableInertia {
-	t.Helper()
-
-	return AssertFromString(t, string(body))
-}
-
-var pageRe = regexp.MustCompile(` data-page="(.*?)"`)
-
-// AssertFromString creates AssertableInertia from the string body.
-func AssertFromString(t t, body string) AssertableInertia {
-	t.Helper()
-
 	assertable := AssertableInertia{t: t}
 
+	var buf bytes.Buffer
+
 	// Might be body is a json? Let's try to unmarshall first.
-	if err := json.Unmarshal([]byte(body), &assertable.page); err == nil {
+	if err := json.NewDecoder(io.TeeReader(body, &buf)).Decode(&assertable.page); err == nil {
+		assertable.Body = &buf
 		return assertable
 	}
 
-	matched := pageRe.FindAllStringSubmatch(body, -1)
+	matched := containerRe.FindAllStringSubmatch(buf.String(), -1)
 	if len(matched) == 0 {
 		invalidInertiaResponse(t)
 	}
@@ -115,7 +102,22 @@ func AssertFromString(t t, body string) AssertableInertia {
 		invalidInertiaResponse(t)
 	}
 
+	assertable.Body = &buf
 	return assertable
+}
+
+// AssertFromBytes creates AssertableInertia from the bytes body.
+func AssertFromBytes(t t, body []byte) AssertableInertia {
+	t.Helper()
+
+	return Assert(t, bytes.NewReader(body))
+}
+
+// AssertFromString creates AssertableInertia from the string body.
+func AssertFromString(t t, body string) AssertableInertia {
+	t.Helper()
+
+	return Assert(t, strings.NewReader(body))
 }
 
 func invalidInertiaResponse(t t) {

@@ -69,7 +69,7 @@ func Test_TemplateDataFromContext(t *testing.T) {
 			if tt.wantErr && err == nil {
 				t.Fatal("error expected")
 			} else if !tt.wantErr && err != nil {
-				t.Fatalf("unexpected error: %#v", err)
+				t.Fatalf("unexpected error: %s", err)
 			} else if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("TemplateData=%#v, want=%#v", got, tt.want)
 			}
@@ -157,7 +157,7 @@ func Test_PropsFromContext(t *testing.T) {
 			if tt.wantErr && err == nil {
 				t.Fatal("error expected")
 			} else if !tt.wantErr && err != nil {
-				t.Fatalf("unexpected error: %#v", err)
+				t.Fatalf("unexpected error: %s", err)
 			} else if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("Props=%#v, want=%#v", got, tt.want)
 			}
@@ -276,7 +276,7 @@ func Test_ValidationErrorsFromContext(t *testing.T) {
 			if tt.wantErr && err == nil {
 				t.Fatal("error expected")
 			} else if !tt.wantErr && err != nil {
-				t.Fatalf("unexpected error: %#v", err)
+				t.Fatalf("unexpected error: %s", err)
 			} else if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("ValidationErrors=%#v, want=%#v", got, tt.want)
 			}
