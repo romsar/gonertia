@@ -159,3 +159,51 @@ func TestWithContainerID(t *testing.T) {
 		t.Fatalf("containerID=%s, want=%s", i.containerID, want)
 	}
 }
+
+func TestWithSSR(t *testing.T) {
+	t.Parallel()
+
+	t.Run("with default url", func(t *testing.T) {
+		t.Parallel()
+
+		i := I()
+
+		wantURL := "http://127.0.0.1:13714"
+
+		option := WithSSR()
+
+		if err := option(i); err != nil {
+			t.Fatalf("unexpected error: %#v", err)
+		}
+
+		if i.ssrHTTPClient == nil {
+			t.Fatal("ssr http client is nil")
+		}
+
+		if i.ssrURL != wantURL {
+			t.Fatalf("ssrURL=%s, want=%s", i.containerID, wantURL)
+		}
+	})
+
+	t.Run("with specified url", func(t *testing.T) {
+		t.Parallel()
+
+		i := I()
+
+		wantURL := "https://foo.bar/baz/quz"
+
+		option := WithSSR(wantURL)
+
+		if err := option(i); err != nil {
+			t.Fatalf("unexpected error: %#v", err)
+		}
+
+		if i.ssrHTTPClient == nil {
+			t.Fatal("ssr http client is nil")
+		}
+
+		if i.ssrURL != wantURL {
+			t.Fatalf("ssrURL=%s, want=%s", i.containerID, wantURL)
+		}
+	})
+}

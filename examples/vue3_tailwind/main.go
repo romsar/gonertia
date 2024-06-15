@@ -28,6 +28,7 @@ func initInertia() *inertia.Inertia {
 	i, err := inertia.New(
 		"./resources/views/root.html",
 		inertia.WithVersionFromFile(manifestPath),
+		inertia.WithSSR(),
 	)
 	if err != nil {
 		log.Fatal(err)

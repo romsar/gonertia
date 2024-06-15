@@ -61,6 +61,10 @@ func setJSONResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
+func setJSONRequest(r *http.Request) {
+	r.Header.Set("Content-Type", "application/json")
+}
+
 func setHTMLResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html")
 }

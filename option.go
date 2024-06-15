@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"net/http"
 )
 
 // Option is an option parameter that modifies Inertia.
@@ -70,6 +71,23 @@ func WithoutLogger() Option {
 func WithContainerID(id string) Option {
 	return func(i *Inertia) error {
 		i.containerID = id
+		return nil
+	}
+}
+
+// WithSSR returns Option that will enable server side rendering on Inertia.
+func WithSSR(url ...string) Option {
+	return func(i *Inertia) error {
+		var u string
+		if len(url) > 0 {
+			u = url[0]
+		} else {
+			const defaultURL = "http://127.0.0.1:13714"
+			u = defaultURL
+		}
+
+		i.ssrURL = u
+		i.ssrHTTPClient = &http.Client{}
 		return nil
 	}
 }
