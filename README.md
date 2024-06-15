@@ -80,7 +80,6 @@ Create `root.html` template:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>title</title>
     <!-- Put here your styles, meta and other stuff -->
     {{ .inertiaHead }}
 </head>
@@ -204,7 +203,7 @@ i.ShareTemplateData("title", "Home page")
 ```
 
 ```html
-<title>{{ .title }}</title>
+<h1>{{ .title }}</h1>
 ```
 
 #### Share template func
@@ -214,7 +213,7 @@ i.ShareTemplateFunc("trim", strings.TrimSpace)
 ```
 
 ```html
-<title>{{ trim " foo bar " }}</title>
+<h1>{{ trim " foo bar " }}</h1>
 ```
 
 #### Pass template data via context (in middleware)
