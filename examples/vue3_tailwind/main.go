@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 )
 
 func main() {
@@ -32,12 +33,12 @@ func initInertia() *inertia.Inertia {
 		log.Fatal(err)
 	}
 
-	i.ShareTemplateFunc("vite", vite(manifestPath))
+	i.ShareTemplateFunc("vite", vite(manifestPath, "/build/"))
 
 	return i
 }
 
-func vite(manifestPath string) func(path string) (string, error) {
+func vite(manifestPath, buildDir string) func(path string) (string, error) {
 	f, err := os.Open(manifestPath)
 	if err != nil {
 		log.Fatalf("cannot open provided vite manifest file: %s", err)
@@ -53,11 +54,11 @@ func vite(manifestPath string) func(path string) (string, error) {
 		log.Fatalf("cannot unmarshal vite manifest file to json: %s", err)
 	}
 
-	return func(path string) (string, error) {
-		if val, ok := viteAssets[path]; ok {
-			return val.File, nil
+	return func(p string) (string, error) {
+		if val, ok := viteAssets[p]; ok {
+			return path.Join(buildDir, val.File), nil
 		}
-		return "", fmt.Errorf("asset %q not found", path)
+		return "", fmt.Errorf("asset %q not found", p)
 	}
 }
 
