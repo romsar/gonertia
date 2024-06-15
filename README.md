@@ -210,11 +210,11 @@ i.ShareTemplateData("title", "Home page")
 #### Share template func
 
 ```go
-i.ShareTemplateFunc("trim", strings.Trim)
+i.ShareTemplateFunc("trim", strings.TrimSpace)
 ```
 
 ```html
-<title>{{ trim "foo bar" }}</title>
+<title>{{ trim " foo bar " }}</title>
 ```
 
 #### Pass template data via context (in middleware)

@@ -2,6 +2,7 @@ package gonertia
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -149,6 +150,58 @@ func TestInertia_Render(t *testing.T) {
 			})
 
 			assertRootTemplateSuccess(t, i)
+		})
+
+		t.Run("shared funcs", func(t *testing.T) {
+			t.Parallel()
+
+			f := tmpFile(t, `{{ trim " foo bar " }}`)
+			w, r := requestMock(http.MethodGet, "/")
+
+			i := I(func(i *Inertia) {
+				i.rootTemplatePath = f.Name()
+				i.sharedTemplateFuncs = TemplateFuncs{
+					"trim": strings.TrimSpace,
+				}
+			})
+
+			err := i.Render(w, r, "Some/Component")
+			if err != nil {
+				t.Fatalf("unexpected error: %#v", err)
+			}
+
+			got := w.Body.String()
+			want := "foo bar"
+
+			if got != want {
+				t.Fatalf("got=%s, want=%s", got, want)
+			}
+		})
+
+		t.Run("shared template data", func(t *testing.T) {
+			t.Parallel()
+
+			f := tmpFile(t, `Hello, {{ .text }}!`)
+			w, r := requestMock(http.MethodGet, "/")
+
+			i := I(func(i *Inertia) {
+				i.rootTemplatePath = f.Name()
+				i.sharedTemplateData = TemplateData{
+					"text": "world",
+				}
+			})
+
+			err := i.Render(w, r, "Some/Component")
+			if err != nil {
+				t.Fatalf("unexpected error: %#v", err)
+			}
+
+			got := w.Body.String()
+			want := "foo bar"
+
+			if got != want {
+				t.Fatalf("got=%s, want=%s", got, want)
+			}
 		})
 	})
 

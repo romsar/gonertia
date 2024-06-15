@@ -85,18 +85,39 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 	}
 
 	if IsInertiaRequest(r) {
-		if err := i.doInertiaResponse(w, page); err != nil {
+		if err = i.doInertiaResponse(w, page); err != nil {
 			return fmt.Errorf("inertia response: %w", err)
 		}
 
 		return
 	}
 
-	if err := i.doHTMLResponse(w, r, page); err != nil {
+	if err = i.doHTMLResponse(w, r, page); err != nil {
 		return fmt.Errorf("html response: %w", err)
 	}
 
 	return nil
+}
+
+type page struct {
+	Component string `json:"component"`
+	Props     Props  `json:"props"`
+	URL       string `json:"url"`
+	Version   string `json:"version"`
+}
+
+func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*page, error) {
+	props, err := i.prepareProps(r, component, props)
+	if err != nil {
+		return nil, fmt.Errorf("prepare props: %w", err)
+	}
+
+	return &page{
+		Component: component,
+		Props:     props,
+		URL:       r.RequestURI,
+		Version:   i.version,
+	}, nil
 }
 
 func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
