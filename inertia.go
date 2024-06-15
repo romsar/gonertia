@@ -29,18 +29,13 @@ type Inertia struct {
 }
 
 // New initializes and returns Inertia.
-func New(rootTemplate string, opts ...Option) (*Inertia, error) {
-	rootTemplate, err := tryGetRootTemplateHTMLFromPath(rootTemplate)
-	if err != nil {
-		return nil, fmt.Errorf("try get root template html from path: %w", err)
-	}
-
-	if rootTemplate == "" {
+func New(rootTemplateHTML string, opts ...Option) (*Inertia, error) {
+	if rootTemplateHTML == "" {
 		return nil, fmt.Errorf("blank root template")
 	}
 
 	i := &Inertia{
-		rootTemplateHTML:    rootTemplate,
+		rootTemplateHTML:    rootTemplateHTML,
 		marshallJSON:        json.Marshal,
 		containerID:         "app",
 		logger:              log.New(io.Discard, "", 0),
@@ -50,7 +45,7 @@ func New(rootTemplate string, opts ...Option) (*Inertia, error) {
 	}
 
 	for _, opt := range opts {
-		if err = opt(i); err != nil {
+		if err := opt(i); err != nil {
 			return nil, fmt.Errorf("initialize inertia: %w", err)
 		}
 	}
@@ -58,17 +53,13 @@ func New(rootTemplate string, opts ...Option) (*Inertia, error) {
 	return i, nil
 }
 
-func tryGetRootTemplateHTMLFromPath(rootTemplate string) (string, error) {
-	bs, err := os.ReadFile(rootTemplate)
+func NewFromFile(rootTemplatePath string, opts ...Option) (*Inertia, error) {
+	bs, err := os.ReadFile(rootTemplatePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return rootTemplate, nil
-		}
-
-		return "", fmt.Errorf("read file: %w", err)
+		return nil, fmt.Errorf("read file %q: %w", rootTemplatePath, err)
 	}
 
-	return string(bs), nil
+	return New(string(bs), opts...)
 }
 
 type marshallJSON func(v any) ([]byte, error)

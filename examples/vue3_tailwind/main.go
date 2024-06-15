@@ -26,7 +26,7 @@ func main() {
 func initInertia() *inertia.Inertia {
 	manifestPath := "./public/build/manifest.json"
 
-	i, err := inertia.New(
+	i, err := inertia.NewFromFile(
 		"resources/views/root.html",
 		inertia.WithVersionFromFile(manifestPath),
 		inertia.WithSSR(),

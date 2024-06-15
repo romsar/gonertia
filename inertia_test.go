@@ -13,33 +13,42 @@ var rootTemplate = `<html>
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	t.Run("root template init", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("by html", func(t *testing.T) {
-			i, err := New(rootTemplate)
-			if err != nil {
-				t.Fatalf("unexpected error: %s", err)
-			}
+		i, err := New(rootTemplate)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
 
-			if i.rootTemplateHTML != rootTemplate {
-				t.Fatalf("root template html=%s, want=%s", i.rootTemplateHTML, rootTemplate)
-			}
-		})
-
-		t.Run("by path", func(t *testing.T) {
-			f := tmpFile(t, rootTemplate)
-
-			i, err := New(f.Name())
-			if err != nil {
-				t.Fatalf("unexpected error: %s", err)
-			}
-
-			if i.rootTemplateHTML != rootTemplate {
-				t.Fatalf("root template html=%s, want=%s", i.rootTemplateHTML, rootTemplate)
-			}
-		})
+		if i.rootTemplateHTML != rootTemplate {
+			t.Fatalf("root template html=%s, want=%s", i.rootTemplateHTML, rootTemplate)
+		}
 	})
+
+	t.Run("blank", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := New("")
+		if err == nil {
+			t.Fatal("error expected")
+		}
+	})
+}
+
+func TestNewFromFile(t *testing.T) {
+	t.Parallel()
+
+	f := tmpFile(t, rootTemplate)
+
+	i, err := NewFromFile(f.Name())
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if i.rootTemplateHTML != rootTemplate {
+		t.Fatalf("root template html=%s, want=%s", i.rootTemplateHTML, rootTemplate)
+	}
 }
 
 func TestInertia_ShareProp(t *testing.T) {

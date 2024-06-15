@@ -43,7 +43,7 @@ import (
 )
 
 func main() {
-    i, err := inertia.New("resources/views/root.html") // put here HTML or path to the root template file
+    i, err := inertia.NewFromFile("resources/views/root.html") // or just provide HTML to New constructor
     if err != nil {
         log.Fatal(err)
     }
