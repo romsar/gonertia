@@ -2,6 +2,7 @@ package gonertia
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -42,6 +43,32 @@ func TestNewFromFile(t *testing.T) {
 	f := tmpFile(t, rootTemplate)
 
 	i, err := NewFromFile(f.Name())
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if i.rootTemplateHTML != rootTemplate {
+		t.Fatalf("root template html=%s, want=%s", i.rootTemplateHTML, rootTemplate)
+	}
+}
+
+func TestNewFromReader(t *testing.T) {
+	t.Parallel()
+
+	i, err := NewFromReader(strings.NewReader(rootTemplate))
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if i.rootTemplateHTML != rootTemplate {
+		t.Fatalf("root template html=%s, want=%s", i.rootTemplateHTML, rootTemplate)
+	}
+}
+
+func TestNewFromBytes(t *testing.T) {
+	t.Parallel()
+
+	i, err := NewFromBytes([]byte(rootTemplate))
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

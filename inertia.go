@@ -53,13 +53,32 @@ func New(rootTemplateHTML string, opts ...Option) (*Inertia, error) {
 	return i, nil
 }
 
+// NewFromFile reads all bytes from the root template file and then initializes Inertia.
 func NewFromFile(rootTemplatePath string, opts ...Option) (*Inertia, error) {
 	bs, err := os.ReadFile(rootTemplatePath)
 	if err != nil {
 		return nil, fmt.Errorf("read file %q: %w", rootTemplatePath, err)
 	}
 
-	return New(string(bs), opts...)
+	return NewFromBytes(bs, opts...)
+}
+
+// NewFromReader reads all bytes from the reader with root template html and then initializes Inertia.
+func NewFromReader(rootTemplateReader io.Reader, opts ...Option) (*Inertia, error) {
+	bs, err := io.ReadAll(rootTemplateReader)
+	if err != nil {
+		return nil, fmt.Errorf("read root template: %w", err)
+	}
+	if closer, ok := rootTemplateReader.(io.Closer); ok {
+		_ = closer.Close()
+	}
+
+	return NewFromBytes(bs, opts...)
+}
+
+// NewFromBytes receive bytes with root template html and then initializes Inertia.
+func NewFromBytes(rootTemplateBs []byte, opts ...Option) (*Inertia, error) {
+	return New(string(rootTemplateBs), opts...)
 }
 
 type marshallJSON func(v any) ([]byte, error)
