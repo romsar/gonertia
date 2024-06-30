@@ -93,7 +93,10 @@ Create `root.html` template:
 </html>
 ```
 
-You can also find more examples and starter kits in [examples folder](./examples) or in section above.
+### Starter kits
+
+1. [Gonertia + Vue + Vite + Tailwind](https://github.com/hbourgeot/gonertia_vue_example)
+2. [Gonertia + Svelte + Tailwind](https://github.com/hbourgeot/gonertia_svelte_example)
 
 ### More examples
 
@@ -247,7 +250,7 @@ i, err := inertia.New(
 )
 ```
 
-Also, you have to use asset bundling tools like [Vite](https://vitejs.dev/) or [Webpack](https://webpack.js.org/) (especially with [Laravel Mix](https://laravel-mix.com/)). The setup will vary depending on this choice, you can read more about it in [official docs](https://inertiajs.com/server-side-rendering) or check an [example](./examples/vue3_tailwind) that works on Vite. 
+Also, you have to use asset bundling tools like [Vite](https://vitejs.dev/) or [Webpack](https://webpack.js.org/) (especially with [Laravel Mix](https://laravel-mix.com/)). The setup will vary depending on this choice, you can read more about it in [official docs](https://inertiajs.com/server-side-rendering) or check an [example](https://github.com/hbourgeot/gonertia_vue_example) that works on Vite. 
 
 #### Testing
 
