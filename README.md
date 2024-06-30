@@ -158,7 +158,7 @@ Also, Gonertia have support for `always` props ([learn more](https://github.com/
 
 ```go
 props := inertia.Props{
-    "foo": inertia.AlwaysProp(func() any { return "bar" }),
+    "foo": inertia.AlwaysProp{"bar"},
 }
 ```
 
