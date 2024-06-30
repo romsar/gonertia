@@ -317,7 +317,7 @@ func TestInertia_Render(t *testing.T) {
 						"abc":     "123",
 						"closure": func() (any, error) { return "prop", nil },
 						"lazy":    LazyProp(func() (any, error) { return "prop", nil }),
-						"always":  AlwaysProp(func() any { return "prop" }),
+						"always":  AlwaysProp{"prop"},
 					})
 					if err != nil {
 						t.Fatalf("unexpected error: %s", err)
@@ -374,7 +374,7 @@ func TestInertia_Render(t *testing.T) {
 					"baz":    "quz",
 					"bez":    "bee",
 					"lazy":   LazyProp(func() (any, error) { return "prop", nil }),
-					"always": AlwaysProp(func() any { return "prop" }),
+					"always": AlwaysProp{"prop"},
 				})
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
@@ -386,8 +386,48 @@ func TestInertia_Render(t *testing.T) {
 					"errors": map[string]any{},
 				})
 			})
+
+			t.Run("proper interfaces", func(t *testing.T) {
+				t.Parallel()
+
+				w, r := requestMock(http.MethodGet, "/home")
+				asInertiaRequest(r)
+				withPartialComponent(r, "Some/Component")
+
+				err := I().Render(w, r, "Some/Component", Props{
+					"proper":     testProper{"prop1"},
+					"try_proper": testTryProper{"prop2"},
+				})
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+
+				assertable := AssertFromString(t, w.Body.String())
+				if assertable.Props["proper"] != "prop1" {
+					t.Fatalf("resolved prop=%v, want=%v", assertable.Props["proper"], "prop1")
+				}
+				if assertable.Props["try_proper"] != "prop2" {
+					t.Fatalf("try resolved prop=%v, want=%v", assertable.Props["try_proper"], "prop2")
+				}
+			})
 		})
 	})
+}
+
+type testProper struct {
+	Value any
+}
+
+func (p testProper) Prop() any {
+	return p.Value
+}
+
+type testTryProper struct {
+	Value any
+}
+
+func (p testTryProper) TryProp() (any, error) {
+	return p.Value, nil
 }
 
 func TestInertia_Location(t *testing.T) {

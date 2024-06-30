@@ -14,10 +14,30 @@ type Props map[string]any
 // https://inertiajs.com/partial-reloads
 type LazyProp func() (any, error)
 
+func (p LazyProp) TryProp() (any, error) {
+	return p()
+}
+
 // AlwaysProp is a property value that will always evaluated.
 //
 // https://github.com/inertiajs/inertia-laravel/pull/627
-type AlwaysProp func() any
+type AlwaysProp struct {
+	Value any
+}
+
+func (p AlwaysProp) Prop() any {
+	return p.Value
+}
+
+// Proper is an interface for custom type, which provides property, that will be resolved.
+type Proper interface {
+	Prop() any
+}
+
+// TryProper is an interface for custom type, which provides property and error, that will be resolved.
+type TryProper interface {
+	TryProp() (any, error)
+}
 
 // ValidationErrors are messages, that will be stored in the "errors" prop.
 type ValidationErrors map[string]any
@@ -30,7 +50,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	if err != nil {
 		return nil, fmt.Errorf("getting validation errors from context: %w", err)
 	}
-	result["errors"] = AlwaysProp(func() any { return ctxValidationErrors })
+	result["errors"] = AlwaysProp{ctxValidationErrors}
 
 	// Add shared props to the result.
 	for key, val := range i.sharedProps {
@@ -107,18 +127,15 @@ func resolvePropVal(val any) (_ any, err error) {
 	switch typed := val.(type) {
 	case func() any:
 		return typed(), nil
-	case AlwaysProp:
-		return typed(), nil
 	case func() (any, error):
 		val, err = typed()
 		if err != nil {
 			return nil, fmt.Errorf("closure prop resolving: %w", err)
 		}
-	case LazyProp:
-		val, err = typed()
-		if err != nil {
-			return nil, fmt.Errorf("lazy prop resolving: %w", err)
-		}
+	case Proper:
+		return typed.Prop(), nil
+	case TryProper:
+		return typed.TryProp()
 	}
 
 	return val, nil
