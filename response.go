@@ -2,7 +2,6 @@ package gonertia
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -64,7 +63,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 }
 
 func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
-	pageJSON, err := i.marshallJSON(page)
+	pageJSON, err := i.jsonMarshaller.Marshal(page)
 	if err != nil {
 		return fmt.Errorf("marshal page into json: %w", err)
 	}
@@ -139,7 +138,7 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 }
 
 func (i *Inertia) buildInertiaHTML(page *page) (inertia, inertiaHead template.HTML, _ error) {
-	pageJSON, err := i.marshallJSON(page)
+	pageJSON, err := i.jsonMarshaller.Marshal(page)
 	if err != nil {
 		return "", "", fmt.Errorf("marshal page into json: %w", err)
 	}
@@ -185,7 +184,7 @@ func (i *Inertia) htmlContainerSSR(pageJSON []byte) (inertia, inertiaHead templa
 		Head []string `json:"head"`
 		Body string   `json:"body"`
 	}
-	err = json.NewDecoder(resp.Body).Decode(&ssr)
+	err = i.jsonMarshaller.Decode(resp.Body, &ssr)
 	if err != nil {
 		return "", "", fmt.Errorf("json unmarshal ssr render response: %w", err)
 	}

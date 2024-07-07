@@ -1,7 +1,6 @@
 package gonertia
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -22,10 +21,10 @@ type Inertia struct {
 	ssrURL        string
 	ssrHTTPClient *http.Client
 
-	containerID  string
-	version      string
-	marshallJSON marshallJSON
-	logger       logger
+	containerID    string
+	version        string
+	jsonMarshaller JSONMarshaller
+	logger         logger
 }
 
 // New initializes and returns Inertia.
@@ -36,7 +35,7 @@ func New(rootTemplateHTML string, opts ...Option) (*Inertia, error) {
 
 	i := &Inertia{
 		rootTemplateHTML:    rootTemplateHTML,
-		marshallJSON:        json.Marshal,
+		jsonMarshaller:      jsonDefaultMarshaller{},
 		containerID:         "app",
 		logger:              log.New(io.Discard, "", 0),
 		sharedProps:         make(Props),
@@ -80,8 +79,6 @@ func NewFromReader(rootTemplateReader io.Reader, opts ...Option) (*Inertia, erro
 func NewFromBytes(rootTemplateBs []byte, opts ...Option) (*Inertia, error) {
 	return New(string(rootTemplateBs), opts...)
 }
-
-type marshallJSON func(v any) ([]byte, error)
 
 // Sometimes it's not possible to return an error,
 // so we will send those messages to the logger.

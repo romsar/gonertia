@@ -1,6 +1,7 @@
 package gonertia
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"reflect"
@@ -45,29 +46,73 @@ func TestWithVersionFromFile(t *testing.T) {
 	}
 }
 
-func TestWithMarshalJSON(t *testing.T) {
+func TestWithJSONMarshaller(t *testing.T) {
 	t.Parallel()
 
-	i := I()
+	t.Run("marshal", func(t *testing.T) {
+		t.Parallel()
 
-	want := "bar"
+		i := I()
 
-	option := WithMarshalJSON(func(v any) ([]byte, error) {
-		return []byte(want), nil
+		want := "foo bar"
+
+		option := WithJSONMarshaller(jsonTestMarshaller{val: want})
+
+		if err := option(i); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		got, err := i.jsonMarshaller.Marshal([]byte{})
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if string(got) != want {
+			t.Fatalf("JSONMarshaller.Marshal()=%s, want=%s", string(got), want)
+		}
 	})
 
-	if err := option(i); err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
+	t.Run("decode", func(t *testing.T) {
+		t.Parallel()
 
-	got, err := i.marshallJSON([]byte{})
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
+		i := I()
 
-	if string(got) != want {
-		t.Fatalf("marshallJSON()=%s, want=%s", string(got), want)
+		want := "foo bar"
+
+		option := WithJSONMarshaller(jsonTestMarshaller{val: want})
+
+		if err := option(i); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		var got string
+
+		err := i.jsonMarshaller.Decode(nil, &got)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		fmt.Println(got)
+
+		if got != want {
+			t.Fatalf("JSONMarshaller.Decode()=%s, want=%s", got, want)
+		}
+	})
+}
+
+type jsonTestMarshaller struct {
+	val string
+}
+
+func (j jsonTestMarshaller) Decode(_ io.Reader, v interface{}) error {
+	if ptr, ok := v.(*string); ok {
+		*ptr = j.val
 	}
+	return nil
+}
+
+func (j jsonTestMarshaller) Marshal(v interface{}) ([]byte, error) {
+	return []byte(j.val), nil
 }
 
 func TestWithLogger(t *testing.T) {

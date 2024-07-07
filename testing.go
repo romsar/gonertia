@@ -76,7 +76,7 @@ func Assert(t t, body io.Reader) AssertableInertia {
 
 	var buf bytes.Buffer
 
-	// Might be body is a json? Let's try to unmarshall first.
+	// Might be body is a json? Let's try to unmarshal first.
 	if err := json.NewDecoder(io.TeeReader(body, &buf)).Decode(&assertable.page); err == nil {
 		assertable.Body = &buf
 		return assertable

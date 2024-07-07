@@ -110,7 +110,7 @@ i, err := inertia.New(
 )
 ```
 
-#### Replace standard JSON marshall function
+#### Replace standard JSON marshal function
 
 ```go
 import jsoniter "github.com/json-iterator/go"

@@ -29,10 +29,10 @@ func WithVersionFromFile(path string) Option {
 	}
 }
 
-// WithMarshalJSON returns Option that will set Inertia's marshallJSON func.
-func WithMarshalJSON(f marshallJSON) Option {
+// WithJSONMarshaller returns Option that will set Inertia's JSON marshaller.
+func WithJSONMarshaller(jsonMarshaller JSONMarshaller) Option {
 	return func(i *Inertia) error {
-		i.marshallJSON = f
+		i.jsonMarshaller = jsonMarshaller
 		return nil
 	}
 }

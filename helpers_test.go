@@ -1,7 +1,6 @@
 package gonertia
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -14,7 +13,7 @@ import (
 func I(opts ...func(i *Inertia)) *Inertia {
 	i := &Inertia{
 		containerID:        "app",
-		marshallJSON:       json.Marshal,
+		jsonMarshaller:     jsonDefaultMarshaller{},
 		sharedProps:        make(Props),
 		sharedTemplateData: make(TemplateData),
 		logger:             log.New(io.Discard, "", 0),
