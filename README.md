@@ -110,37 +110,19 @@ i, err := inertia.New(
 )
 ```
 
-#### Replace standard JSON marshal function
+#### SSR (Server Side Rendering) ([learn more](https://inertiajs.com/server-side-rendering))
 
-```go
-import jsoniter "github.com/json-iterator/go"
-
-// ...
-
-i, err := inertia.New(
-    /* ... */, 
-    inertia.WithMarshalJSON(jsoniter.Marshal),
-)
-```
-
-#### Use your logger
+To enable server side rendering you have to provide an option in place where you initialize Gonertia:
 
 ```go
 i, err := inertia.New(
-    /* ... */
-    inertia.WithLogger(), // default logger
-    inertia.WithLogger(somelogger.New()), // custom logger
+/* ... */
+    inertia.WithSSR(), // default is http://127.0.0.1:13714
+    // or inertia.WithSSR("http://127.0.0.1:1234"),
 )
 ```
 
-#### Set custom container id
-
-```go
-i, err := inertia.New(
-    /* ... */
-    inertia.WithContainerID("inertia"),
-)
-```
+Also, you have to use asset bundling tools like [Vite](https://vitejs.dev/) or [Webpack](https://webpack.js.org/) (especially with [Laravel Mix](https://laravel-mix.com/)). The setup will vary depending on this choice, you can read more about it in [official docs](https://inertiajs.com/server-side-rendering) or check an [example](https://github.com/hbourgeot/gonertia_vue_example) that works on Vite.
 
 #### Closure and lazy props ([learn more](https://inertiajs.com/partial-reloads))
 
@@ -238,19 +220,49 @@ ctx := inertia.WithValidationError(r.Context(), "some_field", "some error")
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
 
-#### SSR (Server Side Rendering) ([learn more](https://inertiajs.com/server-side-rendering))
+#### Replace standard JSON marshaller
 
-To enable server side rendering you have to provide an option in place where you initialize Gonertia:
+1. Implement [JSONMarshaller](./json.go) interface:
+```go
+import jsoniter "github.com/json-iterator/go"
 
+type jsonIteratorMarshaller struct{}
+
+func (j jsonIteratorMarshaller) Decode(r io.Reader, v interface{}) error {
+    return jsoniter.NewDecoder(r).Decode(v)
+}
+
+func (j jsonIteratorMarshaller) Marshal(v interface{}) ([]byte, error) {
+    return jsoniter.Marshal(v)
+}
+```
+
+2. Provide your implementation in constructor:
 ```go
 i, err := inertia.New(
-/* ... */
-    inertia.WithSSR(), // default is http://127.0.0.1:13714
-    inertia.WithSSR("http://127.0.0.1:1234"), // custom url
+    /* ... */,
+    inertia.WithMarshalJSON(jsonIteratorMarshaller{}),
 )
 ```
 
-Also, you have to use asset bundling tools like [Vite](https://vitejs.dev/) or [Webpack](https://webpack.js.org/) (especially with [Laravel Mix](https://laravel-mix.com/)). The setup will vary depending on this choice, you can read more about it in [official docs](https://inertiajs.com/server-side-rendering) or check an [example](https://github.com/hbourgeot/gonertia_vue_example) that works on Vite. 
+#### Use your logger
+
+```go
+i, err := inertia.New(
+    /* ... */
+    inertia.WithLogger(), // default logger
+    inertia.WithLogger(somelogger.New()), // custom logger
+)
+```
+
+#### Set custom container id
+
+```go
+i, err := inertia.New(
+    /* ... */
+    inertia.WithContainerID("inertia"),
+)
+```
 
 #### Testing
 
