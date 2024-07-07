@@ -241,7 +241,7 @@ func (j jsonIteratorMarshaller) Marshal(v interface{}) ([]byte, error) {
 ```go
 i, err := inertia.New(
     /* ... */,
-    inertia.WithMarshalJSON(jsonIteratorMarshaller{}),
+    inertia.WithJSONMarshaller(jsonIteratorMarshaller{}),
 )
 ```
 
