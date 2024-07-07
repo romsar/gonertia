@@ -65,7 +65,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
 	pageJSON, err := i.jsonMarshaller.Marshal(page)
 	if err != nil {
-		return fmt.Errorf("marshal page into json: %w", err)
+		return fmt.Errorf("json marshal page into json: %w", err)
 	}
 
 	setInertiaInResponse(w)
@@ -140,7 +140,7 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 func (i *Inertia) buildInertiaHTML(page *page) (inertia, inertiaHead template.HTML, _ error) {
 	pageJSON, err := i.jsonMarshaller.Marshal(page)
 	if err != nil {
-		return "", "", fmt.Errorf("marshal page into json: %w", err)
+		return "", "", fmt.Errorf("json marshal page into json: %w", err)
 	}
 
 	if i.isSSREnabled() {
@@ -186,7 +186,7 @@ func (i *Inertia) htmlContainerSSR(pageJSON []byte) (inertia, inertiaHead templa
 	}
 	err = i.jsonMarshaller.Decode(resp.Body, &ssr)
 	if err != nil {
-		return "", "", fmt.Errorf("json unmarshal ssr render response: %w", err)
+		return "", "", fmt.Errorf("json decode ssr render response: %w", err)
 	}
 
 	inertia = template.HTML(ssr.Body)
