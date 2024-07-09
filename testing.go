@@ -23,7 +23,7 @@ var _ t = (*testing.T)(nil)
 type AssertableInertia struct {
 	t t
 	*page
-	Body io.Reader
+	Body *bytes.Buffer
 }
 
 // AssertComponent verifies that component from Inertia
