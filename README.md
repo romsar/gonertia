@@ -118,7 +118,7 @@ To enable server side rendering you have to provide an option in place where you
 i, err := inertia.New(
 /* ... */
     inertia.WithSSR(), // default is http://127.0.0.1:13714
-    // or inertia.WithSSR("http://127.0.0.1:1234"),
+    inertia.WithSSR("http://127.0.0.1:1234"), // custom url http://127.0.0.1:1234
 )
 ```
 
