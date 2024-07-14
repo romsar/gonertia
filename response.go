@@ -359,14 +359,14 @@ func (i *Inertia) prepareSSRURL() string {
 }
 
 func (i *Inertia) htmlContainer(pageJSON []byte) (inertia, _ template.HTML, _ error) {
-	builder := new(strings.Builder)
+	var sb strings.Builder
 
 	// It doesn't look pretty, but fast!
-	builder.WriteString(`<div id="`)
-	builder.WriteString(i.containerID)
-	builder.WriteString(`" data-page="`)
-	template.HTMLEscape(builder, pageJSON)
-	builder.WriteString(`"></div>`)
+	sb.WriteString(`<div id="`)
+	sb.WriteString(i.containerID)
+	sb.WriteString(`" data-page="`)
+	template.HTMLEscape(&sb, pageJSON)
+	sb.WriteString(`"></div>`)
 
-	return template.HTML(builder.String()), "", nil
+	return template.HTML(sb.String()), "", nil
 }
