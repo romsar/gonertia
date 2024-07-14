@@ -1,6 +1,7 @@
 package gonertia
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io"
@@ -20,6 +21,8 @@ type Inertia struct {
 
 	ssrURL        string
 	ssrHTTPClient *http.Client
+
+	errorsStore errorsStore
 
 	containerID    string
 	version        string
@@ -85,6 +88,11 @@ func NewFromBytes(rootTemplateBs []byte, opts ...Option) (*Inertia, error) {
 type logger interface {
 	Printf(format string, v ...any)
 	Println(v ...any)
+}
+
+type errorsStore interface {
+	Push(ctx context.Context, errors ValidationErrors) error
+	Pop(ctx context.Context) (ValidationErrors, error)
 }
 
 // ShareProp adds passed prop to shared props.

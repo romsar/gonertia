@@ -80,3 +80,11 @@ func WithSSR(url ...string) Option {
 		return nil
 	}
 }
+
+// WithErrorsStore returns Option that will set Inertia's errors store.
+func WithErrorsStore(errorsStore errorsStore) Option {
+	return func(i *Inertia) error {
+		i.errorsStore = errorsStore
+		return nil
+	}
+}

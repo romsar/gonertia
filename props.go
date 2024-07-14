@@ -1,6 +1,7 @@
 package gonertia
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 )
@@ -45,12 +46,12 @@ type ValidationErrors map[string]any
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 
-	// Add validation errors from context.
-	ctxValidationErrors, err := ValidationErrorsFromContext(r.Context())
+	// Add validation errors to the result.
+	validationErrors, err := i.resolveValidationErrors(r)
 	if err != nil {
-		return nil, fmt.Errorf("getting validation errors from context: %w", err)
+		return nil, fmt.Errorf("resolve validation errors: %w", err)
 	}
-	result["errors"] = AlwaysProp{ctxValidationErrors}
+	result["errors"] = AlwaysProp{validationErrors}
 
 	// Add shared props to the result.
 	for key, val := range i.sharedProps {
@@ -110,6 +111,43 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	}
 
 	return result, nil
+}
+
+func (i *Inertia) resolveValidationErrors(r *http.Request) (ValidationErrors, error) {
+	// Add validation errors from storage.
+	storageValidationErrors, err := i.restoreValidationErrors(r.Context())
+	if err != nil {
+		return nil, fmt.Errorf("getting validation errors from context: %w", err)
+	}
+
+	// ... and from context.
+	ctxValidationErrors, err := ValidationErrorsFromContext(r.Context())
+	if err != nil {
+		return nil, fmt.Errorf("getting validation errors from context: %w", err)
+	}
+
+	validationErrors := make(ValidationErrors)
+	for key, val := range storageValidationErrors {
+		validationErrors[key] = val
+	}
+	for key, val := range ctxValidationErrors {
+		validationErrors[key] = val
+	}
+
+	return ctxValidationErrors, nil
+}
+
+func (i *Inertia) restoreValidationErrors(ctx context.Context) (ValidationErrors, error) {
+	if i.errorsStore == nil {
+		return nil, nil
+	}
+
+	storageValidationErrors, err := i.errorsStore.Pop(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("errors store pop: %w", err)
+	}
+
+	return storageValidationErrors, nil
 }
 
 func (i *Inertia) getOnlyAndExcept(r *http.Request, component string) (only, except map[string]struct{}) {

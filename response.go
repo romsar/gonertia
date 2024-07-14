@@ -218,11 +218,28 @@ func (i *Inertia) htmlContainer(pageJSON []byte) (inertia, _ template.HTML, _ er
 // Otherwise, it will do an HTTP redirect with specified status (default is 302 for GET, 303 for POST/PUT/PATCH).
 func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, status ...int) {
 	if IsInertiaRequest(r) {
+		i.captureValidationErrors(r)
 		setInertiaLocationInResponse(w, url)
 		return
 	}
 
 	redirectResponse(w, r, url, status...)
+}
+
+func (i *Inertia) captureValidationErrors(r *http.Request) {
+	if i.errorsStore == nil {
+		return
+	}
+
+	validationErrors, err := ValidationErrorsFromContext(r.Context())
+	if err != nil {
+		i.logger.Printf("invalid validation errors from context: %s", err)
+	}
+
+	err = i.errorsStore.Push(r.Context(), validationErrors)
+	if err != nil {
+		i.logger.Printf("cannot push validation errors to storage: %s", err)
+	}
 }
 
 // Back creates redirect response to the previous url.
