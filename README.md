@@ -282,24 +282,24 @@ i, err := inertia.New(
 Simple inmemory implementation of flash provider:
 ```go
 type InmemFlashProvider struct {
-    errorsByUser map[string]inertia.ValidationErrors
+    errors map[string]inertia.ValidationErrors
 }
 
 func NewInmemFlashProvider() *InmemFlashProvider {
-    return &InmemFlashProvider{errorsByUser: make(inertia.ValidationErrors)}
+    return &InmemFlashProvider{errorsByUser: make(map[string]inertia.ValidationErrors)}
 }
 
 func (p *InmemFlashProvider) FlashErrors(ctx context.Context, errors ValidationErrors) error {
-    userID := getUserIDFromContext(ctx)
-    p.errorsByUser[userID] = errors
+    sessionID := getSessionIDFromContext(ctx)
+    p.errors[sessionID] = errors
     return nil
 }
 
 func (p *InmemFlashProvider) GetErrors(ctx context.Context) (ValidationErrors, error) {
-    userID := getUserIDFromContext(ctx)
-    errors := p.errorsByUser[userID]
+    sessionID := getSessionIDFromContext(ctx)
+    errors := p.errors[sessionID]
     p.errorsByUser[userID] = nil
-    return errors
+    return errors, nil
 }
 ```
 
