@@ -297,7 +297,7 @@ func TestInertia_Render(t *testing.T) {
 					"foo":              "bar",
 					"closure":          func() any { return "prop" },
 					"closure_with_err": func() (any, error) { return "prop", nil },
-					"lazy":             LazyProp(func() (any, error) { return "prop", nil }),
+					"lazy":             LazyProp{func() (any, error) { return "prop", nil }},
 				})
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
@@ -327,7 +327,7 @@ func TestInertia_Render(t *testing.T) {
 						"foo":     "bar",
 						"abc":     "123",
 						"closure": func() (any, error) { return "prop", nil },
-						"lazy":    LazyProp(func() (any, error) { return "prop", nil }),
+						"lazy":    LazyProp{func() (any, error) { return "prop", nil }},
 						"always":  AlwaysProp{"prop"},
 					})
 					if err != nil {
@@ -384,7 +384,7 @@ func TestInertia_Render(t *testing.T) {
 					"foo":    "bar",
 					"baz":    "quz",
 					"bez":    "bee",
-					"lazy":   LazyProp(func() (any, error) { return "prop", nil }),
+					"lazy":   LazyProp{func() (any, error) { return "prop", nil }},
 					"always": AlwaysProp{"prop"},
 				})
 				if err != nil {

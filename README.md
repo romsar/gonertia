@@ -124,27 +124,17 @@ i, err := inertia.New(
 
 Also, you have to use asset bundling tools like [Vite](https://vitejs.dev/) or [Webpack](https://webpack.js.org/) (especially with [Laravel Mix](https://laravel-mix.com/)). The setup will vary depending on this choice, you can read more about it in [official docs](https://inertiajs.com/server-side-rendering) or check an [example](https://github.com/hbourgeot/gonertia_vue_example) that works on Vite.
 
-#### Closure and lazy props ([learn more](https://inertiajs.com/partial-reloads))
+#### Lazy and Always props ([learn more](https://inertiajs.com/partial-reloads))
 
 ```go
 props := inertia.Props{
-    "regular": "prop",
-    "closure": func () (any) { return "prop" },
-    "closure_with_err": func () (any, error) { return "prop", nil },
-    "lazy": inertia.LazyProp(func () (any, error) {
+    "lazy": inertia.LazyProp{func () (any, error) {
         return "prop", nil
-    },
+    }},
+    "always": inertia.AlwaysProp{"prop"},
 }
 
 i.Render(w, r, "Some/Page", props)
-```
-
-Also, Gonertia have support for `always` props ([learn more](https://github.com/inertiajs/inertia-laravel/pull/627)):
-
-```go
-props := inertia.Props{
-    "foo": inertia.AlwaysProp{"bar"},
-}
 ```
 
 #### Redirects ([learn more](https://inertiajs.com/redirects))

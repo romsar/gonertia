@@ -22,10 +22,12 @@ type Props map[string]any
 // LazyProp is a property value that will only evaluated then needed.
 //
 // https://inertiajs.com/partial-reloads
-type LazyProp func() (any, error)
+type LazyProp struct {
+	Value any
+}
 
-func (p LazyProp) TryProp() (any, error) {
-	return p()
+func (p LazyProp) Prop() any {
+	return p.Value
 }
 
 // AlwaysProp is a property value that will always evaluated.
@@ -256,6 +258,16 @@ func (i *Inertia) getOnlyAndExcept(r *http.Request, component string) (only, exc
 }
 
 func resolvePropVal(val any) (_ any, err error) {
+	switch proper := val.(type) {
+	case Proper:
+		val = proper.Prop()
+	case TryProper:
+		val, err = proper.TryProp()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	switch typed := val.(type) {
 	case func() any:
 		return typed(), nil
@@ -264,10 +276,6 @@ func resolvePropVal(val any) (_ any, err error) {
 		if err != nil {
 			return nil, fmt.Errorf("closure prop resolving: %w", err)
 		}
-	case Proper:
-		return typed.Prop(), nil
-	case TryProper:
-		return typed.TryProp()
 	}
 
 	return val, nil
