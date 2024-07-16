@@ -292,6 +292,7 @@ func NewInmemFlashProvider() *InmemFlashProvider {
 func (p *InmemFlashProvider) FlashErrors(ctx context.Context, errors ValidationErrors) error {
     userID := getUserIDFromContext(ctx)
     p.errorsByUser[userID] = errors
+    return nil
 }
 
 func (p *InmemFlashProvider) GetErrors(ctx context.Context) (ValidationErrors, error) {
