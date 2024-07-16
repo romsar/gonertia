@@ -295,9 +295,9 @@ func (p *InmemFlashProvider) FlashErrors(ctx context.Context, errors ValidationE
 }
 
 func (p *InmemFlashProvider) GetErrors(ctx context.Context) (ValidationErrors, error) {
-    userID := getUserIDFromContext(ctx)
-    errors := p.errorsByUser[userID]
-    p.errorsByUser[userID] = nil
+	userID := getUserIDFromContext(ctx)
+	errors := p.errorsByUser[userID]
+	p.errorsByUser[userID] = nil
 	return errors
 }
 ```
