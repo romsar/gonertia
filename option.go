@@ -38,8 +38,8 @@ func WithJSONMarshaller(jsonMarshaller JSONMarshaller) Option {
 }
 
 // WithLogger returns Option that will set Inertia's logger.
-func WithLogger(logs ...logger) Option {
-	var l logger
+func WithLogger(logs ...Logger) Option {
+	var l Logger
 	if len(logs) > 0 {
 		l = logs[0]
 	} else {
@@ -77,6 +77,14 @@ func WithSSR(url ...string) Option {
 
 		i.ssrURL = u
 		i.ssrHTTPClient = &http.Client{}
+		return nil
+	}
+}
+
+// WithFlashProvider returns Option that will set Inertia's flash data provider.
+func WithFlashProvider(flashData FlashProvider) Option {
+	return func(i *Inertia) error {
+		i.flash = flashData
 		return nil
 	}
 }

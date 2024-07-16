@@ -1,6 +1,7 @@
 package gonertia
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io"
@@ -18,13 +19,15 @@ type Inertia struct {
 	sharedTemplateData  TemplateData
 	sharedTemplateFuncs TemplateFuncs
 
+	flash FlashProvider
+
 	ssrURL        string
 	ssrHTTPClient *http.Client
 
 	containerID    string
 	version        string
 	jsonMarshaller JSONMarshaller
-	logger         logger
+	logger         Logger
 }
 
 // New initializes and returns Inertia.
@@ -80,11 +83,16 @@ func NewFromBytes(rootTemplateBs []byte, opts ...Option) (*Inertia, error) {
 	return New(string(rootTemplateBs), opts...)
 }
 
-// Sometimes it's not possible to return an error,
-// so we will send those messages to the logger.
-type logger interface {
+// Logger defines an interface for debug messages.
+type Logger interface {
 	Printf(format string, v ...any)
 	Println(v ...any)
+}
+
+// FlashProvider defines an interface for flash data provider.
+type FlashProvider interface {
+	FlashErrors(ctx context.Context, errors ValidationErrors) error
+	GetErrors(ctx context.Context) (ValidationErrors, error)
 }
 
 // ShareProp adds passed prop to shared props.

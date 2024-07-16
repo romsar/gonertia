@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -250,7 +251,16 @@ func TestInertia_Render(t *testing.T) {
 		t.Run("validation errors", func(t *testing.T) {
 			t.Parallel()
 
-			i := I()
+			flashProvider := &flashProviderMock{
+				errors: ValidationErrors{
+					"foo": "baz",
+					"baz": "quz",
+				},
+			}
+
+			i := I(func(i *Inertia) {
+				i.flash = flashProvider
+			})
 
 			w, r := requestMock(http.MethodGet, "/home")
 			asInertiaRequest(r)
@@ -269,6 +279,7 @@ func TestInertia_Render(t *testing.T) {
 				"abc": "123",
 				"errors": map[string]any{
 					"foo": "bar",
+					"baz": "quz",
 				},
 			})
 		})
@@ -477,6 +488,38 @@ func TestInertia_Location(t *testing.T) {
 		assertLocation(t, w, wantLocation)
 		assertResponseStatusCode(t, w, http.StatusConflict)
 		assertInertiaLocation(t, w, wantInertiaLocation)
+	})
+
+	t.Run("inertia location with flash validation errors", func(t *testing.T) {
+		t.Parallel()
+
+		w, r := requestMock(http.MethodGet, "/")
+		asInertiaRequest(r)
+
+		wantLocation := ""
+		wantInertiaLocation := "/foo"
+
+		flashProvider := &flashProviderMock{}
+
+		i := I(func(i *Inertia) {
+			i.flash = flashProvider
+		})
+
+		errors := ValidationErrors{
+			"foo": "bar",
+			"baz": "quz",
+		}
+
+		r = r.WithContext(WithValidationErrors(r.Context(), errors))
+		i.Location(w, r, wantInertiaLocation, http.StatusMovedPermanently)
+
+		assertLocation(t, w, wantLocation)
+		assertResponseStatusCode(t, w, http.StatusConflict)
+		assertInertiaLocation(t, w, wantInertiaLocation)
+
+		if !reflect.DeepEqual(flashProvider.errors, errors) {
+			t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
+		}
 	})
 }
 

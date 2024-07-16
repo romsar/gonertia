@@ -264,6 +264,44 @@ i, err := inertia.New(
 )
 ```
 
+#### Set flash provider
+
+Unfortunately (or fortunately) we do not have the advantages of such a framework as Laravel in terms of session management.
+In this regard, we have to do some things manually that are done automatically in frameworks.
+
+One of them is displaying validation errors after redirects via `Location` and `Back` methods. 
+You should write your own implementation of `gonertia.FlashProvider` which will have to store error data into the user's session and return this data (you can get the user ID from the context depending on your application).
+
+```go
+i, err := inertia.New(
+    /* ... */
+    inertia.WithFlashProvider(flashProvider),
+)
+```
+
+Simple inmemory implementation for the flash provider:
+```go
+type InmemFlashProvider struct {
+	errorsByUser map[string]inertia.ValidationErrors
+}
+
+func NewInmemFlashProvider() *InmemFlashProvider {
+	return &InmemFlashProvider{errorsByUser: make(inertia.ValidationErrors)}
+}
+
+func (p *InmemFlashProvider) FlashErrors(ctx context.Context, errors ValidationErrors) error {
+	userID := getUserIDFromContext(ctx)
+	p.errorsByUser[userID] = errors
+}
+
+func (p *InmemFlashProvider) GetErrors(ctx context.Context) (ValidationErrors, error) {
+    userID := getUserIDFromContext(ctx)
+    errors := p.errorsByUser[userID]
+    p.errorsByUser[userID] = nil
+	return errors
+}
+```
+
 #### Testing
 
 Of course, this package provides convenient interfaces for testing!

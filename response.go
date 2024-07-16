@@ -2,6 +2,7 @@ package gonertia
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -57,11 +58,33 @@ type ValidationErrors map[string]any
 // Otherwise, it will do an HTTP redirect with specified status (default is 302 for GET, 303 for POST/PUT/PATCH).
 func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, status ...int) {
 	if IsInertiaRequest(r) {
+		i.flashValidationErrors(r.Context())
 		setInertiaLocationInResponse(w, url)
 		return
 	}
 
 	redirectResponse(w, r, url, status...)
+}
+
+func (i *Inertia) flashValidationErrors(ctx context.Context) {
+	if i.flash == nil {
+		return
+	}
+
+	validationErrors, err := ValidationErrorsFromContext(ctx)
+	if err != nil {
+		i.logger.Printf("invalid validation errors from context: %s", err)
+		return
+	}
+
+	if len(validationErrors) == 0 {
+		return
+	}
+
+	err = i.flash.FlashErrors(ctx, validationErrors)
+	if err != nil {
+		i.logger.Printf("cannot flash validation errors: %s", err)
+	}
 }
 
 // Back creates redirect response to the previous url.
@@ -81,20 +104,20 @@ func (i *Inertia) backURL(r *http.Request) string {
 //
 // If SSR is enabled, pre-renders JavaScript and return HTML (https://inertiajs.com/server-side-rendering).
 func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component string, props ...Props) (err error) {
-	page, err := i.buildPage(r, component, firstOr[Props](props, nil))
+	p, err := i.buildPage(r, component, firstOr[Props](props, nil))
 	if err != nil {
 		return fmt.Errorf("build page: %w", err)
 	}
 
 	if IsInertiaRequest(r) {
-		if err = i.doInertiaResponse(w, page); err != nil {
+		if err = i.doInertiaResponse(w, p); err != nil {
 			return fmt.Errorf("inertia response: %w", err)
 		}
 
 		return
 	}
 
-	if err = i.doHTMLResponse(w, r, page); err != nil {
+	if err = i.doHTMLResponse(w, r, p); err != nil {
 		return fmt.Errorf("html response: %w", err)
 	}
 
@@ -125,12 +148,12 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 
-	// Add validation errors from context.
-	ctxValidationErrors, err := ValidationErrorsFromContext(r.Context())
+	// Add validation errors to the result.
+	validationErrors, err := i.resolveValidationErrors(r)
 	if err != nil {
-		return nil, fmt.Errorf("getting validation errors from context: %w", err)
+		return nil, fmt.Errorf("resolve validation errors: %w", err)
 	}
-	result["errors"] = AlwaysProp{ctxValidationErrors}
+	result["errors"] = AlwaysProp{validationErrors}
 
 	// Add shared props to the result.
 	for key, val := range i.sharedProps {
@@ -190,6 +213,35 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	}
 
 	return result, nil
+}
+
+func (i *Inertia) resolveValidationErrors(r *http.Request) (ValidationErrors, error) {
+	// Add validation errors from flash data provider.
+	var flashValidationErrors ValidationErrors
+	if i.flash != nil {
+		var err error
+		flashValidationErrors, err = i.flash.GetErrors(r.Context())
+		if err != nil {
+			return nil, fmt.Errorf("get validation errors from flash data: %w", err)
+		}
+	}
+
+	// ... and from context.
+	ctxValidationErrors, err := ValidationErrorsFromContext(r.Context())
+	if err != nil {
+		return nil, fmt.Errorf("get validation errors from context: %w", err)
+	}
+
+	// Merge many validation errors from different sources into one piece.
+	validationErrors := make(ValidationErrors)
+	for key, val := range flashValidationErrors {
+		validationErrors[key] = val
+	}
+	for key, val := range ctxValidationErrors {
+		validationErrors[key] = val
+	}
+
+	return validationErrors, nil
 }
 
 func (i *Inertia) getOnlyAndExcept(r *http.Request, component string) (only, except map[string]struct{}) {

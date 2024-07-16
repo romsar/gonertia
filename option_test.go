@@ -130,7 +130,7 @@ func TestWithLogger(t *testing.T) {
 		}
 
 		if i.logger == nil {
-			t.Fatal("logger is nil")
+			t.Fatal("Logger is nil")
 		}
 	})
 
@@ -146,7 +146,7 @@ func TestWithLogger(t *testing.T) {
 		}
 
 		if i.logger == nil {
-			t.Fatal("logger is nil")
+			t.Fatal("Logger is nil")
 		}
 	})
 
@@ -164,7 +164,7 @@ func TestWithLogger(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(i.logger, want) {
-			t.Fatalf("logger=%#v, want=%#v", i.logger, want)
+			t.Fatalf("Logger=%#v, want=%#v", i.logger, want)
 		}
 	})
 }
@@ -233,4 +233,22 @@ func TestWithSSR(t *testing.T) {
 			t.Fatalf("ssrURL=%s, want=%s", i.containerID, wantURL)
 		}
 	})
+}
+
+func TestWithFlashProvider(t *testing.T) {
+	t.Parallel()
+
+	i := I()
+
+	want := &flashProviderMock{}
+
+	option := WithFlashProvider(want)
+
+	if err := option(i); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if i.flash != want {
+		t.Fatalf("flash provider=%v, want=%s", i.flash, want)
+	}
 }

@@ -1,6 +1,7 @@
 package gonertia
 
 import (
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -181,4 +182,17 @@ func tmpFile(t *testing.T, content string) *os.File {
 	})
 
 	return f
+}
+
+type flashProviderMock struct {
+	errors ValidationErrors
+}
+
+func (p *flashProviderMock) FlashErrors(_ context.Context, errors ValidationErrors) error {
+	p.errors = errors
+	return nil
+}
+
+func (p *flashProviderMock) GetErrors(_ context.Context) (ValidationErrors, error) {
+	return p.errors, nil
 }
