@@ -279,7 +279,7 @@ i, err := inertia.New(
 )
 ```
 
-Simple inmemory implementation for the flash provider:
+Simple inmemory implementation of flash provider:
 ```go
 type InmemFlashProvider struct {
 	errorsByUser map[string]inertia.ValidationErrors
