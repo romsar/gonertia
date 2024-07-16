@@ -241,7 +241,7 @@ i, err := inertia.New(
 i, err := inertia.New(
     /* ... */
     inertia.WithLogger(), // default logger
-    inertia.WithLogger(somelogger.New()), // custom logger
+    // inertia.WithLogger(somelogger.New()),
 )
 ```
 
