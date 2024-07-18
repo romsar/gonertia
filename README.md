@@ -271,19 +271,19 @@ type InmemFlashProvider struct {
 }
 
 func NewInmemFlashProvider() *InmemFlashProvider {
-    return &InmemFlashProvider{errorsByUser: make(map[string]inertia.ValidationErrors)}
+    return &InmemFlashProvider{errors: make(map[string]inertia.ValidationErrors)}
 }
 
 func (p *InmemFlashProvider) FlashErrors(ctx context.Context, errors ValidationErrors) error {
-    userID := getUserIDFromContext(ctx)
-    p.errors[userID] = errors
+    sessionID := getSessionIDFromContext(ctx)
+    p.errors[sessionID] = errors
     return nil
 }
 
 func (p *InmemFlashProvider) GetErrors(ctx context.Context) (ValidationErrors, error) {
-    userID := getUserIDFromContext(ctx)
-    errors := p.errors[userID]
-    p.errors[userID] = nil
+    sessionID := getSessionIDFromContext(ctx)
+    errors := p.errors[sessionID]
+    p.errors[sessionID] = nil
     return errors, nil
 }
 ```
