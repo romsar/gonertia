@@ -280,15 +280,15 @@ func NewInmemFlashProvider() *InmemFlashProvider {
 }
 
 func (p *InmemFlashProvider) FlashErrors(ctx context.Context, errors ValidationErrors) error {
-    sessionID := getSessionIDFromContext(ctx)
-    p.errors[sessionID] = errors
+    userID := getUserIDFromContext(ctx)
+    p.errors[userID] = errors
     return nil
 }
 
 func (p *InmemFlashProvider) GetErrors(ctx context.Context) (ValidationErrors, error) {
-    sessionID := getSessionIDFromContext(ctx)
-    errors := p.errors[sessionID]
-    p.errorsByUser[userID] = nil
+    userID := getUserIDFromContext(ctx)
+    errors := p.errors[userID]
+    p.errors[userID] = nil
     return errors, nil
 }
 ```
