@@ -112,8 +112,9 @@ func TestInertia_Middleware(t *testing.T) {
 				I().Middleware(assertHandlerServed(t)).ServeHTTP(w, r)
 
 				assertInertiaVary(t, w)
-				assertResponseStatusCode(t, w, http.StatusConflict)
-				assertInertiaLocation(t, w, "/foo")
+				assertResponseStatusCode(t, w, http.StatusFound)
+				assertLocation(t, w, "/foo")
+				assertInertiaLocation(t, w, "")
 			})
 
 			t.Run("don't redirect back if empty request and status not ok", func(t *testing.T) {
@@ -127,6 +128,7 @@ func TestInertia_Middleware(t *testing.T) {
 
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusBadRequest)
+				assertLocation(t, w, "")
 				assertInertiaLocation(t, w, "")
 			})
 		})
