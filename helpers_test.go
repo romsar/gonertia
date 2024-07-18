@@ -70,7 +70,7 @@ func assertHeader(t *testing.T, w *httptest.ResponseRecorder, key, want string) 
 	t.Helper()
 
 	if got := w.Header().Get(key); got != want {
-		t.Fatalf("header=%s, want=%s", got, want)
+		t.Fatalf("header %s=%s, want=%s", strings.ToLower(key), got, want)
 	}
 }
 
