@@ -17,6 +17,9 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// https://github.com/inertiajs/inertia-laravel/pull/404
 		setInertiaVaryInResponse(w)
 
+		// Resolve validation errors from flash data provider.
+		r = i.resolveValidationErrors(r)
+
 		if !IsInertiaRequest(r) {
 			next.ServeHTTP(w, r)
 			return
@@ -69,6 +72,24 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 			setResponseStatus(w2, http.StatusSeeOther)
 		}
 	})
+}
+
+func (i *Inertia) resolveValidationErrors(r *http.Request) *http.Request {
+	if i.flash == nil {
+		return r
+	}
+
+	validationErrors, err := i.flash.GetErrors(r.Context())
+	if err != nil {
+		i.logger.Printf("get validation errors from flash data provider error: %s", err)
+		return r
+	}
+
+	if len(validationErrors) == 0 {
+		return r
+	}
+
+	return r.WithContext(WithValidationErrors(r.Context(), validationErrors))
 }
 
 func (i *Inertia) copyWrapperResponse(dst http.ResponseWriter, src *inertiaResponseWrapper) {

@@ -23,6 +23,38 @@ func TestInertia_Middleware(t *testing.T) {
 			assertInertiaVary(t, w)
 			assertResponseStatusCode(t, w, http.StatusOK)
 		})
+
+		t.Run("resolve validation errors from flash data provider", func(t *testing.T) {
+			t.Parallel()
+
+			w, r := requestMock(http.MethodGet, "/")
+
+			want := ValidationErrors{
+				"foo": "baz",
+				"baz": "quz",
+			}
+
+			flashProvider := &flashProviderMock{
+				errors: want,
+			}
+
+			i := I(func(i *Inertia) {
+				i.flash = flashProvider
+			})
+
+			var got ValidationErrors
+			i.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				var err error
+				got, err = ValidationErrorsFromContext(r.Context())
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+			})).ServeHTTP(w, r)
+
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("validation errors=%#v, want=%#v", got, want)
+			}
+		})
 	})
 
 	t.Run("inertia request", func(t *testing.T) {

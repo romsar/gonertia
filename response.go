@@ -59,8 +59,9 @@ type ValidationErrors map[string]any
 // If request was made by Inertia - sets status to 409 and url will be in "X-Inertia-Location" header.
 // Otherwise, it will do an HTTP redirect with specified status (default is 302 for GET, 303 for POST/PUT/PATCH).
 func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, status ...int) {
+	i.flashValidationErrorsFromContext(r.Context())
+
 	if IsInertiaRequest(r) {
-		i.flashValidationErrors(r.Context())
 		setInertiaLocationInResponse(w, url)
 		return
 	}
@@ -68,7 +69,7 @@ func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, s
 	redirectResponse(w, r, url, status...)
 }
 
-func (i *Inertia) flashValidationErrors(ctx context.Context) {
+func (i *Inertia) flashValidationErrorsFromContext(ctx context.Context) {
 	if i.flash == nil {
 		return
 	}
@@ -150,31 +151,36 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 
-	// Add validation errors to the result.
-	validationErrors, err := i.resolveValidationErrors(r)
-	if err != nil {
-		return nil, fmt.Errorf("resolve validation errors: %w", err)
-	}
-	result["errors"] = AlwaysProp{validationErrors}
-
-	// Add shared props to the result.
-	for key, val := range i.sharedProps {
-		result[key] = val
+	{
+		// Add validation errors from context to the result.
+		// Get validation errors from context.
+		validationErrors, err := ValidationErrorsFromContext(r.Context())
+		if err != nil {
+			return nil, fmt.Errorf("get validation errors from context: %w", err)
+		}
+		result["errors"] = AlwaysProp{validationErrors}
 	}
 
-	// Add props from context to the result.
-	ctxProps, err := PropsFromContext(r.Context())
-	if err != nil {
-		return nil, fmt.Errorf("getting props from context: %w", err)
-	}
+	{
+		// Add shared props to the result.
+		for key, val := range i.sharedProps {
+			result[key] = val
+		}
 
-	for key, val := range ctxProps {
-		result[key] = val
-	}
+		// Add props from context to the result.
+		ctxProps, err := PropsFromContext(r.Context())
+		if err != nil {
+			return nil, fmt.Errorf("getting props from context: %w", err)
+		}
 
-	// Add passed props to the result.
-	for key, val := range props {
-		result[key] = val
+		for key, val := range ctxProps {
+			result[key] = val
+		}
+
+		// Add passed props to the result.
+		for key, val := range props {
+			result[key] = val
+		}
 	}
 
 	{
@@ -207,6 +213,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 
 	// Resolve props values.
 	for key, val := range result {
+		var err error
 		val, err = resolvePropVal(val)
 		if err != nil {
 			return nil, fmt.Errorf("resolve prop value: %w", err)
@@ -215,35 +222,6 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	}
 
 	return result, nil
-}
-
-func (i *Inertia) resolveValidationErrors(r *http.Request) (ValidationErrors, error) {
-	// Add validation errors from flash data provider.
-	var flashValidationErrors ValidationErrors
-	if i.flash != nil {
-		var err error
-		flashValidationErrors, err = i.flash.GetErrors(r.Context())
-		if err != nil {
-			return nil, fmt.Errorf("get validation errors from flash data: %w", err)
-		}
-	}
-
-	// ... and from context.
-	ctxValidationErrors, err := ValidationErrorsFromContext(r.Context())
-	if err != nil {
-		return nil, fmt.Errorf("get validation errors from context: %w", err)
-	}
-
-	// Merge many validation errors from different sources into one piece.
-	validationErrors := make(ValidationErrors)
-	for key, val := range flashValidationErrors {
-		validationErrors[key] = val
-	}
-	for key, val := range ctxValidationErrors {
-		validationErrors[key] = val
-	}
-
-	return validationErrors, nil
 }
 
 func (i *Inertia) getOnlyAndExcept(r *http.Request, component string) (only, except map[string]struct{}) {
