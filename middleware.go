@@ -17,7 +17,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// https://github.com/inertiajs/inertia-laravel/pull/404
 		setInertiaVaryInResponse(w)
 
-		// Resolve validation errors from flash data provider.
+		// Resolve validation errors from the flash data provider.
 		r = i.resolveValidationErrors(r)
 
 		if !IsInertiaRequest(r) {
