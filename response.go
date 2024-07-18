@@ -69,6 +69,22 @@ func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, s
 	redirectResponse(w, r, url, status...)
 }
 
+// Back creates plain redirect response to the previous url.
+func (i *Inertia) Back(w http.ResponseWriter, r *http.Request, status ...int) {
+	i.Redirect(w, r, backURL(r), status...)
+}
+
+func backURL(r *http.Request) string {
+	// At the moment, it based only on the "Referer" HTTP header.
+	return refererFromRequest(r)
+}
+
+// Redirect creates plain redirect response.
+func (i *Inertia) Redirect(w http.ResponseWriter, r *http.Request, url string, status ...int) {
+	i.flashValidationErrorsFromContext(r.Context())
+	redirectResponse(w, r, url, status...)
+}
+
 func (i *Inertia) flashValidationErrorsFromContext(ctx context.Context) {
 	if i.flash == nil {
 		return
@@ -88,16 +104,6 @@ func (i *Inertia) flashValidationErrorsFromContext(ctx context.Context) {
 	if err != nil {
 		i.logger.Printf("cannot flash validation errors: %s", err)
 	}
-}
-
-// Back creates redirect response to the previous url.
-func (i *Inertia) Back(w http.ResponseWriter, r *http.Request, status ...int) {
-	i.Location(w, r, i.backURL(r), status...)
-}
-
-func (i *Inertia) backURL(r *http.Request) string {
-	// At the moment, it based only on the "Referer" HTTP header.
-	return refererFromRequest(r)
 }
 
 // Render returns response with Inertia data.
@@ -153,7 +159,6 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 
 	{
 		// Add validation errors from context to the result.
-		// Get validation errors from context.
 		validationErrors, err := ValidationErrorsFromContext(r.Context())
 		if err != nil {
 			return nil, fmt.Errorf("get validation errors from context: %w", err)

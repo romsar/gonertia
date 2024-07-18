@@ -497,14 +497,8 @@ func TestInertia_Location(t *testing.T) {
 				"baz": "quz",
 			}
 
-			wantStatus := http.StatusFound
-			wantLocation := "/foo"
-
 			r = r.WithContext(WithValidationErrors(r.Context(), errors))
-			i.Location(w, r, wantLocation)
-
-			assertResponseStatusCode(t, w, wantStatus)
-			assertLocation(t, w, wantLocation)
+			i.Location(w, r, "/foo")
 
 			if !reflect.DeepEqual(flashProvider.errors, errors) {
 				t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
@@ -516,9 +510,6 @@ func TestInertia_Location(t *testing.T) {
 
 			w, r := requestMock(http.MethodGet, "/")
 			asInertiaRequest(r)
-
-			wantLocation := ""
-			wantInertiaLocation := "/foo"
 
 			flashProvider := &flashProviderMock{}
 
@@ -532,11 +523,7 @@ func TestInertia_Location(t *testing.T) {
 			}
 
 			r = r.WithContext(WithValidationErrors(r.Context(), errors))
-			i.Location(w, r, wantInertiaLocation, http.StatusMovedPermanently)
-
-			assertLocation(t, w, wantLocation)
-			assertResponseStatusCode(t, w, http.StatusConflict)
-			assertInertiaLocation(t, w, wantInertiaLocation)
+			i.Location(w, r, "/foo", http.StatusMovedPermanently)
 
 			if !reflect.DeepEqual(flashProvider.errors, errors) {
 				t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
@@ -545,10 +532,84 @@ func TestInertia_Location(t *testing.T) {
 	})
 }
 
+func TestInertia_Redirect(t *testing.T) {
+	t.Parallel()
+
+	t.Run("with default status", func(t *testing.T) {
+		t.Parallel()
+
+		wantStatus := http.StatusFound
+		wantLocation := "https://example.com/foo"
+
+		w, r := requestMock(http.MethodGet, "/")
+
+		i := I()
+
+		i.Redirect(w, r, wantLocation)
+
+		assertResponseStatusCode(t, w, wantStatus)
+		assertLocation(t, w, wantLocation)
+	})
+
+	t.Run("with specified status", func(t *testing.T) {
+		t.Parallel()
+
+		wantStatus := http.StatusMovedPermanently
+		wantLocation := "https://example.com/foo"
+
+		w, r := requestMock(http.MethodGet, "/")
+
+		I().Redirect(w, r, wantLocation, wantStatus)
+
+		assertResponseStatusCode(t, w, wantStatus)
+		assertLocation(t, w, wantLocation)
+	})
+
+	t.Run("inertia request", func(t *testing.T) {
+		t.Parallel()
+
+		wantLocation := "https://example.com/foo"
+		wantInertiaLocation := ""
+
+		w, r := requestMock(http.MethodGet, "/")
+		asInertiaRequest(r)
+
+		I().Redirect(w, r, wantLocation, http.StatusMovedPermanently)
+
+		assertLocation(t, w, wantLocation)
+		assertResponseStatusCode(t, w, http.StatusMovedPermanently)
+		assertInertiaLocation(t, w, wantInertiaLocation)
+	})
+
+	t.Run("flash validation errors", func(t *testing.T) {
+		t.Parallel()
+
+		w, r := requestMock(http.MethodGet, "/")
+
+		flashProvider := &flashProviderMock{}
+
+		i := I(func(i *Inertia) {
+			i.flash = flashProvider
+		})
+
+		errors := ValidationErrors{
+			"foo": "bar",
+			"baz": "quz",
+		}
+
+		r = r.WithContext(WithValidationErrors(r.Context(), errors))
+		i.Redirect(w, r, "https://example.com/foo")
+
+		if !reflect.DeepEqual(flashProvider.errors, errors) {
+			t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
+		}
+	})
+}
+
 func TestInertia_Back(t *testing.T) {
 	t.Parallel()
 
-	t.Run("plain redirect with default status", func(t *testing.T) {
+	t.Run("with default status", func(t *testing.T) {
 		t.Parallel()
 
 		wantStatus := http.StatusFound
@@ -565,7 +626,7 @@ func TestInertia_Back(t *testing.T) {
 		assertLocation(t, w, wantLocation)
 	})
 
-	t.Run("plain redirect with specified status", func(t *testing.T) {
+	t.Run("with specified status", func(t *testing.T) {
 		t.Parallel()
 
 		wantStatus := http.StatusMovedPermanently
@@ -574,27 +635,52 @@ func TestInertia_Back(t *testing.T) {
 		w, r := requestMock(http.MethodGet, "/")
 		r.Header.Set("Referer", wantLocation)
 
-		I().Location(w, r, wantLocation, wantStatus)
+		I().Back(w, r, wantStatus)
 
 		assertResponseStatusCode(t, w, wantStatus)
 		assertLocation(t, w, wantLocation)
 	})
 
-	t.Run("inertia location", func(t *testing.T) {
+	t.Run("inertia request", func(t *testing.T) {
 		t.Parallel()
 
-		wantLocation := ""
-		wantInertiaLocation := "https://example.com/foo"
+		wantLocation := "https://example.com/foo"
+		wantInertiaLocation := ""
 
 		w, r := requestMock(http.MethodGet, "/")
 		r.Header.Set("Referer", wantLocation)
 		asInertiaRequest(r)
 
-		I().Location(w, r, wantInertiaLocation, http.StatusMovedPermanently)
+		I().Back(w, r, http.StatusMovedPermanently)
 
 		assertLocation(t, w, wantLocation)
-		assertResponseStatusCode(t, w, http.StatusConflict)
+		assertResponseStatusCode(t, w, http.StatusMovedPermanently)
 		assertInertiaLocation(t, w, wantInertiaLocation)
+	})
+
+	t.Run("flash validation errors", func(t *testing.T) {
+		t.Parallel()
+
+		w, r := requestMock(http.MethodGet, "/")
+		r.Header.Set("Referer", "https://example.com/foo")
+
+		flashProvider := &flashProviderMock{}
+
+		i := I(func(i *Inertia) {
+			i.flash = flashProvider
+		})
+
+		errors := ValidationErrors{
+			"foo": "bar",
+			"baz": "quz",
+		}
+
+		r = r.WithContext(WithValidationErrors(r.Context(), errors))
+		i.Back(w, r)
+
+		if !reflect.DeepEqual(flashProvider.errors, errors) {
+			t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
+		}
 	})
 }
 
