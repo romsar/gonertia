@@ -49,7 +49,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		//
 		// https://inertiajs.com/asset-versioning
 		if r.Method == http.MethodGet && inertiaVersionFromRequest(r) != i.version {
-			setInertiaLocationInResponse(w2, r.URL.RequestURI())
+			i.Location(w2, r, r.URL.RequestURI())
 			return
 		}
 

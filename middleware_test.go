@@ -63,11 +63,21 @@ func TestInertia_Middleware(t *testing.T) {
 		t.Run("assert versioning", func(t *testing.T) {
 			t.Parallel()
 
-			t.Run("diff version with GET, should change location with 409", func(t *testing.T) {
+			t.Run("diff version with GET, should change location with 409 and flash errors", func(t *testing.T) {
 				t.Parallel()
+
+				errors := ValidationErrors{
+					"foo": "baz",
+					"baz": "quz",
+				}
+
+				flashProvider := &flashProviderMock{
+					errors: errors,
+				}
 
 				i := I(func(i *Inertia) {
 					i.version = "foo"
+					i.flash = flashProvider
 				})
 
 				w, r := requestMock(http.MethodGet, "https://example.com/home")
@@ -79,6 +89,10 @@ func TestInertia_Middleware(t *testing.T) {
 				assertInertiaVary(t, w)
 				assertResponseStatusCode(t, w, http.StatusConflict)
 				assertInertiaLocation(t, w, "/home")
+
+				if !reflect.DeepEqual(flashProvider.errors, errors) {
+					t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
+				}
 			})
 
 			t.Run("diff version with POST, do nothing", func(t *testing.T) {
