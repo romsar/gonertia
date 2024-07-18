@@ -140,13 +140,8 @@ i.Render(w, r, "Some/Page", props)
 #### Redirects ([learn more](https://inertiajs.com/redirects))
 
 ```go
-func homeHandler(i *inertia.Inertia) http.Handler {
-    fn := func(w http.ResponseWriter, r *http.Request) {
-        i.Location(w, r, "/some-url")
-    }
-
-    return http.HandlerFunc(fn)
-}
+i.Redirect(w, r, "https://example.com") // plain redirect
+i.Location(w, r, "https://example.com") // external redirect
 ```
 
 NOTES:

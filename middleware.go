@@ -56,7 +56,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// Determines what to do when an Inertia action returned empty response.
 		// By default, we will redirect the user back to where he came from.
 		if w2.StatusCode() == http.StatusOK && w2.IsEmpty() {
-			backURL := i.backURL(r)
+			backURL := backURL(r)
 
 			if backURL != "" {
 				setInertiaLocationInResponse(w2, backURL)
