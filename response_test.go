@@ -497,7 +497,7 @@ func TestInertia_Location(t *testing.T) {
 				"baz": "quz",
 			}
 
-			r = r.WithContext(WithValidationErrors(r.Context(), errors))
+			withValidationErrors(r, errors)
 			i.Location(w, r, "/foo")
 
 			if !reflect.DeepEqual(flashProvider.errors, errors) {
@@ -522,7 +522,7 @@ func TestInertia_Location(t *testing.T) {
 				"baz": "quz",
 			}
 
-			r = r.WithContext(WithValidationErrors(r.Context(), errors))
+			withValidationErrors(r, errors)
 			i.Location(w, r, "/foo", http.StatusMovedPermanently)
 
 			if !reflect.DeepEqual(flashProvider.errors, errors) {
@@ -597,7 +597,7 @@ func TestInertia_Redirect(t *testing.T) {
 			"baz": "quz",
 		}
 
-		r = r.WithContext(WithValidationErrors(r.Context(), errors))
+		withValidationErrors(r, errors)
 		i.Redirect(w, r, "https://example.com/foo")
 
 		if !reflect.DeepEqual(flashProvider.errors, errors) {
@@ -675,7 +675,7 @@ func TestInertia_Back(t *testing.T) {
 			"baz": "quz",
 		}
 
-		r = r.WithContext(WithValidationErrors(r.Context(), errors))
+		withValidationErrors(r, errors)
 		i.Back(w, r)
 
 		if !reflect.DeepEqual(flashProvider.errors, errors) {

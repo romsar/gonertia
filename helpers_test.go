@@ -58,6 +58,10 @@ func withReferer(r *http.Request, referer string) {
 	r.Header.Set("Referer", referer)
 }
 
+func withValidationErrors(r *http.Request, errors ValidationErrors) {
+	*r = *r.WithContext(WithValidationErrors(r.Context(), errors))
+}
+
 func assertResponseStatusCode(t *testing.T, w *httptest.ResponseRecorder, want int) {
 	t.Helper()
 
