@@ -69,12 +69,12 @@ func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, s
 	redirectResponse(w, r, url, status...)
 }
 
-// Back creates redirect response to the previous url.
+// Back creates plain redirect response to the previous url.
 func (i *Inertia) Back(w http.ResponseWriter, r *http.Request, status ...int) {
-	i.Redirect(w, r, i.backURL(r), status...)
+	i.Redirect(w, r, backURL(r), status...)
 }
 
-func (i *Inertia) backURL(r *http.Request) string {
+func backURL(r *http.Request) string {
 	// At the moment, it based only on the "Referer" HTTP header.
 	return refererFromRequest(r)
 }
