@@ -254,7 +254,7 @@ i, err := inertia.New(
 Unfortunately (or fortunately) we do not have the advantages of such a framework as Laravel in terms of session management.
 In this regard, we have to do some things manually that are done automatically in frameworks.
 
-One of them is displaying validation errors after redirects via `Location` and `Back` methods. 
+One of them is displaying validation errors after redirects. 
 You have to write your own implementation of `gonertia.FlashProvider` which will have to store error data into the user's session and return this data (you can get the session ID from the context depending on your application).
 
 ```go
