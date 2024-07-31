@@ -298,7 +298,7 @@ func TestHomepage(t *testing.T) {
 	
     // ...
 	
-    assertable := inertia.Assert(t, body) // from io.Reader body
+    assertable := inertia.AssertFromReader(t, body) // from io.Reader body
     // OR
     assertable := inertia.AssertFromBytes(t, body) // from []byte body
     // OR

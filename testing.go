@@ -7,7 +7,6 @@ import (
 	"io"
 	"reflect"
 	"regexp"
-	"strings"
 	"testing"
 )
 
@@ -68,17 +67,36 @@ func (i AssertableInertia) AssertProps(want Props) {
 
 var containerRe = regexp.MustCompile(` data-page="(.*?)"`)
 
-// Assert creates AssertableInertia from the io.Reader body.
-func Assert(t t, body io.Reader) AssertableInertia {
+// AssertFromReader creates AssertableInertia from the io.Reader body.
+func AssertFromReader(t t, body io.Reader) AssertableInertia {
+	t.Helper()
+
+	bs, err := io.ReadAll(body)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	return AssertFromBytes(t, bs)
+}
+
+// AssertFromString creates AssertableInertia from the string body.
+func AssertFromString(t t, body string) AssertableInertia {
+	t.Helper()
+
+	return AssertFromBytes(t, []byte(body))
+}
+
+// AssertFromBytes creates AssertableInertia from the bytes body.
+func AssertFromBytes(t t, body []byte) AssertableInertia {
 	t.Helper()
 
 	assertable := AssertableInertia{t: t}
 
-	var buf bytes.Buffer
+	buf := bytes.NewBuffer(body)
 
 	// Might be body is a json? Let's try to unmarshal first.
-	if err := json.NewDecoder(io.TeeReader(body, &buf)).Decode(&assertable.page); err == nil {
-		assertable.Body = &buf
+	if err := json.Unmarshal(buf.Bytes(), &assertable.page); err == nil {
+		assertable.Body = buf
 		return assertable
 	}
 
@@ -102,22 +120,8 @@ func Assert(t t, body io.Reader) AssertableInertia {
 		invalidInertiaResponse(t)
 	}
 
-	assertable.Body = &buf
+	assertable.Body = buf
 	return assertable
-}
-
-// AssertFromBytes creates AssertableInertia from the bytes body.
-func AssertFromBytes(t t, body []byte) AssertableInertia {
-	t.Helper()
-
-	return Assert(t, bytes.NewReader(body))
-}
-
-// AssertFromString creates AssertableInertia from the string body.
-func AssertFromString(t t, body string) AssertableInertia {
-	t.Helper()
-
-	return Assert(t, strings.NewReader(body))
 }
 
 func invalidInertiaResponse(t t) {
