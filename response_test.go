@@ -90,7 +90,7 @@ func TestInertia_Render(t *testing.T) {
 
 				var buf bytes.Buffer
 
-				assertable := Assert(t, io.TeeReader(w.Body, &buf))
+				assertable := AssertFromReader(t, io.TeeReader(w.Body, &buf))
 				assertable.AssertComponent("Some/Component")
 				assertable.AssertProps(Props{"foo": "bar", "errors": map[string]any{}})
 				assertable.AssertVersion("f8v01xv4h4")
@@ -129,7 +129,7 @@ func TestInertia_Render(t *testing.T) {
 
 				var buf bytes.Buffer
 
-				assertable := Assert(t, io.TeeReader(w.Body, &buf))
+				assertable := AssertFromReader(t, io.TeeReader(w.Body, &buf))
 				assertable.AssertComponent("Some/Component")
 				assertable.AssertProps(Props{"foo": "bar", "errors": map[string]any{}})
 				assertable.AssertVersion("f8v01xv4h4")
@@ -696,7 +696,7 @@ func assertRootTemplateSuccess(t *testing.T, i *Inertia) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	assertable := Assert(t, w.Body)
+	assertable := AssertFromReader(t, w.Body)
 	assertable.AssertComponent("Some/Component")
 	assertable.AssertProps(Props{"foo": "bar", "errors": map[string]any{}})
 	assertable.AssertVersion("f8v01xv4h4")

@@ -24,10 +24,20 @@ func (m *tMock) Fatalf(format string, args ...any) {
 	m.isFailed = true
 }
 
-const stubHTML = `<html>
-	<head></head>
+const stubHTML = `<!DOCTYPE html>
+<html lang="en">
+	<head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <script type="module" src="/build/assets/main.js"></script>
+            <link rel="stylesheet" href="/build/assets/index.css">
+	</head>
 	<body>
-		<div data-page="foo bar"></div>
+		<div data-page="foo bar">
+			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla a metus condimentum, pulvinar arcu in, lacinia urna.</p>
+			<p>Proin tincidunt, leo ut consectetur tincidunt, sem ex fermentum ipsum, a sollicitudin odio magna et dui.</p>
+			<p>Aliquam efficitur, purus quis porttitor placerat, massa mi hendrerit nulla, id convallis eros tortor non augue. Duis id varius arcu.</p>
+		</div>
 		<div id="app" data-page="{&#34;component&#34;:&#34;Foo/Bar&#34;,&#34;props&#34;:{&#34;foo&#34;: &#34;bar&#34;},&#34;url&#34;:&#34;https://example.com&#34;,&#34;version&#34;:&#34;foobar&#34;}"></div>
 	</body>
 </html>`
@@ -290,12 +300,12 @@ func TestAssertFromBytes(t *testing.T) {
 	assertStubSuccess(t, mock, stubHTML, assertable)
 }
 
-func TestAssert(t *testing.T) {
+func TestAssertFromReader(t *testing.T) {
 	t.Parallel()
 
 	mock := new(tMock)
 
-	assertable := Assert(mock, strings.NewReader(stubHTML))
+	assertable := AssertFromReader(mock, strings.NewReader(stubHTML))
 
 	assertStubSuccess(t, mock, stubHTML, assertable)
 }
