@@ -7,6 +7,7 @@ Gonertia is a well-tested and zero-dependency Inertia.js server-side adapter for
 [![Latest Release](https://img.shields.io/github/v/release/romsar/gonertia)](https://github.com/romsar/gonertia/releases)
 [![Audit Workflow](https://github.com/romsar/gonertia/actions/workflows/audit.yml/badge.svg?branch=master)](https://github.com/romsar/gonertia/actions/workflows/audit.yml?query=branch:master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/romsar/gonertia)](https://goreportcard.com/report/github.com/romsar/gonertia)
+[![codecov](https://codecov.io/github/romsar/gonertia/graph/badge.svg?token=7UKCOTU11F)](https://codecov.io/github/romsar/gonertia)
 [![Go Reference](https://godoc.org/github.com/romsar/gonertia?status.svg)](https://pkg.go.dev/github.com/romsar/gonertia)
 [![MIT license](https://img.shields.io/badge/LICENSE-MIT-orange.svg)](https://github.com/romsar/gonertia/blob/master/LICENSE)
 
