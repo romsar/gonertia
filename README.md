@@ -13,7 +13,7 @@ Gonertia is a well-tested and zero-dependency Inertia.js server-side adapter for
 
 Inertia allows you to create fully client-side rendered single-page apps without the complexity that comes with modern SPAs. It does this by leveraging existing server-side patterns that you already love.
 
-This package based on the official Laravel adapter for Inertia.js: [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel).
+This package based on the official Laravel adapter for Inertia.js [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel), supports all the features and works in the most similar way.
 
 ## Roadmap
 - [x] Tests
