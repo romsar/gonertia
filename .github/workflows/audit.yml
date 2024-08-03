@@ -9,7 +9,6 @@ on:
 
 
 jobs:
-
   audit:
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +45,7 @@ jobs:
           args: --timeout=5m
 
       - name: Test
-        run: go test -race -count 10 -vet=off ./...
+        run: go test -race -count 10 -vet=off -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
