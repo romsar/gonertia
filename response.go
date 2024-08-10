@@ -90,17 +90,12 @@ func (i *Inertia) flashValidationErrorsFromContext(ctx context.Context) {
 		return
 	}
 
-	validationErrors, err := ValidationErrorsFromContext(ctx)
-	if err != nil {
-		i.logger.Printf("invalid validation errors from context: %s", err)
-		return
-	}
-
+	validationErrors := ValidationErrorsFromContext(ctx)
 	if len(validationErrors) == 0 {
 		return
 	}
 
-	err = i.flash.FlashErrors(ctx, validationErrors)
+	err := i.flash.FlashErrors(ctx, validationErrors)
 	if err != nil {
 		i.logger.Printf("cannot flash validation errors: %s", err)
 	}
@@ -159,11 +154,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 
 	{
 		// Add validation errors from context to the result.
-		validationErrors, err := ValidationErrorsFromContext(r.Context())
-		if err != nil {
-			return nil, fmt.Errorf("get validation errors from context: %w", err)
-		}
-		result["errors"] = AlwaysProp{validationErrors}
+		result["errors"] = AlwaysProp{ValidationErrorsFromContext(r.Context())}
 	}
 
 	{
@@ -173,12 +164,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 		}
 
 		// Add props from context to the result.
-		ctxProps, err := PropsFromContext(r.Context())
-		if err != nil {
-			return nil, fmt.Errorf("getting props from context: %w", err)
-		}
-
-		for key, val := range ctxProps {
+		for key, val := range PropsFromContext(r.Context()) {
 			result[key] = val
 		}
 
@@ -310,16 +296,10 @@ func (i *Inertia) buildRootTemplate() (*template.Template, error) {
 }
 
 func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, error) {
-	// Get template data from context.
-	ctxTemplateData, err := TemplateDataFromContext(r.Context())
-	if err != nil {
-		return nil, fmt.Errorf("getting template data from context: %w", err)
-	}
-
 	// Defaults.
 	inertia, inertiaHead, err := i.buildInertiaHTML(page)
 	if err != nil {
-		return nil, fmt.Errorf("build intertia html: %w", err)
+		return nil, fmt.Errorf("build inertia html: %w", err)
 	}
 	templateData := TemplateData{
 		"inertia":     inertia,
@@ -332,7 +312,7 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 	}
 
 	// Add template data from context to the result.
-	for key, val := range ctxTemplateData {
+	for key, val := range TemplateDataFromContext(r.Context()) {
 		templateData[key] = val
 	}
 

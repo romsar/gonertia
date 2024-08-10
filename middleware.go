@@ -84,7 +84,7 @@ func (i *Inertia) resolveValidationErrors(r *http.Request) *http.Request {
 		return r
 	}
 
-	return r.WithContext(WithValidationErrors(r.Context(), validationErrors))
+	return r.WithContext(SetValidationErrors(r.Context(), validationErrors))
 }
 
 func (i *Inertia) copyWrapperResponse(dst http.ResponseWriter, src *inertiaResponseWrapper) {

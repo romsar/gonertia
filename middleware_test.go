@@ -44,11 +44,7 @@ func TestInertia_Middleware(t *testing.T) {
 
 			var got ValidationErrors
 			i.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				var err error
-				got, err = ValidationErrorsFromContext(r.Context())
-				if err != nil {
-					t.Fatalf("unexpected error: %s", err)
-				}
+				got = ValidationErrorsFromContext(r.Context())
 			})).ServeHTTP(w, r)
 
 			if !reflect.DeepEqual(got, want) {

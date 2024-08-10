@@ -6,21 +6,82 @@ import (
 	"testing"
 )
 
-func TestInertia_WithTemplateData(t *testing.T) {
+func TestInertia_SetTemplateData(t *testing.T) {
 	t.Parallel()
 
-	ctx := WithTemplateData(context.Background(), "foo", "bar")
+	t.Run("fresh", func(t *testing.T) {
+		t.Parallel()
 
-	got, ok := ctx.Value(templateDataContextKey).(TemplateData)
-	if !ok {
-		t.Fatal("template data from context is not `TemplateData`")
-	}
+		ctx := SetTemplateData(context.Background(), TemplateData{"foo": "bar"})
 
-	want := TemplateData{"foo": "bar"}
+		got, ok := ctx.Value(templateDataContextKey).(TemplateData)
+		if !ok {
+			t.Fatal("template data from context is not `TemplateData` type")
+		}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("temlateData=%#v, want=%#v", got, want)
-	}
+		want := TemplateData{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("TemplateData=%#v, want=%#v", got, want)
+		}
+	})
+
+	t.Run("already filled", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.WithValue(context.Background(), templateDataContextKey, TemplateData{"baz": "quz", "foo": "quz"})
+		ctx = SetTemplateData(ctx, TemplateData{"foo": "bar"})
+
+		got, ok := ctx.Value(templateDataContextKey).(TemplateData)
+		if !ok {
+			t.Fatal("template data from context is not `TemplateData` type")
+		}
+
+		want := TemplateData{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("TemplateData=%#v, want=%#v", got, want)
+		}
+	})
+}
+
+func TestInertia_SetTemplateDatum(t *testing.T) {
+	t.Parallel()
+
+	t.Run("fresh", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := SetTemplateDatum(context.Background(), "foo", "bar")
+
+		got, ok := ctx.Value(templateDataContextKey).(TemplateData)
+		if !ok {
+			t.Fatal("template data from context is not `TemplateData` type")
+		}
+
+		want := TemplateData{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("TemplateData=%#v, want=%#v", got, want)
+		}
+	})
+
+	t.Run("already filled", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.WithValue(context.Background(), templateDataContextKey, TemplateData{"baz": "quz", "foo": "quz"})
+		ctx = SetTemplateDatum(ctx, "foo", "bar")
+
+		got, ok := ctx.Value(templateDataContextKey).(TemplateData)
+		if !ok {
+			t.Fatal("template data from context is not `TemplateData` type")
+		}
+
+		want := TemplateData{"foo": "bar", "baz": "quz"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("TemplateData=%#v, want=%#v", got, want)
+		}
+	})
 }
 
 func Test_TemplateDataFromContext(t *testing.T) {
@@ -30,31 +91,26 @@ func Test_TemplateDataFromContext(t *testing.T) {
 		name    string
 		ctxData any
 		want    TemplateData
-		wantErr bool
 	}{
 		{
 			name:    "nil",
 			ctxData: nil,
 			want:    TemplateData{},
-			wantErr: false,
 		},
 		{
 			name:    "empty",
 			ctxData: TemplateData{},
 			want:    TemplateData{},
-			wantErr: false,
 		},
 		{
 			name:    "filled",
 			ctxData: TemplateData{"foo": "bar"},
 			want:    TemplateData{"foo": "bar"},
-			wantErr: false,
 		},
 		{
 			name:    "wrong type",
 			ctxData: []string{"foo", "bar"},
-			want:    nil,
-			wantErr: true,
+			want:    TemplateData{},
 		},
 	}
 	for _, tt := range tests {
@@ -65,50 +121,90 @@ func Test_TemplateDataFromContext(t *testing.T) {
 
 			ctx := context.WithValue(context.Background(), templateDataContextKey, tt.ctxData)
 
-			got, err := TemplateDataFromContext(ctx)
-			if tt.wantErr && err == nil {
-				t.Fatal("error expected")
-			} else if !tt.wantErr && err != nil {
-				t.Fatalf("unexpected error: %s", err)
-			} else if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+			got := TemplateDataFromContext(ctx)
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("TemplateData=%#v, want=%#v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestInertia_WithProp(t *testing.T) {
+func TestInertia_SetProps(t *testing.T) {
 	t.Parallel()
 
-	ctx := WithProp(context.Background(), "foo", "bar")
+	t.Run("fresh", func(t *testing.T) {
+		t.Parallel()
 
-	got, ok := ctx.Value(propsContextKey).(Props)
-	if !ok {
-		t.Fatal("props from context are not `Props`")
-	}
+		ctx := SetProps(context.Background(), Props{"foo": "bar"})
 
-	want := Props{"foo": "bar"}
+		got, ok := ctx.Value(propsContextKey).(Props)
+		if !ok {
+			t.Fatal("props from context is not `Props` type")
+		}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("Props=%#v, want=%#v", got, want)
-	}
+		want := Props{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("Props=%#v, want=%#v", got, want)
+		}
+	})
+
+	t.Run("already filled", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.WithValue(context.Background(), propsContextKey, Props{"baz": "quz", "foo": "quz"})
+		ctx = SetProps(ctx, Props{"foo": "bar"})
+
+		got, ok := ctx.Value(propsContextKey).(Props)
+		if !ok {
+			t.Fatal("props from context is not `Props` type")
+		}
+
+		want := Props{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("Props=%#v, want=%#v", got, want)
+		}
+	})
 }
 
-func TestInertia_WithProps(t *testing.T) {
+func TestInertia_SetProp(t *testing.T) {
 	t.Parallel()
 
-	ctx := WithProps(context.Background(), Props{"foo": "bar"})
+	t.Run("fresh", func(t *testing.T) {
+		t.Parallel()
 
-	got, ok := ctx.Value(propsContextKey).(Props)
-	if !ok {
-		t.Fatal("props from context are not `Props`")
-	}
+		ctx := SetProp(context.Background(), "foo", "bar")
 
-	want := Props{"foo": "bar"}
+		got, ok := ctx.Value(propsContextKey).(Props)
+		if !ok {
+			t.Fatal("props from context is not `Props` type")
+		}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("Props=%#v, want=%#v", got, want)
-	}
+		want := Props{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("Props=%#v, want=%#v", got, want)
+		}
+	})
+
+	t.Run("already filled", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.WithValue(context.Background(), propsContextKey, Props{"baz": "quz", "foo": "quz"})
+		ctx = SetProp(ctx, "foo", "bar")
+
+		got, ok := ctx.Value(propsContextKey).(Props)
+		if !ok {
+			t.Fatal("props from context is not `Props` type")
+		}
+
+		want := Props{"foo": "bar", "baz": "quz"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("props=%#v, want=%#v", got, want)
+		}
+	})
 }
 
 func Test_PropsFromContext(t *testing.T) {
@@ -118,31 +214,26 @@ func Test_PropsFromContext(t *testing.T) {
 		name    string
 		ctxData any
 		want    Props
-		wantErr bool
 	}{
 		{
 			name:    "nil",
 			ctxData: nil,
 			want:    Props{},
-			wantErr: false,
 		},
 		{
 			name:    "empty",
 			ctxData: Props{},
 			want:    Props{},
-			wantErr: false,
 		},
 		{
 			name:    "filled",
 			ctxData: Props{"foo": "bar"},
 			want:    Props{"foo": "bar"},
-			wantErr: false,
 		},
 		{
 			name:    "wrong type",
 			ctxData: []string{"foo", "bar"},
-			want:    nil,
-			wantErr: true,
+			want:    Props{},
 		},
 	}
 	for _, tt := range tests {
@@ -153,29 +244,25 @@ func Test_PropsFromContext(t *testing.T) {
 
 			ctx := context.WithValue(context.Background(), propsContextKey, tt.ctxData)
 
-			got, err := PropsFromContext(ctx)
-			if tt.wantErr && err == nil {
-				t.Fatal("error expected")
-			} else if !tt.wantErr && err != nil {
-				t.Fatalf("unexpected error: %s", err)
-			} else if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+			got := PropsFromContext(ctx)
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("Props=%#v, want=%#v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestInertia_WithValidationError(t *testing.T) {
+func TestInertia_SetValidationErrors(t *testing.T) {
 	t.Parallel()
 
-	t.Run("message is string", func(t *testing.T) {
+	t.Run("fresh", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := WithValidationError(context.Background(), "foo", "bar")
+		ctx := SetValidationErrors(context.Background(), ValidationErrors{"foo": "bar"})
 
 		got, ok := ctx.Value(validationErrorsContextKey).(ValidationErrors)
 		if !ok {
-			t.Fatal("validation errors from context are not `ValidationErrors`")
+			t.Fatal("validation errors from context is not `ValidationErrors` type")
 		}
 
 		want := ValidationErrors{"foo": "bar"}
@@ -185,21 +272,18 @@ func TestInertia_WithValidationError(t *testing.T) {
 		}
 	})
 
-	t.Run("message is validation errors", func(t *testing.T) {
+	t.Run("already filled", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := WithValidationError(context.Background(), "foo", ValidationErrors{
-			"abc": "123",
-		})
+		ctx := context.WithValue(context.Background(), validationErrorsContextKey, ValidationErrors{"baz": "quz", "foo": "quz"})
+		ctx = SetValidationErrors(ctx, ValidationErrors{"foo": "bar"})
 
 		got, ok := ctx.Value(validationErrorsContextKey).(ValidationErrors)
 		if !ok {
-			t.Fatal("validation errors from context are not `ValidationErrors`")
+			t.Fatal("validation errors from context is not `ValidationErrors` type")
 		}
 
-		want := ValidationErrors{"foo": ValidationErrors{
-			"abc": "123",
-		}}
+		want := ValidationErrors{"foo": "bar"}
 
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("ValidationErrors=%#v, want=%#v", got, want)
@@ -207,21 +291,82 @@ func TestInertia_WithValidationError(t *testing.T) {
 	})
 }
 
-func TestInertia_WithValidationErrors(t *testing.T) {
+func TestInertia_AddValidationErrors(t *testing.T) {
 	t.Parallel()
 
-	ctx := WithValidationErrors(context.Background(), ValidationErrors{"foo": "bar"})
+	t.Run("fresh", func(t *testing.T) {
+		t.Parallel()
 
-	got, ok := ctx.Value(validationErrorsContextKey).(ValidationErrors)
-	if !ok {
-		t.Fatal("validation errors from context area not `ValidationErrors`")
-	}
+		ctx := AddValidationErrors(context.Background(), ValidationErrors{"foo": "bar"})
 
-	want := ValidationErrors{"foo": "bar"}
+		got, ok := ctx.Value(validationErrorsContextKey).(ValidationErrors)
+		if !ok {
+			t.Fatal("validation errors from context is not `ValidationErrors` type")
+		}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("ValidationErrors=%#v, want=%#v", got, want)
-	}
+		want := ValidationErrors{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("ValidationErrors=%#v, want=%#v", got, want)
+		}
+	})
+
+	t.Run("already filled", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.WithValue(context.Background(), validationErrorsContextKey, ValidationErrors{"baz": "quz", "foo": "quz"})
+		ctx = AddValidationErrors(ctx, ValidationErrors{"foo": "bar"})
+
+		got, ok := ctx.Value(validationErrorsContextKey).(ValidationErrors)
+		if !ok {
+			t.Fatal("validation errors from context is not `ValidationErrors` type")
+		}
+
+		want := ValidationErrors{"baz": "quz", "foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("ValidationErrors=%#v, want=%#v", got, want)
+		}
+	})
+}
+
+func TestInertia_SetValidationError(t *testing.T) {
+	t.Parallel()
+
+	t.Run("fresh", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := SetValidationError(context.Background(), "foo", "bar")
+
+		got, ok := ctx.Value(validationErrorsContextKey).(ValidationErrors)
+		if !ok {
+			t.Fatal("validation errors from context is not `ValidationErrors` type")
+		}
+
+		want := ValidationErrors{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("ValidationErrors=%#v, want=%#v", got, want)
+		}
+	})
+
+	t.Run("already filled", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.WithValue(context.Background(), validationErrorsContextKey, ValidationErrors{"baz": "quz", "foo": "quz"})
+		ctx = SetValidationError(ctx, "foo", "bar")
+
+		got, ok := ctx.Value(validationErrorsContextKey).(ValidationErrors)
+		if !ok {
+			t.Fatal("validation errors from context is not `ValidationErrors` type")
+		}
+
+		want := ValidationErrors{"foo": "bar", "baz": "quz"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("ValidationErrors=%#v, want=%#v", got, want)
+		}
+	})
 }
 
 func Test_ValidationErrorsFromContext(t *testing.T) {
@@ -231,37 +376,31 @@ func Test_ValidationErrorsFromContext(t *testing.T) {
 		name    string
 		ctxData any
 		want    ValidationErrors
-		wantErr bool
 	}{
 		{
 			name:    "nil",
 			ctxData: nil,
 			want:    ValidationErrors{},
-			wantErr: false,
 		},
 		{
 			name:    "empty",
 			ctxData: ValidationErrors{},
 			want:    ValidationErrors{},
-			wantErr: false,
 		},
 		{
 			name:    "filled",
 			ctxData: ValidationErrors{"foo": "bar"},
 			want:    ValidationErrors{"foo": "bar"},
-			wantErr: false,
 		},
 		{
 			name:    "filled with nested",
 			ctxData: ValidationErrors{"foo": ValidationErrors{"abc": "123"}},
 			want:    ValidationErrors{"foo": ValidationErrors{"abc": "123"}},
-			wantErr: false,
 		},
 		{
 			name:    "wrong type",
 			ctxData: []string{"foo", "bar"},
-			want:    nil,
-			wantErr: true,
+			want:    ValidationErrors{},
 		},
 	}
 	for _, tt := range tests {
@@ -272,12 +411,8 @@ func Test_ValidationErrorsFromContext(t *testing.T) {
 
 			ctx := context.WithValue(context.Background(), validationErrorsContextKey, tt.ctxData)
 
-			got, err := ValidationErrorsFromContext(ctx)
-			if tt.wantErr && err == nil {
-				t.Fatal("error expected")
-			} else if !tt.wantErr && err != nil {
-				t.Fatalf("unexpected error: %s", err)
-			} else if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+			got := ValidationErrorsFromContext(ctx)
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("ValidationErrors=%#v, want=%#v", got, tt.want)
 			}
 		})

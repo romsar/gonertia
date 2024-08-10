@@ -229,7 +229,7 @@ func TestInertia_Render(t *testing.T) {
 			w, r := requestMock(http.MethodGet, "/home")
 			asInertiaRequest(r)
 
-			ctx := WithProps(r.Context(), Props{"foo": "baz", "abc": "456", "ctx": "prop"})
+			ctx := SetProps(r.Context(), Props{"foo": "baz", "abc": "456", "ctx": "prop"})
 
 			err := i.Render(w, r.WithContext(ctx), "Some/Component", Props{
 				"foo": "zzz",
@@ -254,7 +254,7 @@ func TestInertia_Render(t *testing.T) {
 			w, r := requestMock(http.MethodGet, "/home")
 			asInertiaRequest(r)
 
-			ctx := WithValidationErrors(r.Context(), ValidationErrors{"foo": "bar"})
+			ctx := SetValidationErrors(r.Context(), ValidationErrors{"foo": "bar"})
 
 			err := I().Render(w, r.WithContext(ctx), "Some/Component", Props{
 				"abc": "123",

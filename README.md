@@ -17,6 +17,7 @@ Inertia allows you to create fully client-side rendered single-page apps without
 This package based on the official Laravel adapter for Inertia.js [inertiajs/inertia-laravel](https://github.com/inertiajs/inertia-laravel), supports all the features and works in the most similar way.
 
 ## Roadmap
+
 - [x] Tests
 - [x] Helpers for testing
 - [x] Helpers for validation errors
@@ -24,7 +25,9 @@ This package based on the official Laravel adapter for Inertia.js [inertiajs/ine
 - [x] SSR
 
 ## Installation
+
 Install using `go get` command:
+
 ```shell
 go get github.com/romsar/gonertia
 ```
@@ -32,14 +35,16 @@ go get github.com/romsar/gonertia
 ## Usage
 
 ### Basic example
+
 Initialize Gonertia in your `main.go`:
+
 ```go
 package main
 
 import (
     "log"
     "net/http"
-	
+
     inertia "github.com/romsar/gonertia"
 )
 
@@ -65,7 +70,7 @@ func homeHandler(i *inertia.Inertia) http.Handler {
         err := i.Render(w, r, "Home/Index", inertia.Props{
             "some": "data",
         })
-		
+
         if err != nil {
             handleServerErr(w, err)
             return
@@ -77,20 +82,21 @@ func homeHandler(i *inertia.Inertia) http.Handler {
 ```
 
 Create `root.html` template:
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Put here your styles, meta and other stuff -->
-    {{ .inertiaHead }}
-</head>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<!-- Put here your styles, meta and other stuff -->
+		{{ .inertiaHead }}
+	</head>
 
-<body>
-{{ .inertia }}
-<script type="module" src="/build/assets/app.js"></script>
-</body>
+	<body>
+		{{ .inertia }}
+		<script type="module" src="/build/assets/app.js"></script>
+	</body>
 </html>
 ```
 
@@ -177,7 +183,8 @@ i.ShareTemplateFunc("trim", strings.TrimSpace)
 #### Pass template data via context (in middleware)
 
 ```go
-ctx := inertia.WithTemplateData(r.Context(), "title", "Home page")
+ctx := inertia.SetTemplateData(r.Context(), inertia.TemplateData{"foo", "bar"})
+// or inertia.SetTemplateDatum(r.Context(), "foo", "bar")
 
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
@@ -185,14 +192,14 @@ ctx := inertia.WithTemplateData(r.Context(), "title", "Home page")
 #### Share prop globally ([learn more](https://inertiajs.com/shared-data))
 
 ```go
-i.ShareProp("name", "Roman")
+i.ShareProp("foo", "bar")
 ```
 
 #### Pass props via context (in middleware)
 
 ```go
-ctx := inertia.WithProp(r.Context(), "name", "Roman")
-// or inertia.WithProps(r.Context(), inertia.Props{"name": "Roman"})
+ctx := inertia.SetProps(r.Context(), inertia.Props{"foo": "bar"})
+// or inertia.SetProp(r.Context(), "foo", "bar")
 
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
@@ -200,8 +207,9 @@ ctx := inertia.WithProp(r.Context(), "name", "Roman")
 #### Validation errors ([learn more](https://inertiajs.com/validation))
 
 ```go
-ctx := inertia.WithValidationError(r.Context(), "some_field", "some error")
-// or inertia.WithValidationErrors(r.Context(), inertia.ValidationErrors{"some_field": "some error"})
+ctx := inertia.SetValidationErrors(r.Context(), inertia.ValidationErrors{"some_field": "some error"})
+// or inertia.AddValidationErrors(r.Context(), inertia.ValidationErrors{"some_field": "some error"})
+// or inertia.SetValidationError(r.Context(), "some_field", "some error")
 
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
@@ -209,6 +217,7 @@ ctx := inertia.WithValidationError(r.Context(), "some_field", "some error")
 #### Replace standard JSON marshaller
 
 1. Implement [JSONMarshaller](./json.go) interface:
+
 ```go
 import jsoniter "github.com/json-iterator/go"
 
@@ -224,6 +233,7 @@ func (j jsonIteratorMarshaller) Marshal(v interface{}) ([]byte, error) {
 ```
 
 2. Provide your implementation in constructor:
+
 ```go
 i, err := inertia.New(
     /* ... */,
@@ -255,7 +265,7 @@ i, err := inertia.New(
 Unfortunately (or fortunately) we do not have the advantages of such a framework as Laravel in terms of session management.
 In this regard, we have to do some things manually that are done automatically in frameworks.
 
-One of them is displaying validation errors after redirects. 
+One of them is displaying validation errors after redirects.
 You have to write your own implementation of `gonertia.FlashProvider` which will have to store error data into the user's session and return this data (you can get the session ID from the context depending on your application).
 
 ```go
@@ -266,6 +276,7 @@ i, err := inertia.New(
 ```
 
 Simple inmemory implementation of flash provider:
+
 ```go
 type InmemFlashProvider struct {
     errors map[string]inertia.ValidationErrors
@@ -295,16 +306,16 @@ Of course, this package provides convenient interfaces for testing!
 
 ```go
 func TestHomepage(t *testing.T) {
-    body := ... // get an HTML or JSON using httptest package or real HTTP request. 
-	
+    body := ... // get an HTML or JSON using httptest package or real HTTP request.
+
     // ...
-	
+
     assertable := inertia.AssertFromReader(t, body) // from io.Reader body
     // OR
     assertable := inertia.AssertFromBytes(t, body) // from []byte body
     // OR
     assertable := inertia.AssertFromString(t, body) // from string body
-	
+
     // now you can do assertions using assertable.Assert[...] methods:
     assertable.AssertComponent("Foo/Bar")
     assertable.AssertVersion("foo bar")
