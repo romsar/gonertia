@@ -70,7 +70,7 @@ func setHTMLResponse(w http.ResponseWriter) {
 }
 
 func isSeeOtherRedirectMethod(method string) bool {
-	return method == http.MethodPost || method == http.MethodPatch || method == http.MethodPut
+	return method == http.MethodPut || method == http.MethodPatch || method == http.MethodDelete
 }
 
 func refererFromRequest(r *http.Request) string {
