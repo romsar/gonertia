@@ -158,7 +158,7 @@ func TestInertia_Middleware(t *testing.T) {
 				assertResponseStatusCode(t, w, http.StatusFound)
 			})
 
-			for _, method := range []string{http.MethodPost, http.MethodPut, http.MethodPatch} {
+			for _, method := range []string{http.MethodPut, http.MethodPatch, http.MethodDelete} {
 				method := method
 
 				t.Run(method+" cannot have 302 status", func(t *testing.T) {
