@@ -59,7 +59,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 			i.Back(w2, r)
 		}
 
-		// The POST, PUT and PATCH requests cannot have the 302 code status.
+		// The PUT, PATCH and DELETE requests cannot have the 302 code status.
 		// Let's set the status code to the 303 instead.
 		//
 		// https://inertiajs.com/redirects#303-response-code
