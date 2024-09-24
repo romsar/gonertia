@@ -25,15 +25,6 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Determines what to do when the Inertia asset version has changed.
-		// By default, we'll initiate a client-side location visit to force an update.
-		//
-		// https://inertiajs.com/asset-versioning
-		if r.Method == http.MethodGet && inertiaVersionFromRequest(r) != i.version {
-			i.Location(w, r, r.URL.RequestURI())
-			return
-		}
-
 		// Now we know that this request was made by Inertia.
 		//
 		// But there is one problem:
@@ -46,6 +37,15 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 
 		// Now put our response writer wrapper to other handlers.
 		next.ServeHTTP(w2, r)
+
+		// Determines what to do when the Inertia asset version has changed.
+		// By default, we'll initiate a client-side location visit to force an update.
+		//
+		// https://inertiajs.com/asset-versioning
+		if r.Method == http.MethodGet && inertiaVersionFromRequest(r) != i.version {
+			i.Location(w, r, r.URL.RequestURI())
+			return
+		}
 
 		// Determines what to do when an Inertia action returned empty response.
 		// By default, we will redirect the user back to where he came from.
