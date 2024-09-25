@@ -38,25 +38,20 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// Now put our response writer wrapper to other handlers.
 		next.ServeHTTP(w2, r)
 
-		// Our response writer wrapper does have all needle data! Yuppy!
-		//
-		// Don't forget to copy all data to the original
-		// response writer before end!
-		defer i.copyWrapperResponse(w, w2)
-
 		// Determines what to do when the Inertia asset version has changed.
 		// By default, we'll initiate a client-side location visit to force an update.
 		//
 		// https://inertiajs.com/asset-versioning
 		if r.Method == http.MethodGet && inertiaVersionFromRequest(r) != i.version {
-			i.Location(w2, r, r.URL.RequestURI())
+			i.Location(w, r, r.URL.RequestURI())
 			return
 		}
 
 		// Determines what to do when an Inertia action returned empty response.
 		// By default, we will redirect the user back to where he came from.
 		if w2.StatusCode() == http.StatusOK && w2.IsEmpty() {
-			i.Back(w2, r)
+			i.Back(w, r)
+			return
 		}
 
 		// The PUT, PATCH and DELETE requests cannot have the 302 code status.
@@ -66,6 +61,12 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		if w2.StatusCode() == http.StatusFound && isSeeOtherRedirectMethod(r.Method) {
 			setResponseStatus(w2, http.StatusSeeOther)
 		}
+
+		// Our response writer wrapper does have all needle data! Yuppy!
+		//
+		// Don't forget to copy all data to the original
+		// response writer before end!
+		i.copyWrapperResponse(w, w2)
 	})
 }
 
