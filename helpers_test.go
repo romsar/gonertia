@@ -125,12 +125,7 @@ func assertHTMLResponse(t *testing.T, w *httptest.ResponseRecorder) {
 func assertInertiaVary(t *testing.T, w *httptest.ResponseRecorder) {
 	t.Helper()
 
-	gotVary := w.Header().Get("Vary")
-	wantVary := "X-Inertia"
-
-	if gotVary != wantVary {
-		t.Fatalf("vary=%s, want=%s", gotVary, wantVary)
-	}
+	assertHeader(t, w, "Vary", "X-Inertia")
 }
 
 func assertInertiaNotVary(t *testing.T, w *httptest.ResponseRecorder) {
