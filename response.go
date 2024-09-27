@@ -63,6 +63,9 @@ func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, s
 
 	if IsInertiaRequest(r) {
 		setInertiaLocationInResponse(w, url)
+		deleteInertiaInResponse(w)
+		deleteVaryInResponse(w)
+		setResponseStatus(w, http.StatusConflict)
 		return
 	}
 

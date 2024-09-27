@@ -82,7 +82,7 @@ func assertHeaderMissing(t *testing.T, w *httptest.ResponseRecorder, key string)
 	t.Helper()
 
 	if got := w.Header().Get(key); got != "" {
-		t.Fatalf("header=%s, want=%s", got, "")
+		t.Fatalf("unexpected header %s=%s, want=empty", key, got)
 	}
 }
 
@@ -130,6 +130,16 @@ func assertInertiaVary(t *testing.T, w *httptest.ResponseRecorder) {
 
 	if gotVary != wantVary {
 		t.Fatalf("vary=%s, want=%s", gotVary, wantVary)
+	}
+}
+
+func assertInertiaNotVary(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+
+	gotVary := w.Header().Get("Vary")
+
+	if gotVary != "" {
+		t.Fatal("unexpected Vary header found")
 	}
 }
 
