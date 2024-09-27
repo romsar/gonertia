@@ -80,9 +80,10 @@ func TestInertia_Middleware(t *testing.T) {
 				asInertiaRequest(r)
 				withInertiaVersion(r, "bar")
 
-				i.Middleware(assertHandlerServed(t, successJSONHandler)).ServeHTTP(w, r)
+				i.Middleware(assertHandlerServed(t, setInertiaResponseHandler, successJSONHandler)).ServeHTTP(w, r)
 
-				assertInertiaVary(t, w)
+				assertInertiaNotVary(t, w)
+				assertNotInertiaResponse(t, w)
 				assertResponseStatusCode(t, w, http.StatusConflict)
 				assertInertiaLocation(t, w, "/home")
 
@@ -271,4 +272,8 @@ func setHeadersHandler(headers map[string]string) http.HandlerFunc {
 			w.Header().Set(key, val)
 		}
 	}
+}
+
+func setInertiaResponseHandler(w http.ResponseWriter, _ *http.Request) {
+	setInertiaInResponse(w)
 }
