@@ -136,11 +136,7 @@ func assertInertiaVary(t *testing.T, w *httptest.ResponseRecorder) {
 func assertInertiaNotVary(t *testing.T, w *httptest.ResponseRecorder) {
 	t.Helper()
 
-	gotVary := w.Header().Get("Vary")
-
-	if gotVary != "" {
-		t.Fatal("unexpected Vary header found")
-	}
+	assertHeaderMissing(t, w, "Vary")
 }
 
 func assertHandlerServed(t *testing.T, handlers ...http.HandlerFunc) http.HandlerFunc {
