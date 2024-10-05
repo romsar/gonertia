@@ -104,6 +104,7 @@ Create `root.html` template:
 
 1. [Gonertia + Vue + Vite + Tailwind](https://github.com/hbourgeot/gonertia_vue_example)
 2. [Gonertia + Svelte + Vite + Tailwind](https://github.com/hbourgeot/gonertia_svelte_example)
+3. [Gonertia + React + Vite + Tailwind](https://github.com/sdil/gonertia_react_example)
 
 ### More examples
 
