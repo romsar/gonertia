@@ -90,9 +90,9 @@ func WithFlashProvider(flashData FlashProvider) Option {
 }
 
 // WithEncryptHistory returns Option that will enable Inertia's global history encryption.
-func WithEncryptHistory(encrypt ...bool) Option {
+func WithEncryptHistory(encryptHistory ...bool) Option {
 	return func(i *Inertia) error {
-		i.encryptHistory = firstOr[bool](encrypt, true)
+		i.encryptHistory = firstOr[bool](encryptHistory, true)
 		return nil
 	}
 }
