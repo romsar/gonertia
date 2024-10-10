@@ -418,3 +418,127 @@ func Test_ValidationErrorsFromContext(t *testing.T) {
 		})
 	}
 }
+
+func TestInertia_SetEncryptHistory(t *testing.T) {
+	t.Parallel()
+
+	ctx := SetEncryptHistory(context.Background())
+
+	got, ok := ctx.Value(encryptHistoryContextKey).(bool)
+	if !ok {
+		t.Fatal("encrypt history from context is not `bool` type")
+	}
+
+	want := true
+
+	if got != want {
+		t.Fatalf("encryptHistory=%t, want=%t", got, want)
+	}
+}
+
+func Test_EncryptHistoryFromContext(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		ctxData any
+		want    bool
+	}{
+		{
+			name:    "nil",
+			ctxData: nil,
+			want:    false,
+		},
+		{
+			name:    "false",
+			ctxData: false,
+			want:    false,
+		},
+		{
+			name:    "true",
+			ctxData: true,
+			want:    true,
+		},
+		{
+			name:    "wrong type",
+			ctxData: []string{"foo", "bar"},
+			want:    false,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := context.WithValue(context.Background(), encryptHistoryContextKey, tt.ctxData)
+
+			got, _ := EncryptHistoryFromContext(ctx)
+			if got != tt.want {
+				t.Fatalf("encryptHistory=%t, want=%t", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInertia_SetClearHistory(t *testing.T) {
+	t.Parallel()
+
+	ctx := SetClearHistory(context.Background())
+
+	got, ok := ctx.Value(clearHistoryContextKey).(bool)
+	if !ok {
+		t.Fatal("clear history from context is not `bool` type")
+	}
+
+	want := true
+
+	if got != want {
+		t.Fatalf("clearHistory=%t, want=%t", got, want)
+	}
+}
+
+func Test_ClearHistoryFromContext(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		ctxData any
+		want    bool
+	}{
+		{
+			name:    "nil",
+			ctxData: nil,
+			want:    false,
+		},
+		{
+			name:    "false",
+			ctxData: false,
+			want:    false,
+		},
+		{
+			name:    "true",
+			ctxData: true,
+			want:    true,
+		},
+		{
+			name:    "wrong type",
+			ctxData: []string{"foo", "bar"},
+			want:    false,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := context.WithValue(context.Background(), clearHistoryContextKey, tt.ctxData)
+
+			got := ClearHistoryFromContext(ctx)
+			if got != tt.want {
+				t.Fatalf("clearHistory=%t, want=%t", got, tt.want)
+			}
+		})
+	}
+}

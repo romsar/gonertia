@@ -228,6 +228,98 @@ func TestAssertableInertia_AssertProps(t *testing.T) {
 	})
 }
 
+func TestAssertableInertia_EncryptHistory(t *testing.T) {
+	t.Parallel()
+
+	t.Run("positive", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		i := AssertableInertia{
+			t:    mock,
+			page: &page{EncryptHistory: true},
+		}
+
+		i.AssertEncryptHistory(true)
+
+		if !mock.helperInvoked {
+			t.Fatal("expected Helper() to be invoked")
+		}
+
+		if mock.isFailed {
+			t.Fatal("unexpected assertion failure")
+		}
+	})
+
+	t.Run("negative", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		i := AssertableInertia{
+			page: &page{EncryptHistory: true},
+			t:    mock,
+		}
+
+		i.AssertEncryptHistory(false)
+
+		if !mock.helperInvoked {
+			t.Fatal("expected Helper() to be invoked")
+		}
+
+		if !mock.isFailed {
+			t.Fatal("expected assertion failure")
+		}
+	})
+}
+
+func TestAssertableInertia_ClearHistory(t *testing.T) {
+	t.Parallel()
+
+	t.Run("positive", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		i := AssertableInertia{
+			t:    mock,
+			page: &page{ClearHistory: true},
+		}
+
+		i.AssertClearHistory(true)
+
+		if !mock.helperInvoked {
+			t.Fatal("expected Helper() to be invoked")
+		}
+
+		if mock.isFailed {
+			t.Fatal("unexpected assertion failure")
+		}
+	})
+
+	t.Run("negative", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		i := AssertableInertia{
+			page: &page{ClearHistory: true},
+			t:    mock,
+		}
+
+		i.AssertClearHistory(false)
+
+		if !mock.helperInvoked {
+			t.Fatal("expected Helper() to be invoked")
+		}
+
+		if !mock.isFailed {
+			t.Fatal("expected assertion failure")
+		}
+	})
+}
+
 func TestAssertFromString(t *testing.T) {
 	t.Parallel()
 

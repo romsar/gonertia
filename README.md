@@ -322,12 +322,16 @@ func TestHomepage(t *testing.T) {
     assertable.AssertVersion("foo bar")
     assertable.AssertURL("https://example.com")
     assertable.AssertProps(inertia.Props{"foo": "bar"})
+    assertable.AssertEncryptHistory(true)
+    assertable.AssertClearHistory(true)
 
     // or work with the data yourself:
     assertable.Component // Foo/Bar
     assertable.Version // foo bar
     assertable.URL // https://example.com
     assertable.Props // inertia.Props{"foo": "bar"}
+    assertable.EncryptHistory // true
+    assertable.ClearHistory // false
     assertable.Body // full response body
 }
 ```

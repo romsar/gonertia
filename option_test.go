@@ -252,3 +252,19 @@ func TestWithFlashProvider(t *testing.T) {
 		t.Fatalf("flash provider=%v, want=%s", i.flash, want)
 	}
 }
+
+func TestWithEncryptHistory(t *testing.T) {
+	t.Parallel()
+
+	i := I()
+
+	option := WithEncryptHistory(true)
+
+	if err := option(i); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if !i.encryptHistory {
+		t.Fatalf("encryptHistory=%t, want=%t", i.encryptHistory, true)
+	}
+}

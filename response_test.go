@@ -213,6 +213,8 @@ func TestInertia_Render(t *testing.T) {
 			assertable.AssertProps(Props{"foo": "bar", "errors": map[string]any{}})
 			assertable.AssertVersion("f8v01xv4h4")
 			assertable.AssertURL("/home")
+			assertable.AssertEncryptHistory(false)
+			assertable.AssertEncryptHistory(false)
 
 			assertInertiaResponse(t, w)
 			assertJSONResponse(t, w)
@@ -270,6 +272,26 @@ func TestInertia_Render(t *testing.T) {
 					"foo": "bar",
 				},
 			})
+		})
+
+		t.Run("history encryption", func(t *testing.T) {
+			t.Parallel()
+
+			w, r := requestMock(http.MethodGet, "/home")
+			asInertiaRequest(r)
+
+			ctx := r.Context()
+			ctx = SetEncryptHistory(ctx, true)
+			ctx = SetClearHistory(ctx)
+
+			err := I().Render(w, r.WithContext(ctx), "Some/Component")
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			assertable := AssertFromString(t, w.Body.String())
+			assertable.AssertEncryptHistory(true)
+			assertable.AssertClearHistory(true)
 		})
 
 		t.Run("props value resolving", func(t *testing.T) {

@@ -65,6 +65,26 @@ func (i AssertableInertia) AssertProps(want Props) {
 	}
 }
 
+// AssertEncryptHistory verifies that encrypt history
+// value from Inertia response and the passed value are the same.
+func (i AssertableInertia) AssertEncryptHistory(want bool) {
+	i.t.Helper()
+
+	if i.EncryptHistory != want {
+		i.t.Fatalf("inertia: EncryptHistory=%t, want=%t", i.EncryptHistory, want)
+	}
+}
+
+// AssertClearHistory verifies that clear history
+// value from Inertia response and the passed value are the same.
+func (i AssertableInertia) AssertClearHistory(want bool) {
+	i.t.Helper()
+
+	if i.ClearHistory != want {
+		i.t.Fatalf("inertia: ClearHistory=%t, want=%t", i.ClearHistory, want)
+	}
+}
+
 var containerRe = regexp.MustCompile(` data-page="(.*?)"`)
 
 // AssertFromReader creates AssertableInertia from the io.Reader body.
