@@ -132,10 +132,12 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 }
 
 type page struct {
-	Component string `json:"component"`
-	Props     Props  `json:"props"`
-	URL       string `json:"url"`
-	Version   string `json:"version"`
+	Component      string `json:"component"`
+	Props          Props  `json:"props"`
+	URL            string `json:"url"`
+	Version        string `json:"version"`
+	EncryptHistory bool   `json:"encryptHistory"`
+	ClearHistory   bool   `json:"clearHistory"`
 }
 
 func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*page, error) {
@@ -145,10 +147,12 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 	}
 
 	return &page{
-		Component: component,
-		Props:     props,
-		URL:       r.RequestURI,
-		Version:   i.version,
+		Component:      component,
+		Props:          props,
+		URL:            r.RequestURI,
+		Version:        i.version,
+		EncryptHistory: i.resolveEncryptHistory(r.Context()),
+		ClearHistory:   ClearHistoryFromContext(r.Context()),
 	}, nil
 }
 
@@ -251,6 +255,14 @@ func resolvePropVal(val any) (_ any, err error) {
 	}
 
 	return val, nil
+}
+
+func (i *Inertia) resolveEncryptHistory(ctx context.Context) bool {
+	encryptHistory, ok := EncryptHistoryFromContext(ctx)
+	if ok {
+		return encryptHistory
+	}
+	return i.encryptHistory
 }
 
 func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {

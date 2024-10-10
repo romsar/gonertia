@@ -26,6 +26,7 @@ type Inertia struct {
 
 	containerID    string
 	version        string
+	encryptHistory bool
 	jsonMarshaller JSONMarshaller
 	logger         Logger
 }

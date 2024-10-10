@@ -10,14 +10,16 @@ const (
 	templateDataContextKey = contextKey(iota + 1)
 	propsContextKey
 	validationErrorsContextKey
+	encryptHistoryContextKey
+	clearHistoryContextKey
 )
 
-// SetTemplateData sets template data to the passed context.Context.
+// SetTemplateData sets template data to the passed context.
 func SetTemplateData(ctx context.Context, templateData TemplateData) context.Context {
 	return context.WithValue(ctx, templateDataContextKey, templateData)
 }
 
-// SetTemplateDatum sets single template data item to the passed context.Context.
+// SetTemplateDatum sets single template data item to the passed context.
 func SetTemplateDatum(ctx context.Context, key string, val any) context.Context {
 	templateData := TemplateDataFromContext(ctx)
 	templateData[key] = val
@@ -33,12 +35,12 @@ func TemplateDataFromContext(ctx context.Context) TemplateData {
 	return TemplateData{}
 }
 
-// SetProps sets props values to the passed context.Context.
+// SetProps sets props values to the passed context.
 func SetProps(ctx context.Context, props Props) context.Context {
 	return context.WithValue(ctx, propsContextKey, props)
 }
 
-// SetProp sets prop value to the passed context.Context.
+// SetProp sets prop value to the passed context.
 func SetProp(ctx context.Context, key string, val any) context.Context {
 	props := PropsFromContext(ctx)
 	props[key] = val
@@ -54,12 +56,12 @@ func PropsFromContext(ctx context.Context) Props {
 	return Props{}
 }
 
-// SetValidationErrors sets validation errors to the passed context.Context.
+// SetValidationErrors sets validation errors to the passed context.
 func SetValidationErrors(ctx context.Context, errors ValidationErrors) context.Context {
 	return context.WithValue(ctx, validationErrorsContextKey, errors)
 }
 
-// AddValidationErrors appends validation errors to the passed context.Context.
+// AddValidationErrors appends validation errors to the passed context.
 func AddValidationErrors(ctx context.Context, errors ValidationErrors) context.Context {
 	validationErrors := ValidationErrorsFromContext(ctx)
 	for key, val := range errors {
@@ -68,7 +70,7 @@ func AddValidationErrors(ctx context.Context, errors ValidationErrors) context.C
 	return SetValidationErrors(ctx, validationErrors)
 }
 
-// SetValidationError sets validation error to the passed context.Context.
+// SetValidationError sets validation error to the passed context.
 func SetValidationError(ctx context.Context, key string, msg string) context.Context {
 	validationErrors := ValidationErrorsFromContext(ctx)
 	validationErrors[key] = msg
@@ -82,4 +84,29 @@ func ValidationErrorsFromContext(ctx context.Context) ValidationErrors {
 		return validationErrors
 	}
 	return ValidationErrors{}
+}
+
+// SetEncryptHistory enables or disables history encryption.
+func SetEncryptHistory(ctx context.Context, encrypt ...bool) context.Context {
+	return context.WithValue(ctx, encryptHistoryContextKey, firstOr[bool](encrypt, true))
+}
+
+// EncryptHistoryFromContext returns history encryption value from the context.
+func EncryptHistoryFromContext(ctx context.Context) (bool, bool) {
+	encrypt, ok := ctx.Value(encryptHistoryContextKey).(bool)
+	return encrypt, ok
+}
+
+// SetClearHistory cleaning history state.
+func SetClearHistory(ctx context.Context) context.Context {
+	return context.WithValue(ctx, clearHistoryContextKey, true)
+}
+
+// ClearHistoryFromContext returns clear history value from the context.
+func ClearHistoryFromContext(ctx context.Context) bool {
+	clear, ok := ctx.Value(clearHistoryContextKey).(bool)
+	if ok {
+		return clear
+	}
+	return false
 }
