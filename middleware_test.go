@@ -160,8 +160,6 @@ func TestInertia_Middleware(t *testing.T) {
 			})
 
 			for _, method := range []string{http.MethodPut, http.MethodPatch, http.MethodDelete} {
-				method := method
-
 				t.Run(method+" cannot have 302 status", func(t *testing.T) {
 					t.Parallel()
 
