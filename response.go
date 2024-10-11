@@ -80,6 +80,7 @@ func Defer(value any, group ...string) DeferProp {
 }
 
 var _ ignoreFirstLoad = DeferProp{}
+
 var _ mergeable = DeferProp{}
 
 // AlwaysProp is a property that will always evaluated.
