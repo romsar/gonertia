@@ -23,6 +23,16 @@ This package based on the official Laravel adapter for Inertia.js [inertiajs/ine
 - [x] Helpers for validation errors
 - [x] Examples
 - [x] SSR
+- [x] Inertia.js v2 compatibility (waiting for stable release, discussion is here: [#17](https://github.com/romsar/gonertia/issues/17))
+
+### Inertia.js v2 compatibility
+
+A beta version of Inertia.js 2.0 [was recently released](https://v2.inertiajs.com/upgrade-guide).
+
+The new version of Gonertia has already been adapted to all new features and will be merged into master after the stable version of Inertia.js appears.
+
+[Click here](https://github.com/romsar/gonertia/issues/17) to try and discuss.
+
 
 ## Installation
 
