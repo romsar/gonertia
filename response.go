@@ -19,18 +19,59 @@ type TemplateFuncs map[string]any
 // and will be available in the front-end component.
 type Props map[string]any
 
-// LazyProp is a property value that will only evaluated then needed.
+// OptionalProp is a property that will evaluate then needed.
 //
 // https://inertiajs.com/partial-reloads
-type LazyProp struct {
+type OptionalProp struct {
 	Value any
 }
 
-func (p LazyProp) Prop() any {
+func (p OptionalProp) Prop() any {
 	return p.Value
 }
 
-// AlwaysProp is a property value that will always evaluated.
+func (p OptionalProp) shouldIgnoreFirstLoad() bool {
+	return true
+}
+
+func Optional(value any) OptionalProp {
+	return OptionalProp{Value: value}
+}
+
+type ignoreFirstLoad interface {
+	shouldIgnoreFirstLoad() bool
+}
+
+var _ ignoreFirstLoad = OptionalProp{}
+
+// Deprecated: use OptionalProp.
+type LazyProp = OptionalProp
+
+// Deprecated: use Optional.
+func Lazy(value any) LazyProp {
+	return LazyProp{Value: value}
+}
+
+// DeferProp is a property that will evaluate after page load.
+//
+// https://v2.inertiajs.com/deferred-props
+type DeferProp struct {
+	OptionalProp
+	Group string
+}
+
+func (p DeferProp) Prop() any {
+	return p.Value
+}
+
+func Defer(value any, group ...string) DeferProp {
+	return DeferProp{
+		OptionalProp: Optional(value),
+		Group:        firstOr[string](group, "default"),
+	}
+}
+
+// AlwaysProp is a property that will always evaluated.
 //
 // https://github.com/inertiajs/inertia-laravel/pull/627
 type AlwaysProp struct {
@@ -39,6 +80,10 @@ type AlwaysProp struct {
 
 func (p AlwaysProp) Prop() any {
 	return p.Value
+}
+
+func Always(value any) AlwaysProp {
+	return AlwaysProp{Value: value}
 }
 
 // Proper is an interface for custom type, which provides property, that will be resolved.
@@ -132,16 +177,19 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 }
 
 type page struct {
-	Component      string `json:"component"`
-	Props          Props  `json:"props"`
-	URL            string `json:"url"`
-	Version        string `json:"version"`
-	EncryptHistory bool   `json:"encryptHistory"`
-	ClearHistory   bool   `json:"clearHistory"`
+	Component      string              `json:"component"`
+	Props          Props               `json:"props"`
+	URL            string              `json:"url"`
+	Version        string              `json:"version"`
+	EncryptHistory bool                `json:"encryptHistory"`
+	ClearHistory   bool                `json:"clearHistory"`
+	DeferredProps  map[string][]string `json:"deferredProps,omitempty"`
 }
 
 func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*page, error) {
-	props, err := i.prepareProps(r, component, props)
+	deferredProps := resolveDeferredProps(r, component, props)
+
+	props, err := i.resolveProperties(r, component, props)
 	if err != nil {
 		return nil, fmt.Errorf("prepare props: %w", err)
 	}
@@ -153,10 +201,11 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 		Version:        i.version,
 		EncryptHistory: i.resolveEncryptHistory(r.Context()),
 		ClearHistory:   ClearHistoryFromContext(r.Context()),
+		DeferredProps:  deferredProps,
 	}, nil
 }
 
-func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
+func (i *Inertia) resolveProperties(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 
 	{
@@ -182,54 +231,55 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	}
 
 	{
-		// Only (include keys) and except (exclude keys) logic.
-		only, except := i.getOnlyAndExcept(r, component)
+		// Partial reloads only work for visits made to the same page component.
+		//
+		// https://inertiajs.com/partial-reloads
+		if isPartial(r, component) {
+			// Only (include keys) and except (exclude keys) logic.
+			only, except := getOnlyAndExcept(r)
 
-		// Filter props.
-		if len(only) > 0 {
-			for key, val := range result {
-				if _, ok := only[key]; ok {
-					continue
-				}
-				if _, ok := val.(AlwaysProp); ok {
-					continue
-				}
+			if len(only) > 0 {
+				for key, val := range result {
+					if _, ok := only[key]; ok {
+						continue
+					}
+					if _, ok := val.(AlwaysProp); ok {
+						continue
+					}
 
-				delete(result, key)
-			}
-		} else {
-			for key, val := range result {
-				if _, ok := val.(LazyProp); ok {
 					delete(result, key)
 				}
 			}
-		}
-		for key := range except {
-			delete(result, key)
+			for key := range except {
+				delete(result, key)
+			}
+		} else {
+			// Props with ignoreFirstLoad should not be included.
+			for key, val := range result {
+				if ifl, ok := val.(ignoreFirstLoad); ok && ifl.shouldIgnoreFirstLoad() {
+					delete(result, key)
+				}
+			}
 		}
 	}
 
 	// Resolve props values.
 	for key, val := range result {
 		var err error
-		val, err = resolvePropVal(val)
+		result[key], err = resolvePropVal(val)
 		if err != nil {
 			return nil, fmt.Errorf("resolve prop value: %w", err)
 		}
-		result[key] = val
 	}
 
 	return result, nil
 }
 
-func (i *Inertia) getOnlyAndExcept(r *http.Request, component string) (only, except map[string]struct{}) {
-	// Partial reloads only work for visits made to the same page component.
-	//
-	// https://inertiajs.com/partial-reloads
-	if partialComponentFromRequest(r) != component {
-		return nil, nil
-	}
+func isPartial(r *http.Request, component string) bool {
+	return partialComponentFromRequest(r) == component
+}
 
+func getOnlyAndExcept(r *http.Request) (only, except map[string]struct{}) {
 	return setOf[string](onlyFromRequest(r)), setOf[string](exceptFromRequest(r))
 }
 
@@ -255,6 +305,22 @@ func resolvePropVal(val any) (_ any, err error) {
 	}
 
 	return val, nil
+}
+
+func resolveDeferredProps(r *http.Request, component string, props Props) map[string][]string {
+	if isPartial(r, component) {
+		return nil
+	}
+
+	keysByGroups := make(map[string][]string)
+
+	for key, val := range props {
+		if dp, ok := val.(DeferProp); ok {
+			keysByGroups[dp.Group] = append(keysByGroups[dp.Group], key)
+		}
+	}
+
+	return keysByGroups
 }
 
 func (i *Inertia) resolveEncryptHistory(ctx context.Context) bool {

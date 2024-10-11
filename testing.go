@@ -85,6 +85,16 @@ func (i AssertableInertia) AssertClearHistory(want bool) {
 	}
 }
 
+// AssertDeferredProps verifies that deferred props from Inertia
+// response and the passed deferred props are the same.
+func (i AssertableInertia) AssertDeferredProps(want map[string][]string) {
+	i.t.Helper()
+
+	if !reflect.DeepEqual(i.DeferredProps, want) {
+		i.t.Fatalf("inertia: Props=%#v, want=%#v", i.Props, want)
+	}
+}
+
 var containerRe = regexp.MustCompile(` data-page="(.*?)"`)
 
 // AssertFromReader creates AssertableInertia from the io.Reader body.

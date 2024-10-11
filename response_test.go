@@ -297,7 +297,7 @@ func TestInertia_Render(t *testing.T) {
 		t.Run("props value resolving", func(t *testing.T) {
 			t.Parallel()
 
-			t.Run("reject lazy props", func(t *testing.T) {
+			t.Run("reject ignoreFirstLoad props", func(t *testing.T) {
 				t.Parallel()
 
 				w, r := requestMock(http.MethodGet, "/home")
@@ -307,7 +307,8 @@ func TestInertia_Render(t *testing.T) {
 					"foo":              "bar",
 					"closure":          func() any { return "prop" },
 					"closure_with_err": func() (any, error) { return "prop", nil },
-					"lazy":             LazyProp{func() (any, error) { return "prop", nil }},
+					"optional":         Optional(func() (any, error) { return "prop", nil }),
+					"defer":            Defer(func() (any, error) { return "prop", nil }),
 				})
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
@@ -322,23 +323,46 @@ func TestInertia_Render(t *testing.T) {
 				})
 			})
 
+			t.Run("partial resolving", func(t *testing.T) {
+				t.Parallel()
+
+				w, r := requestMock(http.MethodGet, "/home")
+				asInertiaRequest(r)
+				withPartialComponent(r, "Some/Component")
+
+				err := I().Render(w, r, "Some/Component", Props{
+					"foo": "bar",
+					"baz": "quz",
+				})
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+
+				assertable := AssertFromString(t, w.Body.String())
+				assertable.AssertProps(Props{
+					"foo":    "bar",
+					"baz":    "quz",
+					"errors": map[string]any{},
+				})
+			})
+
 			t.Run("only", func(t *testing.T) {
 				t.Parallel()
 
-				t.Run("resolve lazy props, same component", func(t *testing.T) {
+				t.Run("partial", func(t *testing.T) {
 					t.Parallel()
 
 					w, r := requestMock(http.MethodGet, "/home")
 					asInertiaRequest(r)
-					withOnly(r, []string{"foo", "closure", "lazy"})
+					withOnly(r, []string{"foo", "closure", "optional"})
 					withPartialComponent(r, "Some/Component")
 
 					err := I().Render(w, r, "Some/Component", Props{
-						"foo":     "bar",
-						"abc":     "123",
-						"closure": func() (any, error) { return "prop", nil },
-						"lazy":    LazyProp{func() (any, error) { return "prop", nil }},
-						"always":  AlwaysProp{"prop"},
+						"foo":      "bar",
+						"abc":      "123",
+						"closure":  func() (any, error) { return "prop", nil },
+						"optional": Optional(func() (any, error) { return "prop", nil }),
+						"always":   Always("prop"),
 					})
 					if err != nil {
 						t.Fatalf("unexpected error: %s", err)
@@ -346,20 +370,20 @@ func TestInertia_Render(t *testing.T) {
 
 					assertable := AssertFromString(t, w.Body.String())
 					assertable.AssertProps(Props{
-						"foo":     "bar",
-						"closure": "prop",
-						"lazy":    "prop",
-						"always":  "prop",
-						"errors":  map[string]interface{}{},
+						"foo":      "bar",
+						"closure":  "prop",
+						"optional": "prop",
+						"always":   "prop",
+						"errors":   map[string]interface{}{},
 					})
 				})
 
-				t.Run("resolve lazy props, other component", func(t *testing.T) {
+				t.Run("not partial", func(t *testing.T) {
 					t.Parallel()
 
 					w, r := requestMock(http.MethodGet, "/home")
 					asInertiaRequest(r)
-					withOnly(r, []string{"foo", "closure", "lazy"})
+					withOnly(r, []string{"foo", "closure", "optional"})
 					withPartialComponent(r, "Other/Component")
 
 					err := I().Render(w, r, "Some/Component", Props{
@@ -384,27 +408,109 @@ func TestInertia_Render(t *testing.T) {
 			t.Run("except", func(t *testing.T) {
 				t.Parallel()
 
-				w, r := requestMock(http.MethodGet, "/home")
-				asInertiaRequest(r)
-				withOnly(r, []string{"foo", "baz"})
-				withExcept(r, []string{"foo", "abc", "lazy", "always"})
-				withPartialComponent(r, "Some/Component")
+				t.Run("partial", func(t *testing.T) {
+					t.Parallel()
 
-				err := I().Render(w, r, "Some/Component", Props{
-					"foo":    "bar",
-					"baz":    "quz",
-					"bez":    "bee",
-					"lazy":   LazyProp{func() (any, error) { return "prop", nil }},
-					"always": AlwaysProp{"prop"},
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+					withOnly(r, []string{"foo", "baz"})
+					withExcept(r, []string{"foo", "abc", "optional", "always"})
+					withPartialComponent(r, "Some/Component")
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"foo":      "bar",
+						"baz":      "quz",
+						"bez":      "bee",
+						"optional": Optional(func() (any, error) { return "prop", nil }),
+						"always":   Always("prop"),
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %s", err)
+					}
+
+					assertable := AssertFromString(t, w.Body.String())
+					assertable.AssertProps(Props{
+						"baz":    "quz",
+						"errors": map[string]any{},
+					})
 				})
-				if err != nil {
-					t.Fatalf("unexpected error: %s", err)
-				}
 
-				assertable := AssertFromString(t, w.Body.String())
-				assertable.AssertProps(Props{
-					"baz":    "quz",
-					"errors": map[string]any{},
+				t.Run("not partial", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+					withExcept(r, []string{"baz"})
+					withPartialComponent(r, "Other/Component")
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"foo": "bar",
+						"baz": "quz",
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %s", err)
+					}
+
+					assertable := AssertFromString(t, w.Body.String())
+					assertable.AssertProps(Props{
+						"foo":    "bar",
+						"baz":    "quz",
+						"errors": map[string]any{},
+					})
+				})
+			})
+
+			t.Run("deferred props", func(t *testing.T) {
+				t.Parallel()
+
+				t.Run("partial", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+					withPartialComponent(r, "Some/Component")
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"defer_with_default_group1": Defer(func() (any, error) { return "prop1", nil }),
+						"defer_with_default_group2": Defer("prop2", "default"),
+						"defer_with_custom_group":   Defer("prop3", "foobar"),
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %s", err)
+					}
+
+					assertable := AssertFromString(t, w.Body.String())
+					assertable.AssertProps(Props{
+						"defer_with_default_group1": "prop1",
+						"defer_with_default_group2": "prop2",
+						"defer_with_custom_group":   "prop3",
+						"errors":                    map[string]any{},
+					})
+					assertable.AssertDeferredProps(nil)
+				})
+
+				t.Run("not partial", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+					withPartialComponent(r, "Other/Component")
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"defer_with_default_group1": Defer(func() (any, error) { return "prop1", nil }),
+						"defer_with_default_group2": Defer("prop2", "default"),
+						"defer_with_custom_group":   Defer("prop3", "foobar"),
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %s", err)
+					}
+
+					assertable := AssertFromString(t, w.Body.String())
+					assertable.AssertProps(Props{"errors": map[string]any{}})
+					assertable.AssertDeferredProps(map[string][]string{
+						"default": {"defer_with_default_group1", "defer_with_default_group2"},
+						"foobar":  {"defer_with_custom_group"},
+					})
 				})
 			})
 
@@ -413,7 +519,6 @@ func TestInertia_Render(t *testing.T) {
 
 				w, r := requestMock(http.MethodGet, "/home")
 				asInertiaRequest(r)
-				withPartialComponent(r, "Some/Component")
 
 				err := I().Render(w, r, "Some/Component", Props{
 					"proper":     testProper{"prop1"},

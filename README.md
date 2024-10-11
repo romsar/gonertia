@@ -132,17 +132,28 @@ i, err := inertia.New(
 
 Also, you have to use asset bundling tools like [Vite](https://vitejs.dev/) or [Webpack](https://webpack.js.org/) (especially with [Laravel Mix](https://laravel-mix.com/)). The setup will vary depending on this choice, you can read more about it in [official docs](https://inertiajs.com/server-side-rendering) or check an [example](https://github.com/hbourgeot/gonertia_vue_example) that works on Vite.
 
-#### Lazy and Always props ([learn more](https://inertiajs.com/partial-reloads))
+#### Optional and Always props ([learn more](https://inertiajs.com/partial-reloads))
 
 ```go
 props := inertia.Props{
-    "lazy": inertia.LazyProp{func () (any, error) {
+    "optional": inertia.Optional{func () (any, error) {
         return "prop", nil
     }},
-    "always": inertia.AlwaysProp{"prop"},
+    "always": inertia.Always("prop"),
 }
 
 i.Render(w, r, "Some/Page", props)
+```
+
+#### Deferred props ([learn more](https://v2.inertiajs.com/deferred-props))
+
+```go
+props := inertia.Props{
+    "defer_with_default_group": inertia.Defer(func () (any, error) {
+        return "prop", nil
+    }),
+    "defer_with_custom_group": inertia.Defer("prop", "foobar"),
+}
 ```
 
 #### Redirects ([learn more](https://inertiajs.com/redirects))
@@ -301,6 +312,29 @@ func (p *InmemFlashProvider) GetErrors(ctx context.Context) (ValidationErrors, e
 }
 ```
 
+#### History encryption ([learn more](https://v2.inertiajs.com/history-encryption))
+
+Encrypt history:
+```go
+// Global encryption:
+i, err := inertia.New(
+    /* ... */
+    inertia.WithEncryptHistory(),
+)
+
+// Pre-request encryption:
+ctx := inertia.SetEncryptHistory(r.Context())
+
+// pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
+```
+
+Clear history:
+```go
+ctx := inertia.SetClearHistory(r.Context())
+
+// pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
+```
+
 #### Testing
 
 Of course, this package provides convenient interfaces for testing!
@@ -324,6 +358,7 @@ func TestHomepage(t *testing.T) {
     assertable.AssertProps(inertia.Props{"foo": "bar"})
     assertable.AssertEncryptHistory(true)
     assertable.AssertClearHistory(true)
+    assertable.AssertDeferredProps(map[string][]string{"default": []string{"foo bar"}})
 
     // or work with the data yourself:
     assertable.Component // Foo/Bar
