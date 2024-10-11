@@ -23,6 +23,7 @@ type Props map[string]any
 //
 // https://inertiajs.com/partial-reloads
 type OptionalProp struct {
+	ignoresFirstLoad
 	Value any
 }
 
@@ -30,19 +31,19 @@ func (p OptionalProp) Prop() any {
 	return p.Value
 }
 
-func (p OptionalProp) shouldIgnoreFirstLoad() bool {
-	return true
-}
-
 func Optional(value any) OptionalProp {
 	return OptionalProp{Value: value}
 }
+
+var _ ignoreFirstLoad = OptionalProp{}
 
 type ignoreFirstLoad interface {
 	shouldIgnoreFirstLoad() bool
 }
 
-var _ ignoreFirstLoad = OptionalProp{}
+type ignoresFirstLoad struct{}
+
+func (i ignoresFirstLoad) shouldIgnoreFirstLoad() bool { return true }
 
 // Deprecated: use OptionalProp.
 type LazyProp = OptionalProp
@@ -56,7 +57,9 @@ func Lazy(value any) LazyProp {
 //
 // https://v2.inertiajs.com/deferred-props
 type DeferProp struct {
-	OptionalProp
+	ignoresFirstLoad
+	mergesProps
+	Value any
 	Group string
 }
 
@@ -64,16 +67,24 @@ func (p DeferProp) Prop() any {
 	return p.Value
 }
 
+func (p DeferProp) Merge() DeferProp {
+	p.merge = true
+	return p
+}
+
 func Defer(value any, group ...string) DeferProp {
 	return DeferProp{
-		OptionalProp: Optional(value),
-		Group:        firstOr[string](group, "default"),
+		Value: value,
+		Group: firstOr[string](group, "default"),
 	}
 }
 
+var _ ignoreFirstLoad = DeferProp{}
+var _ mergeable = DeferProp{}
+
 // AlwaysProp is a property that will always evaluated.
 //
-// https://github.com/inertiajs/inertia-laravel/pull/627
+// https://inertiajs.com/partial-reloads
 type AlwaysProp struct {
 	Value any
 }
@@ -84,6 +95,44 @@ func (p AlwaysProp) Prop() any {
 
 func Always(value any) AlwaysProp {
 	return AlwaysProp{Value: value}
+}
+
+// MergeProps is a property, which items will be merged instead of overwrite.
+//
+// https://v2.inertiajs.com/merging-props
+type MergeProps struct {
+	mergesProps
+	Value any
+}
+
+func (p MergeProps) Prop() any {
+	return p.Value
+}
+
+func (p MergeProps) Merge() MergeProps {
+	p.merge = true
+	return p
+}
+
+func Merge(value any) MergeProps {
+	return MergeProps{
+		Value:       value,
+		mergesProps: mergesProps{merge: true},
+	}
+}
+
+var _ mergeable = MergeProps{}
+
+type mergeable interface {
+	shouldMerge() bool
+}
+
+type mergesProps struct {
+	merge bool
+}
+
+func (p mergesProps) shouldMerge() bool {
+	return p.merge
 }
 
 // Proper is an interface for custom type, which provides property, that will be resolved.
@@ -184,10 +233,12 @@ type page struct {
 	EncryptHistory bool                `json:"encryptHistory"`
 	ClearHistory   bool                `json:"clearHistory"`
 	DeferredProps  map[string][]string `json:"deferredProps,omitempty"`
+	MergeProps     []string            `json:"mergeProps,omitempty"`
 }
 
 func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*page, error) {
 	deferredProps := resolveDeferredProps(r, component, props)
+	mergeProps := resolveMergeProps(r, props)
 
 	props, err := i.resolveProperties(r, component, props)
 	if err != nil {
@@ -202,6 +253,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 		EncryptHistory: i.resolveEncryptHistory(r.Context()),
 		ClearHistory:   ClearHistoryFromContext(r.Context()),
 		DeferredProps:  deferredProps,
+		MergeProps:     mergeProps,
 	}, nil
 }
 
@@ -251,6 +303,10 @@ func (i *Inertia) resolveProperties(r *http.Request, component string, props Pro
 				}
 			}
 			for key := range except {
+				if _, ok := result[key].(AlwaysProp); ok {
+					continue
+				}
+
 				delete(result, key)
 			}
 		} else {
@@ -321,6 +377,23 @@ func resolveDeferredProps(r *http.Request, component string, props Props) map[st
 	}
 
 	return keysByGroups
+}
+
+func resolveMergeProps(r *http.Request, props Props) []string {
+	resetProps := setOf[string](resetFromRequest(r))
+
+	var mergeProps []string
+	for key, val := range props {
+		if _, ok := resetProps[key]; ok {
+			continue
+		}
+
+		if m, ok := val.(mergeable); ok && m.shouldMerge() {
+			mergeProps = append(mergeProps, key)
+		}
+	}
+
+	return mergeProps
 }
 
 func (i *Inertia) resolveEncryptHistory(ctx context.Context) bool {

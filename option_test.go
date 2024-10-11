@@ -104,14 +104,14 @@ type jsonTestMarshaller struct {
 	val string
 }
 
-func (j jsonTestMarshaller) Decode(_ io.Reader, v interface{}) error {
+func (j jsonTestMarshaller) Decode(_ io.Reader, v any) error {
 	if ptr, ok := v.(*string); ok {
 		*ptr = j.val
 	}
 	return nil
 }
 
-func (j jsonTestMarshaller) Marshal(v interface{}) ([]byte, error) {
+func (j jsonTestMarshaller) Marshal(v any) ([]byte, error) {
 	return []byte(j.val), nil
 }
 

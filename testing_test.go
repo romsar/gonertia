@@ -366,6 +366,52 @@ func TestAssertableInertia_DeferredProps(t *testing.T) {
 	})
 }
 
+func TestAssertableInertia_MergeProps(t *testing.T) {
+	t.Parallel()
+
+	t.Run("positive", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		i := AssertableInertia{
+			t:    mock,
+			page: &page{MergeProps: []string{"foo", "bar"}},
+		}
+
+		i.AssertMergeProps([]string{"foo", "bar"})
+
+		if !mock.helperInvoked {
+			t.Fatal("expected Helper() to be invoked")
+		}
+
+		if mock.isFailed {
+			t.Fatal("unexpected assertion failure")
+		}
+	})
+
+	t.Run("negative", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		i := AssertableInertia{
+			t:    mock,
+			page: &page{MergeProps: []string{"foo", "bar"}},
+		}
+
+		i.AssertMergeProps([]string{"foo", "baz"})
+
+		if !mock.helperInvoked {
+			t.Fatal("expected Helper() to be invoked")
+		}
+
+		if !mock.isFailed {
+			t.Fatal("expected assertion failure")
+		}
+	})
+}
+
 func TestAssertFromString(t *testing.T) {
 	t.Parallel()
 

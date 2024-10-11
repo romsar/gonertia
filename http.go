@@ -12,6 +12,7 @@ const (
 	headerInertiaPartialExcept    = "X-Inertia-Partial-Except"
 	headerInertiaPartialComponent = "X-Inertia-Partial-Component"
 	headerInertiaVersion          = "X-Inertia-Version"
+	headerInertiaReset            = "X-Inertia-Reset"
 	headerVary                    = "Vary"
 	headerContentType             = "Content-Type"
 )
@@ -56,6 +57,15 @@ func onlyFromRequest(r *http.Request) []string {
 
 func exceptFromRequest(r *http.Request) []string {
 	header := r.Header.Get(headerInertiaPartialExcept)
+	if header == "" {
+		return nil
+	}
+
+	return strings.Split(header, ",")
+}
+
+func resetFromRequest(r *http.Request) []string {
+	header := r.Header.Get(headerInertiaReset)
 	if header == "" {
 		return nil
 	}

@@ -91,7 +91,17 @@ func (i AssertableInertia) AssertDeferredProps(want map[string][]string) {
 	i.t.Helper()
 
 	if !reflect.DeepEqual(i.DeferredProps, want) {
-		i.t.Fatalf("inertia: Props=%#v, want=%#v", i.Props, want)
+		i.t.Fatalf("inertia: DeferredProps=%#v, want=%#v", i.DeferredProps, want)
+	}
+}
+
+// AssertMergeProps verifies that merge props from Inertia
+// response and the passed merge props are the same.
+func (i AssertableInertia) AssertMergeProps(want []string) {
+	i.t.Helper()
+
+	if !reflect.DeepEqual(i.MergeProps, want) {
+		i.t.Fatalf("inertia: MergeProps=%#v, want=%#v", i.MergeProps, want)
 	}
 }
 

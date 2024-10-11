@@ -23,6 +23,7 @@ This package based on the official Laravel adapter for Inertia.js [inertiajs/ine
 - [x] Helpers for validation errors
 - [x] Examples
 - [x] SSR
+- [x] Inertia 2.0 compatibility
 
 ## Installation
 
@@ -145,6 +146,14 @@ props := inertia.Props{
 i.Render(w, r, "Some/Page", props)
 ```
 
+#### Merging props ([learn more](https://v2.inertiajs.com/merging-props))
+
+```go
+props := inertia.Props{
+    "merging": inertia.Merge([]int{rand.Int63()}),
+}
+```
+
 #### Deferred props ([learn more](https://v2.inertiajs.com/deferred-props))
 
 ```go
@@ -153,6 +162,7 @@ props := inertia.Props{
         return "prop", nil
     }),
     "defer_with_custom_group": inertia.Defer("prop", "foobar"),
+    "defer_with_merging": inertia.Defer([]int64{rand.Int63()}).Merge(),
 }
 ```
 
@@ -235,11 +245,11 @@ import jsoniter "github.com/json-iterator/go"
 
 type jsonIteratorMarshaller struct{}
 
-func (j jsonIteratorMarshaller) Decode(r io.Reader, v interface{}) error {
+func (j jsonIteratorMarshaller) Decode(r io.Reader, v any) error {
     return jsoniter.NewDecoder(r).Decode(v)
 }
 
-func (j jsonIteratorMarshaller) Marshal(v interface{}) ([]byte, error) {
+func (j jsonIteratorMarshaller) Marshal(v any) ([]byte, error) {
     return jsoniter.Marshal(v)
 }
 ```

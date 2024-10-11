@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -374,7 +375,7 @@ func TestInertia_Render(t *testing.T) {
 						"closure":  "prop",
 						"optional": "prop",
 						"always":   "prop",
-						"errors":   map[string]interface{}{},
+						"errors":   map[string]any{},
 					})
 				})
 
@@ -431,6 +432,7 @@ func TestInertia_Render(t *testing.T) {
 					assertable := AssertFromString(t, w.Body.String())
 					assertable.AssertProps(Props{
 						"baz":    "quz",
+						"always": "prop",
 						"errors": map[string]any{},
 					})
 				})
@@ -507,10 +509,109 @@ func TestInertia_Render(t *testing.T) {
 
 					assertable := AssertFromString(t, w.Body.String())
 					assertable.AssertProps(Props{"errors": map[string]any{}})
+
+					sort.Strings(assertable.DeferredProps["default"]) // fix flacks
 					assertable.AssertDeferredProps(map[string][]string{
 						"default": {"defer_with_default_group1", "defer_with_default_group2"},
 						"foobar":  {"defer_with_custom_group"},
 					})
+				})
+			})
+
+			t.Run("merge props", func(t *testing.T) {
+				t.Parallel()
+
+				t.Run("array", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"ids": Merge([]int{1, 2, 3}),
+						"foo": "bar",
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %s", err)
+					}
+
+					assertable := AssertFromString(t, w.Body.String())
+					assertable.AssertProps(Props{
+						"ids":    []any{float64(1), float64(2), float64(3)},
+						"foo":    "bar",
+						"errors": map[string]any{},
+					})
+					assertable.AssertMergeProps([]string{"ids"})
+				})
+
+				t.Run("scalar", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"foo": Merge("bar"),
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %s", err)
+					}
+
+					assertable := AssertFromString(t, w.Body.String())
+					assertable.AssertProps(Props{
+						"foo":    "bar",
+						"errors": map[string]any{},
+					})
+					assertable.AssertMergeProps([]string{"foo"})
+				})
+
+				t.Run("reset", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+					withReset(r, []string{"foo"})
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"foo": Merge([]int{1, 2}),
+						"bar": Merge([]int{3, 4}),
+						"baz": "quz",
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %s", err)
+					}
+
+					assertable := AssertFromString(t, w.Body.String())
+					assertable.AssertProps(Props{
+						"foo":    []any{float64(1), float64(2)},
+						"bar":    []any{float64(3), float64(4)},
+						"baz":    "quz",
+						"errors": map[string]any{},
+					})
+					assertable.AssertMergeProps([]string{"bar"})
+				})
+
+				t.Run("deferred props", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+					withPartialComponent(r, "Some/Component")
+
+					err := I().Render(w, r, "Some/Component", Props{
+						"foo": Defer([]int{1, 2, 3}).Merge(),
+					})
+					if err != nil {
+						t.Fatalf("unexpected error: %s", err)
+					}
+
+					assertable := AssertFromString(t, w.Body.String())
+					assertable.AssertProps(Props{
+						"foo":    []any{float64(1), float64(2), float64(3)},
+						"errors": map[string]any{},
+					})
+					assertable.AssertDeferredProps(nil)
+					assertable.AssertMergeProps([]string{"foo"})
 				})
 			})
 
