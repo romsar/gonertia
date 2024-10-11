@@ -369,6 +369,7 @@ func TestHomepage(t *testing.T) {
     assertable.AssertEncryptHistory(true)
     assertable.AssertClearHistory(true)
     assertable.AssertDeferredProps(map[string][]string{"default": []string{"foo bar"}})
+    assertable.AssertMergeProps([]string{"foo"})
 
     // or work with the data yourself:
     assertable.Component // Foo/Bar
@@ -377,6 +378,7 @@ func TestHomepage(t *testing.T) {
     assertable.Props // inertia.Props{"foo": "bar"}
     assertable.EncryptHistory // true
     assertable.ClearHistory // false
+    assertable.MergeProps // []string{"foo"}
     assertable.Body // full response body
 }
 ```
