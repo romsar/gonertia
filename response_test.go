@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-//nolint:gocognit
+//nolint:gocognit,gocyclo
 func TestInertia_Render(t *testing.T) {
 	t.Parallel()
 
