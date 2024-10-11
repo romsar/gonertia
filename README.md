@@ -30,7 +30,7 @@ This package based on the official Laravel adapter for Inertia.js [inertiajs/ine
 Install using `go get` command:
 
 ```shell
-go get github.com/romsar/gonertia
+go get github.com/romsar/gonertia@2.x
 ```
 
 ## Usage
