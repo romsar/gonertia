@@ -97,8 +97,8 @@ func EncryptHistoryFromContext(ctx context.Context) (bool, bool) {
 	return encryptHistory, ok
 }
 
-// SetClearHistory cleaning history state.
-func SetClearHistory(ctx context.Context) context.Context {
+// ClearHistory cleaning history state.
+func ClearHistory(ctx context.Context) context.Context {
 	return context.WithValue(ctx, clearHistoryContextKey, true)
 }
 

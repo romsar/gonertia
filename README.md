@@ -340,7 +340,7 @@ ctx := inertia.SetEncryptHistory(r.Context())
 
 Clear history:
 ```go
-ctx := inertia.SetClearHistory(r.Context())
+ctx := inertia.ClearHistory(r.Context())
 
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```

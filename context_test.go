@@ -473,10 +473,10 @@ func Test_EncryptHistoryFromContext(t *testing.T) {
 	}
 }
 
-func TestInertia_SetClearHistory(t *testing.T) {
+func TestInertia_ClearHistory(t *testing.T) {
 	t.Parallel()
 
-	ctx := SetClearHistory(context.Background())
+	ctx := ClearHistory(context.Background())
 
 	got, ok := ctx.Value(clearHistoryContextKey).(bool)
 	if !ok {

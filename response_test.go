@@ -283,7 +283,7 @@ func TestInertia_Render(t *testing.T) {
 
 			ctx := r.Context()
 			ctx = SetEncryptHistory(ctx, true)
-			ctx = SetClearHistory(ctx)
+			ctx = ClearHistory(ctx)
 
 			err := I().Render(w, r.WithContext(ctx), "Some/Component")
 			if err != nil {

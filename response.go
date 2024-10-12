@@ -19,7 +19,7 @@ type TemplateFuncs map[string]any
 // and will be available in the front-end component.
 type Props map[string]any
 
-// OptionalProp is a property that will evaluate then needed.
+// OptionalProp is a property that will evaluate when needed.
 //
 // https://inertiajs.com/partial-reloads
 type OptionalProp struct {
