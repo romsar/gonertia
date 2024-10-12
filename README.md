@@ -29,7 +29,7 @@ This package based on the official Laravel adapter for Inertia.js [inertiajs/ine
 
 A beta version of Inertia.js 2.0 [was recently released](https://v2.inertiajs.com/upgrade-guide).
 
-The new version of Gonertia has already been adapted to all new features and will be merged into master after the stable version of Inertia.js appears.
+The new version of Gonertia has already been adapted to all new features.
 
 [Click here](https://github.com/romsar/gonertia/issues/17) to try and discuss.
 
