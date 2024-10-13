@@ -221,14 +221,12 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 		}
 		result[key] = val
 			wg.Done()
-			}()
-		
+			}()	
 	}
         wg.Wait()
 	close(errch)
 	allerr:=make([]error,0)
 	for e:= range errch {
-		
 		allerr= append(allerr,e)
 		}
 	err:=errors.Join(allerr...)
