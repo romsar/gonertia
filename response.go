@@ -229,7 +229,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	}
         wg.Wait()
 	close(errch)
-	allerr:=make([]error,len(result))
+	allerr:=make([]error,0)
 	for e:= range errch {
 		
 		allerr= append(allerr,e)
