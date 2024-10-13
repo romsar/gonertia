@@ -155,7 +155,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 }
 
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
-	mut:=new(sync.Mutex)
+	mut := sync.Mutex{}
 	result := make(Props)
 
 	{
