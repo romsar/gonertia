@@ -3,10 +3,12 @@ package gonertia
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 // TemplateData are data that will be available in the root template.
@@ -153,6 +155,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 }
 
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
+	mut := sync.Mutex{}
 	result := make(Props)
 
 	{
@@ -204,17 +207,35 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 			delete(result, key)
 		}
 	}
-
 	// Resolve props values.
+	wg := new(sync.WaitGroup)
+	errch := make(chan error, len(result))
 	for key, val := range result {
-		var err error
-		val, err = resolvePropVal(val)
-		if err != nil {
-			return nil, fmt.Errorf("resolve prop value: %w", err)
-		}
-		result[key] = val
+		wg.Add(1)
+		go func() {
+			var err error
+			val, err = resolvePropVal(val)
+			if err != nil {
+				errch <- fmt.Errorf("resolve prop value: %w", err)
+				wg.Done()
+				return
+			}
+			mut.Lock()
+			result[key] = val
+			mut.Unlock()
+			wg.Done()
+		}()
 	}
-
+	wg.Wait()
+	close(errch)
+	allerr := make([]error, 0)
+	for e := range errch {
+		allerr = append(allerr, e)
+	}
+	err := errors.Join(allerr...)
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
