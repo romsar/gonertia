@@ -7,6 +7,8 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"sync"
+	"errors"
 )
 
 // TemplateData are data that will be available in the root template.
@@ -226,7 +228,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 		
 	}
         wg.Wait()
-	allerr:=make([]error)
+	allerr:=make([]error,len(result))
 	for _, e:= range errch {
 		
 		allerr= append(allerr,e)
