@@ -206,12 +206,9 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 			delete(result, key)
 		}
 	}
-
 	// Resolve props values.
-
 	wg:=new(sync.WaitGroup)
 	errch:=make(chan error,len(result))
-	
 	for key, val := range result {
 		wg.Add(1)
 		go func(){
