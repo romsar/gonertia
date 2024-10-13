@@ -211,7 +211,7 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 
 	wg:=new(sync.WaitGroup)
 	errch:=make(chan error,len(result))
-	defer close(errch)
+	
 	for key, val := range result {
 		wg.Add(1)
 		go func(){
@@ -228,14 +228,15 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 		
 	}
         wg.Wait()
+	close(errch)
 	allerr:=make([]error,len(result))
-	for _, e:= range errch {
+	for e:= range errch {
 		
 		allerr= append(allerr,e)
 		}
 	err:=errors.Join(allerr...)
 	if err!=nil{
-		return nil, result
+		return nil, err
 	}
 	return result, nil
 }
