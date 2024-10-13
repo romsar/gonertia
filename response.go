@@ -206,15 +206,35 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 	}
 
 	// Resolve props values.
+
+	wg:=new(sync.WaitGroup)
+	errch:=make(chan error,len(result))
+	defer close(errch)
 	for key, val := range result {
+		wg.Add(1)
+		go func(){
 		var err error
 		val, err = resolvePropVal(val)
 		if err != nil {
-			return nil, fmt.Errorf("resolve prop value: %w", err)
+			errch<- fmt.Errorf("resolve prop value: %w", err)
+			wg.Done()
+			return
 		}
 		result[key] = val
+			wg.Done()
+			}()
+		
 	}
-
+        wg.Wait()
+	allerr:=make([]error)
+	for _, e:= range errch {
+		
+		allerr= append(allerr,e)
+		}
+	err:=errors.Join(allerr...)
+	if err!=nil{
+		return nil, result
+	}
 	return result, nil
 }
 
