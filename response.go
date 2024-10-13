@@ -155,6 +155,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 }
 
 func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (Props, error) {
+	mut:=new(sync.Mutex)
 	result := make(Props)
 
 	{
@@ -219,7 +220,9 @@ func (i *Inertia) prepareProps(r *http.Request, component string, props Props) (
 				wg.Done()
 				return
 			}
+			mut.Lock()
 			result[key] = val
+			mut.Unlock()
 			wg.Done()
 		}()
 	}
