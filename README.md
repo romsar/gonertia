@@ -302,6 +302,7 @@ Simple inmemory implementation of flash provider:
 ```go
 type InmemFlashProvider struct {
     errors map[string]inertia.ValidationErrors
+    clearHistory map[string]bool
 }
 
 func NewInmemFlashProvider() *InmemFlashProvider {
@@ -317,8 +318,21 @@ func (p *InmemFlashProvider) FlashErrors(ctx context.Context, errors ValidationE
 func (p *InmemFlashProvider) GetErrors(ctx context.Context) (ValidationErrors, error) {
     sessionID := getSessionIDFromContext(ctx)
     errors := p.errors[sessionID]
-    p.errors[sessionID] = nil
+    delete(p.errors, sessionID)
     return errors, nil
+}
+
+func (p *InmemFlashProvider) FlashClearHistory(ctx context.Context) error {
+    sessionID := getSessionIDFromContext(ctx)
+    p.clearHistory[sessionID] = true
+    return nil
+}
+
+func (p *InmemFlashProvider) ShouldClearHistory(ctx context.Context) (bool, error) {
+    sessionID := getSessionIDFromContext(ctx)
+    clearHistory := p.clearHistory[sessionID]
+    delete(p.clearHistory, sessionID)
+    return clearHistory
 }
 ```
 
