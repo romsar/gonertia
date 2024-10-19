@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+//nolint:gocognit
 func TestInertia_Middleware(t *testing.T) {
 	t.Parallel()
 
