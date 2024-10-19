@@ -24,32 +24,59 @@ func TestInertia_Middleware(t *testing.T) {
 			assertResponseStatusCode(t, w, http.StatusOK)
 		})
 
-		t.Run("resolve validation errors from flash data provider", func(t *testing.T) {
+		t.Run("flash", func(t *testing.T) {
 			t.Parallel()
 
-			w, r := requestMock(http.MethodGet, "/")
+			t.Run("validation errors", func(t *testing.T) {
+				t.Parallel()
 
-			want := ValidationErrors{
-				"foo": "baz",
-				"baz": "quz",
-			}
+				w, r := requestMock(http.MethodGet, "/")
 
-			flashProvider := &flashProviderMock{
-				errors: want,
-			}
+				want := ValidationErrors{
+					"foo": "baz",
+					"baz": "quz",
+				}
 
-			i := I(func(i *Inertia) {
-				i.flash = flashProvider
+				flashProvider := &flashProviderMock{
+					errors: want,
+				}
+
+				i := I(func(i *Inertia) {
+					i.flash = flashProvider
+				})
+
+				var got ValidationErrors
+				i.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					got = ValidationErrorsFromContext(r.Context())
+				})).ServeHTTP(w, r)
+
+				if !reflect.DeepEqual(got, want) {
+					t.Fatalf("validation errors=%#v, want=%#v", got, want)
+				}
 			})
 
-			var got ValidationErrors
-			i.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				got = ValidationErrorsFromContext(r.Context())
-			})).ServeHTTP(w, r)
+			t.Run("clear history", func(t *testing.T) {
+				t.Parallel()
 
-			if !reflect.DeepEqual(got, want) {
-				t.Fatalf("validation errors=%#v, want=%#v", got, want)
-			}
+				w, r := requestMock(http.MethodGet, "/")
+
+				flashProvider := &flashProviderMock{
+					clearHistory: true,
+				}
+
+				i := I(func(i *Inertia) {
+					i.flash = flashProvider
+				})
+
+				var got bool
+				i.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					got = ClearHistoryFromContext(r.Context())
+				})).ServeHTTP(w, r)
+
+				if !got {
+					t.Fatalf("clear history=%v, want=true", got)
+				}
+			})
 		})
 	})
 

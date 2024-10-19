@@ -706,56 +706,103 @@ func TestInertia_Location(t *testing.T) {
 		assertInertiaLocation(t, w, wantInertiaLocation)
 	})
 
-	t.Run("flash validation errors", func(t *testing.T) {
+	t.Run("flash", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("plain redirect", func(t *testing.T) {
+		t.Run("validation errors", func(t *testing.T) {
 			t.Parallel()
 
-			w, r := requestMock(http.MethodGet, "/")
+			t.Run("plain redirect", func(t *testing.T) {
+				t.Parallel()
 
-			flashProvider := &flashProviderMock{}
+				w, r := requestMock(http.MethodGet, "/")
 
-			i := I(func(i *Inertia) {
-				i.flash = flashProvider
+				flashProvider := &flashProviderMock{}
+
+				i := I(func(i *Inertia) {
+					i.flash = flashProvider
+				})
+
+				errors := ValidationErrors{
+					"foo": "bar",
+					"baz": "quz",
+				}
+
+				withValidationErrors(r, errors)
+				i.Location(w, r, "/foo")
+
+				if !reflect.DeepEqual(flashProvider.errors, errors) {
+					t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
+				}
 			})
 
-			errors := ValidationErrors{
-				"foo": "bar",
-				"baz": "quz",
-			}
+			t.Run("inertia location", func(t *testing.T) {
+				t.Parallel()
 
-			withValidationErrors(r, errors)
-			i.Location(w, r, "/foo")
+				w, r := requestMock(http.MethodGet, "/")
+				asInertiaRequest(r)
 
-			if !reflect.DeepEqual(flashProvider.errors, errors) {
-				t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
-			}
+				flashProvider := &flashProviderMock{}
+
+				i := I(func(i *Inertia) {
+					i.flash = flashProvider
+				})
+
+				errors := ValidationErrors{
+					"foo": "bar",
+					"baz": "quz",
+				}
+
+				withValidationErrors(r, errors)
+				i.Location(w, r, "/foo", http.StatusMovedPermanently)
+
+				if !reflect.DeepEqual(flashProvider.errors, errors) {
+					t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
+				}
+			})
 		})
 
-		t.Run("inertia location", func(t *testing.T) {
+		t.Run("clear history", func(t *testing.T) {
 			t.Parallel()
 
-			w, r := requestMock(http.MethodGet, "/")
-			asInertiaRequest(r)
+			t.Run("plain redirect", func(t *testing.T) {
+				t.Parallel()
 
-			flashProvider := &flashProviderMock{}
+				w, r := requestMock(http.MethodGet, "/")
 
-			i := I(func(i *Inertia) {
-				i.flash = flashProvider
+				flashProvider := &flashProviderMock{}
+
+				i := I(func(i *Inertia) {
+					i.flash = flashProvider
+				})
+
+				withClearHistory(r)
+				i.Location(w, r, "/foo")
+
+				if !flashProvider.clearHistory {
+					t.Fatalf("got clear history=%v, want=true", flashProvider.clearHistory)
+				}
 			})
 
-			errors := ValidationErrors{
-				"foo": "bar",
-				"baz": "quz",
-			}
+			t.Run("inertia location", func(t *testing.T) {
+				t.Parallel()
 
-			withValidationErrors(r, errors)
-			i.Location(w, r, "/foo", http.StatusMovedPermanently)
+				w, r := requestMock(http.MethodGet, "/")
+				asInertiaRequest(r)
 
-			if !reflect.DeepEqual(flashProvider.errors, errors) {
-				t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
-			}
+				flashProvider := &flashProviderMock{}
+
+				i := I(func(i *Inertia) {
+					i.flash = flashProvider
+				})
+
+				withClearHistory(r)
+				i.Location(w, r, "/foo", http.StatusMovedPermanently)
+
+				if !flashProvider.clearHistory {
+					t.Fatalf("got clear history=%v, want=true", flashProvider.clearHistory)
+				}
+			})
 		})
 	})
 }
@@ -809,28 +856,51 @@ func TestInertia_Redirect(t *testing.T) {
 		assertInertiaLocation(t, w, wantInertiaLocation)
 	})
 
-	t.Run("flash validation errors", func(t *testing.T) {
+	t.Run("flash", func(t *testing.T) {
 		t.Parallel()
 
-		w, r := requestMock(http.MethodGet, "/")
+		t.Run("validation errors", func(t *testing.T) {
+			t.Parallel()
 
-		flashProvider := &flashProviderMock{}
+			w, r := requestMock(http.MethodGet, "/")
 
-		i := I(func(i *Inertia) {
-			i.flash = flashProvider
+			flashProvider := &flashProviderMock{}
+
+			i := I(func(i *Inertia) {
+				i.flash = flashProvider
+			})
+
+			errors := ValidationErrors{
+				"foo": "bar",
+				"baz": "quz",
+			}
+
+			withValidationErrors(r, errors)
+			i.Redirect(w, r, "https://example.com/foo")
+
+			if !reflect.DeepEqual(flashProvider.errors, errors) {
+				t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
+			}
 		})
 
-		errors := ValidationErrors{
-			"foo": "bar",
-			"baz": "quz",
-		}
+		t.Run("clear history", func(t *testing.T) {
+			t.Parallel()
 
-		withValidationErrors(r, errors)
-		i.Redirect(w, r, "https://example.com/foo")
+			w, r := requestMock(http.MethodGet, "/")
 
-		if !reflect.DeepEqual(flashProvider.errors, errors) {
-			t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
-		}
+			flashProvider := &flashProviderMock{}
+
+			i := I(func(i *Inertia) {
+				i.flash = flashProvider
+			})
+
+			withClearHistory(r)
+			i.Redirect(w, r, "https://example.com/foo")
+
+			if !flashProvider.clearHistory {
+				t.Fatalf("got clear history=%v, want=true", flashProvider.clearHistory)
+			}
+		})
 	})
 }
 
@@ -886,29 +956,53 @@ func TestInertia_Back(t *testing.T) {
 		assertInertiaLocation(t, w, wantInertiaLocation)
 	})
 
-	t.Run("flash validation errors", func(t *testing.T) {
+	t.Run("flash", func(t *testing.T) {
 		t.Parallel()
 
-		w, r := requestMock(http.MethodGet, "/")
-		r.Header.Set("Referer", "https://example.com/foo")
+		t.Run("validation errors", func(t *testing.T) {
+			t.Parallel()
 
-		flashProvider := &flashProviderMock{}
+			w, r := requestMock(http.MethodGet, "/")
+			r.Header.Set("Referer", "https://example.com/foo")
 
-		i := I(func(i *Inertia) {
-			i.flash = flashProvider
+			flashProvider := &flashProviderMock{}
+
+			i := I(func(i *Inertia) {
+				i.flash = flashProvider
+			})
+
+			errors := ValidationErrors{
+				"foo": "bar",
+				"baz": "quz",
+			}
+
+			withValidationErrors(r, errors)
+			i.Back(w, r)
+
+			if !reflect.DeepEqual(flashProvider.errors, errors) {
+				t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
+			}
 		})
 
-		errors := ValidationErrors{
-			"foo": "bar",
-			"baz": "quz",
-		}
+		t.Run("clear history", func(t *testing.T) {
+			t.Parallel()
 
-		withValidationErrors(r, errors)
-		i.Back(w, r)
+			w, r := requestMock(http.MethodGet, "/")
+			r.Header.Set("Referer", "https://example.com/foo")
 
-		if !reflect.DeepEqual(flashProvider.errors, errors) {
-			t.Fatalf("got validation errors=%#v, want=%#v", flashProvider.errors, errors)
-		}
+			flashProvider := &flashProviderMock{}
+
+			i := I(func(i *Inertia) {
+				i.flash = flashProvider
+			})
+
+			withClearHistory(r)
+			i.Back(w, r)
+
+			if !flashProvider.clearHistory {
+				t.Fatalf("got clear history=%v, want=true", flashProvider.clearHistory)
+			}
+		})
 	})
 }
 

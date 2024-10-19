@@ -66,6 +66,10 @@ func withValidationErrors(r *http.Request, errors ValidationErrors) {
 	*r = *r.WithContext(SetValidationErrors(r.Context(), errors))
 }
 
+func withClearHistory(r *http.Request) {
+	*r = *r.WithContext(ClearHistory(r.Context()))
+}
+
 func assertResponseStatusCode(t *testing.T, w *httptest.ResponseRecorder, want int) {
 	t.Helper()
 
@@ -194,8 +198,11 @@ func tmpFile(t *testing.T, content string) *os.File {
 }
 
 type flashProviderMock struct {
-	errors ValidationErrors
+	errors       ValidationErrors
+	clearHistory bool
 }
+
+var _ FlashProvider = (*flashProviderMock)(nil)
 
 func (p *flashProviderMock) FlashErrors(_ context.Context, errors ValidationErrors) error {
 	p.errors = errors
@@ -204,4 +211,13 @@ func (p *flashProviderMock) FlashErrors(_ context.Context, errors ValidationErro
 
 func (p *flashProviderMock) GetErrors(_ context.Context) (ValidationErrors, error) {
 	return p.errors, nil
+}
+
+func (p *flashProviderMock) FlashClearHistory(_ context.Context) error {
+	p.clearHistory = true
+	return nil
+}
+
+func (p *flashProviderMock) ShouldClearHistory(_ context.Context) (bool, error) {
+	return p.clearHistory, nil
 }

@@ -17,8 +17,11 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// https://github.com/inertiajs/inertia-laravel/pull/404
 		setInertiaVaryInResponse(w)
 
-		// Resolve validation errors from the flash data provider.
-		r = i.resolveValidationErrors(r)
+		// Resolve validation errors and clear history from the flash data provider.
+		{
+			r = i.resolveValidationErrors(r)
+			r = i.resolveClearHistory(r)
+		}
 
 		if !IsInertiaRequest(r) {
 			next.ServeHTTP(w, r)
@@ -76,7 +79,7 @@ func (i *Inertia) resolveValidationErrors(r *http.Request) *http.Request {
 
 	validationErrors, err := i.flash.GetErrors(r.Context())
 	if err != nil {
-		i.logger.Printf("get validation errors from flash data provider error: %s", err)
+		i.logger.Printf("get validation errors from the flash data provider error: %s", err)
 		return r
 	}
 
@@ -85,6 +88,24 @@ func (i *Inertia) resolveValidationErrors(r *http.Request) *http.Request {
 	}
 
 	return r.WithContext(SetValidationErrors(r.Context(), validationErrors))
+}
+
+func (i *Inertia) resolveClearHistory(r *http.Request) *http.Request {
+	if i.flash == nil {
+		return r
+	}
+
+	clearHistory, err := i.flash.ShouldClearHistory(r.Context())
+	if err != nil {
+		i.logger.Printf("get clear history flag from the flash data provider error: %s", err)
+		return r
+	}
+
+	if clearHistory {
+		r = r.WithContext(ClearHistory(r.Context()))
+	}
+
+	return r
 }
 
 func (i *Inertia) copyWrapperResponse(dst http.ResponseWriter, src *inertiaResponseWrapper) {

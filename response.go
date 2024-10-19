@@ -154,7 +154,7 @@ type ValidationErrors map[string]any
 // If request was made by Inertia - sets status to 409 and url will be in "X-Inertia-Location" header.
 // Otherwise, it will do an HTTP redirect with specified status (default is 302 for GET, 303 for POST/PUT/PATCH).
 func (i *Inertia) Location(w http.ResponseWriter, r *http.Request, url string, status ...int) {
-	i.flashValidationErrorsFromContext(r.Context())
+	i.flashContext(r.Context())
 
 	if IsInertiaRequest(r) {
 		setInertiaLocationInResponse(w, url)
@@ -179,8 +179,14 @@ func backURL(r *http.Request) string {
 
 // Redirect creates plain redirect response.
 func (i *Inertia) Redirect(w http.ResponseWriter, r *http.Request, url string, status ...int) {
-	i.flashValidationErrorsFromContext(r.Context())
+	i.flashContext(r.Context())
+
 	redirectResponse(w, r, url, status...)
+}
+
+func (i *Inertia) flashContext(ctx context.Context) {
+	i.flashValidationErrorsFromContext(ctx)
+	i.flashClearHistoryFromContext(ctx)
 }
 
 func (i *Inertia) flashValidationErrorsFromContext(ctx context.Context) {
@@ -196,6 +202,22 @@ func (i *Inertia) flashValidationErrorsFromContext(ctx context.Context) {
 	err := i.flash.FlashErrors(ctx, validationErrors)
 	if err != nil {
 		i.logger.Printf("cannot flash validation errors: %s", err)
+	}
+}
+
+func (i *Inertia) flashClearHistoryFromContext(ctx context.Context) {
+	if i.flash == nil {
+		return
+	}
+
+	clearHistory := ClearHistoryFromContext(ctx)
+	if !clearHistory {
+		return
+	}
+
+	err := i.flash.FlashClearHistory(ctx)
+	if err != nil {
+		i.logger.Printf("cannot flash clear history: %s", err)
 	}
 }
 
@@ -241,9 +263,9 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 	deferredProps := resolveDeferredProps(r, component, props)
 	mergeProps := resolveMergeProps(r, props)
 
-	props, err := i.resolveProperties(r, component, props)
+	props, err := i.resolveProps(r, component, props)
 	if err != nil {
-		return nil, fmt.Errorf("prepare props: %w", err)
+		return nil, fmt.Errorf("resolve props: %w", err)
 	}
 
 	return &page{
@@ -258,7 +280,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 	}, nil
 }
 
-func (i *Inertia) resolveProperties(r *http.Request, component string, props Props) (Props, error) {
+func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 
 	{

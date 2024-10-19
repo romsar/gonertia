@@ -90,10 +90,12 @@ type Logger interface {
 	Println(v ...any)
 }
 
-// FlashProvider defines an interface for flash data provider.
+// FlashProvider defines an interface for a flash data provider.
 type FlashProvider interface {
 	FlashErrors(ctx context.Context, errors ValidationErrors) error
 	GetErrors(ctx context.Context) (ValidationErrors, error)
+	ShouldClearHistory(ctx context.Context) (bool, error)
+	FlashClearHistory(ctx context.Context) error
 }
 
 // ShareProp adds passed prop to shared props.

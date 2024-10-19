@@ -82,9 +82,9 @@ func WithSSR(url ...string) Option {
 }
 
 // WithFlashProvider returns Option that will set Inertia's flash data provider.
-func WithFlashProvider(flashData FlashProvider) Option {
+func WithFlashProvider(flash FlashProvider) Option {
 	return func(i *Inertia) error {
-		i.flash = flashData
+		i.flash = flash
 		return nil
 	}
 }

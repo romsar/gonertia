@@ -1,7 +1,6 @@
 package gonertia
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"reflect"
@@ -91,8 +90,6 @@ func TestWithJSONMarshaller(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
-
-		fmt.Println(got)
 
 		if got != want {
 			t.Fatalf("JSONMarshaller.Decode()=%s, want=%s", got, want)
@@ -249,7 +246,7 @@ func TestWithFlashProvider(t *testing.T) {
 	}
 
 	if i.flash != want {
-		t.Fatalf("flash provider=%v, want=%s", i.flash, want)
+		t.Fatalf("flash provider=%v, want=%v", i.flash, want)
 	}
 }
 
