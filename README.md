@@ -115,6 +115,8 @@ Create `root.html` template:
 1. [Gonertia + Vue + Vite + Tailwind](https://github.com/hbourgeot/gonertia_vue_example)
 2. [Gonertia + Svelte + Vite + Tailwind](https://github.com/hbourgeot/gonertia_svelte_example)
 3. [Gonertia + React + Vite + Tailwind](https://github.com/sdil/gonertia_react_example)
+#### Project genertator
+You could also use [Alpacaproj](https://github.com/JensvandeWiel/alpacaproj), which is able to generate projects with inertia including database and caching.
 
 ### More examples
 
