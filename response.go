@@ -343,12 +343,35 @@ func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (
 	}
 
 	// Resolve props values.
+	wg := new(sync.WaitGroup)
+	ctx, cancel := context.WithCancelCause(r.Context())
+
+	defer cancel(nil)
+	var ErrBadPropResolve = errors.New("resolve prop value")
 	for key, val := range result {
-		var err error
-		result[key], err = resolvePropVal(val)
-		if err != nil {
-			return nil, fmt.Errorf("resolve prop value: %w", err)
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var err error
+			val, err = resolvePropVal(val)
+			if err != nil {
+				cancel(fmt.Errorf("%w %w", ErrBadPropResolve, err))
+				return
+			}
+
+			result[key] = val
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		cancel(nil)
+	}()
+
+	<-ctx.Done()
+	if err := context.Cause(ctx); errors.Is(err, ErrBadPropResolve) {
+
+		return nil, err
 	}
 
 	return result, nil
