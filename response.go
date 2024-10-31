@@ -3,10 +3,12 @@ package gonertia
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 // TemplateData are data that will be available in the root template.
