@@ -46,6 +46,7 @@ func New(rootTemplateHTML string, opts ...Option) (*Inertia, error) {
 		sharedProps:         make(Props),
 		sharedTemplateData:  make(TemplateData),
 		sharedTemplateFuncs: make(TemplateFuncs),
+		ssrHTTPClient:       &http.Client{},
 	}
 
 	for _, opt := range opts {
@@ -108,6 +109,7 @@ func NewFromTemplate(rootTemplate *template.Template, opts ...Option) (*Inertia,
 		logger:             log.New(io.Discard, "", 0),
 		sharedProps:        make(Props),
 		sharedTemplateData: make(TemplateData),
+		ssrHTTPClient:      &http.Client{},
 	}
 
 	for _, opt := range opts {
