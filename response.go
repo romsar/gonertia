@@ -515,7 +515,7 @@ func (i *Inertia) buildInertiaHTML(page *page) (inertia, inertiaHead template.HT
 }
 
 func (i *Inertia) isSSREnabled() bool {
-	return i.ssrURL != "" && i.ssrHTTPClient != nil
+	return i.ssrURL != ""
 }
 
 // htmlContainerSSR will send request with json marshaled page payload to ssr render endpoint.

@@ -89,7 +89,14 @@ func WithSSR(url ...string) Option {
 		}
 
 		i.ssrURL = u
-		i.ssrHTTPClient = &http.Client{}
+		return nil
+	}
+}
+
+// WithSSRHTTPClient returns Option that will set Inertia's SSR http client.
+func WithSSRHTTPClient(ssrHTTPClient *http.Client) Option {
+	return func(i *Inertia) error {
+		i.ssrHTTPClient = ssrHTTPClient
 		return nil
 	}
 }

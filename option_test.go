@@ -3,9 +3,11 @@ package gonertia
 import (
 	"io"
 	"log"
+	"net/http"
 	"reflect"
 	"testing"
 	"testing/fstest"
+	"time"
 )
 
 func TestWithVersion(t *testing.T) {
@@ -225,10 +227,6 @@ func TestWithSSR(t *testing.T) {
 			t.Fatalf("unexpected error: %s", err)
 		}
 
-		if i.ssrHTTPClient == nil {
-			t.Fatal("ssr http client is nil")
-		}
-
 		if i.ssrURL != wantURL {
 			t.Fatalf("ssrURL=%s, want=%s", i.containerID, wantURL)
 		}
@@ -247,14 +245,33 @@ func TestWithSSR(t *testing.T) {
 			t.Fatalf("unexpected error: %s", err)
 		}
 
-		if i.ssrHTTPClient == nil {
-			t.Fatal("ssr http client is nil")
-		}
-
 		if i.ssrURL != wantURL {
 			t.Fatalf("ssrURL=%s, want=%s", i.containerID, wantURL)
 		}
 	})
+}
+
+func TestWithSSRHTTPClient(t *testing.T) {
+	t.Parallel()
+
+	i := I()
+
+	want := &http.Client{
+		Transport:     nil,
+		CheckRedirect: nil,
+		Jar:           nil,
+		Timeout:       5 * time.Second,
+	}
+
+	option := WithSSRHTTPClient(want)
+
+	if err := option(i); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if i.ssrHTTPClient != want {
+		t.Fatal("ssr http client was not set")
+	}
 }
 
 func TestWithFlashProvider(t *testing.T) {
