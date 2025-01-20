@@ -38,16 +38,28 @@ func New(rootTemplateHTML string, opts ...Option) (*Inertia, error) {
 		return nil, fmt.Errorf("blank root template")
 	}
 
-	i := &Inertia{
-		rootTemplateHTML:    rootTemplateHTML,
-		jsonMarshaller:      jsonDefaultMarshaller{},
-		containerID:         "app",
-		logger:              log.New(io.Discard, "", 0),
-		sharedProps:         make(Props),
-		sharedTemplateData:  make(TemplateData),
-		sharedTemplateFuncs: make(TemplateFuncs),
-		ssrHTTPClient:       &http.Client{},
+	i := newInertia(func(i *Inertia) {
+		i.rootTemplateHTML = rootTemplateHTML
+	})
+
+	for _, opt := range opts {
+		if err := opt(i); err != nil {
+			return nil, fmt.Errorf("initialize inertia: %w", err)
+		}
 	}
+
+	return i, nil
+}
+
+// NewFromTemplate receives a *template.Template and then initializes Inertia.
+func NewFromTemplate(rootTemplate *template.Template, opts ...Option) (*Inertia, error) {
+	if rootTemplate == nil {
+		return nil, fmt.Errorf("nil root template")
+	}
+
+	i := newInertia(func(i *Inertia) {
+		i.rootTemplate = rootTemplate
+	})
 
 	for _, opt := range opts {
 		if err := opt(i); err != nil {
@@ -96,29 +108,18 @@ func NewFromBytes(rootTemplateBs []byte, opts ...Option) (*Inertia, error) {
 	return New(string(rootTemplateBs), opts...)
 }
 
-// NewFromTemplate receives a *template.Template and then initializes Inertia.
-func NewFromTemplate(rootTemplate *template.Template, opts ...Option) (*Inertia, error) {
-	if rootTemplate == nil {
-		return nil, fmt.Errorf("nil root template")
-	}
-
+func newInertia(f func(i *Inertia)) *Inertia {
 	i := &Inertia{
-		rootTemplate:       rootTemplate,
-		jsonMarshaller:     jsonDefaultMarshaller{},
-		containerID:        "app",
-		logger:             log.New(io.Discard, "", 0),
-		sharedProps:        make(Props),
-		sharedTemplateData: make(TemplateData),
-		ssrHTTPClient:      &http.Client{},
+		jsonMarshaller:      jsonDefaultMarshaller{},
+		containerID:         "app",
+		logger:              log.New(io.Discard, "", 0),
+		sharedProps:         make(Props),
+		sharedTemplateData:  make(TemplateData),
+		sharedTemplateFuncs: make(TemplateFuncs),
+		ssrHTTPClient:       &http.Client{},
 	}
-
-	for _, opt := range opts {
-		if err := opt(i); err != nil {
-			return nil, fmt.Errorf("initialize inertia: %w", err)
-		}
-	}
-
-	return i, nil
+	f(i)
+	return i
 }
 
 // Logger defines an interface for debug messages.
