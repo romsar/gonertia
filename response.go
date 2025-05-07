@@ -290,9 +290,11 @@ func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (
 
 	{
 		// Add shared props to the result.
+		i.sharedPropsMu.RLock()
 		for key, val := range i.sharedProps {
 			result[key] = val
 		}
+		i.sharedPropsMu.RUnlock()
 
 		// Add props from context to the result.
 		for key, val := range PropsFromContext(r.Context()) {
@@ -484,9 +486,11 @@ func (i *Inertia) buildTemplateData(r *http.Request, page *page) (TemplateData, 
 	}
 
 	// Add the shared template data to the result.
+	i.sharedTemplateDataMu.RLock()
 	for key, val := range i.sharedTemplateData {
 		templateData[key] = val
 	}
+	i.sharedTemplateDataMu.RUnlock()
 
 	// Add template data from context to the result.
 	for key, val := range TemplateDataFromContext(r.Context()) {

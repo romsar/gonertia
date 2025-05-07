@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 )
 
 // Inertia is a main Gonertia structure, which contains all the logic for being an Inertia adapter.
@@ -16,9 +17,14 @@ type Inertia struct {
 	rootTemplate     *template.Template
 	rootTemplateHTML string
 
-	sharedProps         Props
-	sharedTemplateData  TemplateData
-	sharedTemplateFuncs TemplateFuncs
+	sharedPropsMu sync.RWMutex
+	sharedProps   Props
+
+	sharedTemplateDataMu sync.RWMutex
+	sharedTemplateData   TemplateData
+
+	sharedTemplateFuncsMu sync.RWMutex
+	sharedTemplateFuncs   TemplateFuncs
 
 	flash FlashProvider
 
@@ -138,22 +144,34 @@ type FlashProvider interface {
 
 // ShareProp adds passed prop to shared props.
 func (i *Inertia) ShareProp(key string, val any) {
+	i.sharedPropsMu.Lock()
+	defer i.sharedPropsMu.Unlock()
+
 	i.sharedProps[key] = val
 }
 
 // SharedProps returns shared props.
 func (i *Inertia) SharedProps() Props {
+	i.sharedPropsMu.RLock()
+	defer i.sharedPropsMu.RUnlock()
+
 	return i.sharedProps
 }
 
 // SharedProp return the shared prop.
 func (i *Inertia) SharedProp(key string) (any, bool) {
+	i.sharedPropsMu.RLock()
+	defer i.sharedPropsMu.RUnlock()
+
 	val, ok := i.sharedProps[key]
 	return val, ok
 }
 
 // ShareTemplateData adds passed data to shared template data.
 func (i *Inertia) ShareTemplateData(key string, val any) {
+	i.sharedTemplateDataMu.Lock()
+	defer i.sharedTemplateDataMu.Unlock()
+
 	i.sharedTemplateData[key] = val
 }
 
@@ -163,6 +181,9 @@ func (i *Inertia) ShareTemplateFunc(key string, val any) error {
 	if i.rootTemplateHTML == "" {
 		return fmt.Errorf("undefined root template html string")
 	}
+
+	i.sharedTemplateFuncsMu.Lock()
+	defer i.sharedTemplateFuncsMu.Unlock()
 
 	i.sharedTemplateFuncs[key] = val
 	return nil
