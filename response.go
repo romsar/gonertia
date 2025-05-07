@@ -470,6 +470,9 @@ func (i *Inertia) doHTMLResponse(w http.ResponseWriter, r *http.Request, page *p
 }
 
 func (i *Inertia) buildRootTemplate() (*template.Template, error) {
+	i.sharedTemplateFuncsMu.RLock()
+	defer i.sharedTemplateFuncsMu.RUnlock()
+
 	tmpl := template.New("").Funcs(template.FuncMap(i.sharedTemplateFuncs))
 	return tmpl.Parse(i.rootTemplateHTML)
 }
