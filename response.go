@@ -260,8 +260,8 @@ type page struct {
 }
 
 func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*page, error) {
-	deferredProps := resolveDeferredProps(r, component, props)
-	mergeProps := resolveMergeProps(r, props)
+	deferredProps := i.resolveDeferredProps(r, component, props)
+	mergeProps := i.resolveMergeProps(r, props)
 
 	props, err := i.resolveProps(r, component, props)
 	if err != nil {
@@ -280,6 +280,28 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 	}, nil
 }
 
+func (i *Inertia) collectProps(r *http.Request, props Props) Props {
+	result := make(Props)
+	// Add shared props to the result.
+	i.sharedPropsMu.RLock()
+	for key, val := range i.sharedProps {
+		result[key] = val
+	}
+	i.sharedPropsMu.RUnlock()
+
+	// Add props from context to the result.
+	for key, val := range PropsFromContext(r.Context()) {
+		result[key] = val
+	}
+
+	// Add passed props to the result.
+	for key, val := range props {
+		result[key] = val
+	}
+
+	return result
+}
+
 func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
 
@@ -289,22 +311,7 @@ func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (
 	}
 
 	{
-		// Add shared props to the result.
-		i.sharedPropsMu.RLock()
-		for key, val := range i.sharedProps {
-			result[key] = val
-		}
-		i.sharedPropsMu.RUnlock()
-
-		// Add props from context to the result.
-		for key, val := range PropsFromContext(r.Context()) {
-			result[key] = val
-		}
-
-		// Add passed props to the result.
-		for key, val := range props {
-			result[key] = val
-		}
+		result = i.collectProps(r, props)
 	}
 
 	{
@@ -388,12 +395,14 @@ func resolvePropVal(val any) (_ any, err error) {
 	return val, nil
 }
 
-func resolveDeferredProps(r *http.Request, component string, props Props) map[string][]string {
+func (i *Inertia) resolveDeferredProps(r *http.Request, component string, props Props) map[string][]string {
 	if isPartial(r, component) {
 		return nil
 	}
 
 	keysByGroups := make(map[string][]string)
+
+	props = i.collectProps(r, props)
 
 	for key, val := range props {
 		if dp, ok := val.(DeferProp); ok {
@@ -404,7 +413,7 @@ func resolveDeferredProps(r *http.Request, component string, props Props) map[st
 	return keysByGroups
 }
 
-func resolveMergeProps(r *http.Request, props Props) []string {
+func (i *Inertia) resolveMergeProps(r *http.Request, props Props) []string {
 	resetProps := setOf[string](resetFromRequest(r))
 
 	var mergeProps []string
