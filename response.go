@@ -280,7 +280,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 	}, nil
 }
 
-func (i *Inertia) collectProps(r *http.Request, component string, props Props) Props {
+func (i *Inertia) collectProps(r *http.Request, props Props) Props {
 	result := make(Props)
 	{
 		result["errors"] = AlwaysProp{ValidationErrorsFromContext(r.Context())}
@@ -308,7 +308,7 @@ func (i *Inertia) collectProps(r *http.Request, component string, props Props) P
 }
 
 func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (Props, error) {
-	result := i.collectProps(r, component, props)
+	result := i.collectProps(r, props)
 
 	{
 		// Partial reloads only work for visits made to the same page component.
@@ -398,7 +398,7 @@ func (i *Inertia) resolveDeferredProps(r *http.Request, component string, props 
 
 	keysByGroups := make(map[string][]string)
 
-	props = i.collectProps(r, component, props)
+	props = i.collectProps(r, props)
 
 	for key, val := range props {
 		if dp, ok := val.(DeferProp); ok {
