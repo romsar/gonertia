@@ -260,7 +260,9 @@ type page struct {
 }
 
 func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*page, error) {
-	deferredProps := resolveDeferredProps(r, component, props)
+	props = i.collectProps(r, props)
+
+	deferredProps := i.resolveDeferredProps(r, component, props)
 	mergeProps := resolveMergeProps(r, props)
 
 	props, err := i.resolveProps(r, component, props)
@@ -280,11 +282,27 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 	}, nil
 }
 
-func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (Props, error) {
+func (i *Inertia) resolveDeferredProps(r *http.Request, component string, props Props) map[string][]string {
+	if isPartial(r, component) {
+		return nil
+	}
+
+	keysByGroups := make(map[string][]string)
+
+	for key, val := range props {
+		if dp, ok := val.(DeferProp); ok {
+			keysByGroups[dp.Group] = append(keysByGroups[dp.Group], key)
+		}
+	}
+
+	return keysByGroups
+}
+
+func (i *Inertia) collectProps(r *http.Request, props Props) Props {
 	result := make(Props)
 
+	// Add validation errors from context to the result.
 	{
-		// Add validation errors from context to the result.
 		result["errors"] = AlwaysProp{ValidationErrorsFromContext(r.Context())}
 	}
 
@@ -307,53 +325,72 @@ func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (
 		}
 	}
 
-	{
-		// Partial reloads only work for visits made to the same page component.
-		//
-		// https://inertiajs.com/partial-reloads
-		if isPartial(r, component) {
-			// Only (include keys) and except (exclude keys) logic.
-			only, except := getOnlyAndExcept(r)
+	return result
+}
 
-			if len(only) > 0 {
-				for key, val := range result {
-					if _, ok := only[key]; ok {
-						continue
-					}
-					if _, ok := val.(AlwaysProp); ok {
-						continue
-					}
+func resolveMergeProps(r *http.Request, props Props) []string {
+	resetProps := setOf[string](resetFromRequest(r))
 
-					delete(result, key)
+	var mergeProps []string
+	for key, val := range props {
+		if _, ok := resetProps[key]; ok {
+			continue
+		}
+
+		if m, ok := val.(mergeable); ok && m.shouldMerge() {
+			mergeProps = append(mergeProps, key)
+		}
+	}
+
+	return mergeProps
+}
+
+func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (Props, error) {
+	// Partial reloads only work for visits made to the same page component.
+	//
+	// https://inertiajs.com/partial-reloads
+	if isPartial(r, component) {
+		// Only (include keys) and except (exclude keys) logic.
+		only, except := getOnlyAndExcept(r)
+
+		if len(only) > 0 {
+			for key, val := range props {
+				if _, ok := only[key]; ok {
+					continue
 				}
-			}
-			for key := range except {
-				if _, ok := result[key].(AlwaysProp); ok {
+				if _, ok := val.(AlwaysProp); ok {
 					continue
 				}
 
-				delete(result, key)
+				delete(props, key)
 			}
-		} else {
-			// Props with ignoreFirstLoad should not be included.
-			for key, val := range result {
-				if ifl, ok := val.(ignoreFirstLoad); ok && ifl.shouldIgnoreFirstLoad() {
-					delete(result, key)
-				}
+		}
+		for key := range except {
+			if _, ok := props[key].(AlwaysProp); ok {
+				continue
+			}
+
+			delete(props, key)
+		}
+	} else {
+		// Props with ignoreFirstLoad should not be included.
+		for key, val := range props {
+			if ifl, ok := val.(ignoreFirstLoad); ok && ifl.shouldIgnoreFirstLoad() {
+				delete(props, key)
 			}
 		}
 	}
 
 	// Resolve props values.
-	for key, val := range result {
+	for key, val := range props {
 		var err error
-		result[key], err = resolvePropVal(val)
+		props[key], err = resolvePropVal(val)
 		if err != nil {
 			return nil, fmt.Errorf("resolve prop value: %w", err)
 		}
 	}
 
-	return result, nil
+	return props, nil
 }
 
 func isPartial(r *http.Request, component string) bool {
@@ -386,39 +423,6 @@ func resolvePropVal(val any) (_ any, err error) {
 	}
 
 	return val, nil
-}
-
-func resolveDeferredProps(r *http.Request, component string, props Props) map[string][]string {
-	if isPartial(r, component) {
-		return nil
-	}
-
-	keysByGroups := make(map[string][]string)
-
-	for key, val := range props {
-		if dp, ok := val.(DeferProp); ok {
-			keysByGroups[dp.Group] = append(keysByGroups[dp.Group], key)
-		}
-	}
-
-	return keysByGroups
-}
-
-func resolveMergeProps(r *http.Request, props Props) []string {
-	resetProps := setOf[string](resetFromRequest(r))
-
-	var mergeProps []string
-	for key, val := range props {
-		if _, ok := resetProps[key]; ok {
-			continue
-		}
-
-		if m, ok := val.(mergeable); ok && m.shouldMerge() {
-			mergeProps = append(mergeProps, key)
-		}
-	}
-
-	return mergeProps
 }
 
 func (i *Inertia) resolveEncryptHistory(ctx context.Context) bool {
