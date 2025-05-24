@@ -260,7 +260,7 @@ type page struct {
 }
 
 func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*page, error) {
-	deferredProps := i.resolveDeferredProps(r, component, props)
+	deferredProps := resolveDeferredProps(r, component, props)
 	mergeProps := resolveMergeProps(r, props)
 
 	props, err := i.resolveProps(r, component, props)
@@ -280,11 +280,14 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 	}, nil
 }
 
-func (i *Inertia) collectProps(r *http.Request, props Props) Props {
+func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (Props, error) {
 	result := make(Props)
+
 	{
+		// Add validation errors from context to the result.
 		result["errors"] = AlwaysProp{ValidationErrorsFromContext(r.Context())}
 	}
+
 	{
 		// Add shared props to the result.
 		i.sharedPropsMu.RLock()
@@ -303,12 +306,6 @@ func (i *Inertia) collectProps(r *http.Request, props Props) Props {
 			result[key] = val
 		}
 	}
-
-	return result
-}
-
-func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (Props, error) {
-	result := i.collectProps(r, props)
 
 	{
 		// Partial reloads only work for visits made to the same page component.
@@ -391,14 +388,12 @@ func resolvePropVal(val any) (_ any, err error) {
 	return val, nil
 }
 
-func (i *Inertia) resolveDeferredProps(r *http.Request, component string, props Props) map[string][]string {
+func resolveDeferredProps(r *http.Request, component string, props Props) map[string][]string {
 	if isPartial(r, component) {
 		return nil
 	}
 
 	keysByGroups := make(map[string][]string)
-
-	props = i.collectProps(r, props)
 
 	for key, val := range props {
 		if dp, ok := val.(DeferProp); ok {
