@@ -603,7 +603,11 @@ func TestInertia_Render(t *testing.T) {
 					asInertiaRequest(r)
 					withPartialComponent(r, "Some/Component")
 
-					err := I().Render(w, r, "Some/Component", Props{
+					i := I()
+					i.sharedProps = Props{
+						"defer_shared_prop": Defer("prop_defer", "shared"),
+					}
+					err := i.Render(w, r, "Some/Component", Props{
 						"defer_with_default_group1": Defer(func() (any, error) { return "prop1", nil }),
 						"defer_with_default_group2": Defer("prop2", "default"),
 						"defer_with_custom_group":   Defer("prop3", "foobar"),
@@ -614,6 +618,7 @@ func TestInertia_Render(t *testing.T) {
 
 					assertable := AssertFromString(t, w.Body.String())
 					assertable.AssertProps(Props{
+						"defer_shared_prop":         "prop_defer",
 						"defer_with_default_group1": "prop1",
 						"defer_with_default_group2": "prop2",
 						"defer_with_custom_group":   "prop3",
@@ -629,7 +634,11 @@ func TestInertia_Render(t *testing.T) {
 					asInertiaRequest(r)
 					withPartialComponent(r, "Other/Component")
 
-					err := I().Render(w, r, "Some/Component", Props{
+					i := I()
+					i.sharedProps = Props{
+						"defer_shared_prop": Defer("prop_defer", "shared"),
+					}
+					err := i.Render(w, r, "Some/Component", Props{
 						"defer_with_default_group1": Defer(func() (any, error) { return "prop1", nil }),
 						"defer_with_default_group2": Defer("prop2", "default"),
 						"defer_with_custom_group":   Defer("prop3", "foobar"),
@@ -645,6 +654,7 @@ func TestInertia_Render(t *testing.T) {
 					assertable.AssertDeferredProps(map[string][]string{
 						"default": {"defer_with_default_group1", "defer_with_default_group2"},
 						"foobar":  {"defer_with_custom_group"},
+						"shared":  {"defer_shared_prop"},
 					})
 				})
 			})
@@ -742,6 +752,28 @@ func TestInertia_Render(t *testing.T) {
 						"errors": map[string]any{},
 					})
 					assertable.AssertDeferredProps(nil)
+					assertable.AssertMergeProps([]string{"foo"})
+				})
+
+				t.Run("shared props", func(t *testing.T) {
+					t.Parallel()
+
+					w, r := requestMock(http.MethodGet, "/home")
+					asInertiaRequest(r)
+
+					i := I()
+					i.sharedProps = Props{"foo": Merge("bar")}
+
+					err := i.Render(w, r, "Some/Component")
+					if err != nil {
+						t.Fatalf("unexpected error: %s", err)
+					}
+
+					assertable := AssertFromString(t, w.Body.String())
+					assertable.AssertProps(Props{
+						"foo":    "bar",
+						"errors": map[string]any{},
+					})
 					assertable.AssertMergeProps([]string{"foo"})
 				})
 			})
