@@ -2,6 +2,7 @@ package gonertia
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"html/template"
 	"io"
@@ -436,11 +437,13 @@ func TestInertia_Render(t *testing.T) {
 				asInertiaRequest(r)
 
 				err := I().Render(w, r, "Some/Component", Props{
-					"foo":              "bar",
-					"closure":          func() any { return "prop" },
-					"closure_with_err": func() (any, error) { return "prop", nil },
-					"optional":         Optional(func() (any, error) { return "prop", nil }),
-					"defer":            Defer(func() (any, error) { return "prop", nil }),
+					"foo":                       "bar",
+					"closure":                   func() any { return "prop" },
+					"closure_with_ctx":          func(_ context.Context) any { return "prop" },
+					"closure_with_err":          func() (any, error) { return "prop", nil },
+					"closure_with_ctx_with_err": func(_ context.Context) (any, error) { return "prop", nil },
+					"optional":                  Optional(func() (any, error) { return "prop", nil }),
+					"defer":                     Defer(func() (any, error) { return "prop", nil }),
 				})
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
@@ -448,10 +451,12 @@ func TestInertia_Render(t *testing.T) {
 
 				assertable := AssertFromString(t, w.Body.String())
 				assertable.AssertProps(Props{
-					"foo":              "bar",
-					"closure":          "prop",
-					"closure_with_err": "prop",
-					"errors":           map[string]any{},
+					"foo":                       "bar",
+					"closure":                   "prop",
+					"closure_with_ctx":          "prop",
+					"closure_with_err":          "prop",
+					"closure_with_ctx_with_err": "prop",
+					"errors":                    map[string]any{},
 				})
 			})
 

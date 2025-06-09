@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 // TemplateData are data that will be available in the root template.
@@ -141,9 +142,21 @@ type Proper interface {
 	Prop() any
 }
 
+// ProperWithContext is an interface for custom type, which provides property,
+// that will be resolved with context passing.
+type ProperWithContext interface {
+	PropWithContext(_ context.Context) any
+}
+
 // TryProper is an interface for custom type, which provides property and error, that will be resolved.
 type TryProper interface {
 	TryProp() (any, error)
+}
+
+// TryProperWithContext is an interface for custom type, which provides property and error,
+// that will be resolved with context passing.
+type TryProperWithContext interface {
+	TryPropWithContext(_ context.Context) (any, error)
 }
 
 // ValidationErrors are messages, that will be stored in the "errors" prop.
@@ -345,6 +358,7 @@ func resolveMergeProps(r *http.Request, props Props) []string {
 	return mergeProps
 }
 
+//nolint:gocognit
 func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (Props, error) {
 	// Partial reloads only work for visits made to the same page component.
 	//
@@ -381,13 +395,56 @@ func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (
 		}
 	}
 
-	// Resolve props values.
+	// Resolve props values concurrently.
+	resolveCtx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	type result struct {
+		key string
+		val any
+	}
+
+	resultCh := make(chan result, len(props))
+	errCh := make(chan error, 1)
+
+	wg := sync.WaitGroup{}
+
 	for key, val := range props {
-		var err error
-		props[key], err = resolvePropVal(val)
-		if err != nil {
-			return nil, fmt.Errorf("resolve prop value: %w", err)
-		}
+		wg.Add(1)
+
+		go func(ctx context.Context, key string, val any) {
+			defer wg.Done()
+
+			resolvedVal, err := resolvePropVal(ctx, val)
+			if err != nil {
+				select {
+				case errCh <- fmt.Errorf("resolve prop %q: %w", key, err):
+					cancel()
+				default:
+				}
+				return
+			}
+
+			select {
+			case resultCh <- result{key, resolvedVal}:
+			case <-ctx.Done():
+			}
+		}(resolveCtx, key, val)
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultCh)
+	}()
+
+	for res := range resultCh {
+		props[res.key] = res.val
+	}
+
+	select {
+	case err := <-errCh:
+		return nil, err
+	default:
 	}
 
 	return props, nil
@@ -401,7 +458,7 @@ func getOnlyAndExcept(r *http.Request) (only, except map[string]struct{}) {
 	return setOf[string](onlyFromRequest(r)), setOf[string](exceptFromRequest(r))
 }
 
-func resolvePropVal(val any) (_ any, err error) {
+func resolvePropVal(ctx context.Context, val any) (_ any, err error) {
 	switch proper := val.(type) {
 	case Proper:
 		val = proper.Prop()
@@ -410,13 +467,27 @@ func resolvePropVal(val any) (_ any, err error) {
 		if err != nil {
 			return nil, err
 		}
+	case ProperWithContext:
+		val = proper.PropWithContext(ctx)
+	case TryProperWithContext:
+		val, err = proper.TryPropWithContext(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	switch typed := val.(type) {
 	case func() any:
-		return typed(), nil
+		val = typed()
+	case func(ctx context.Context) any:
+		val = typed(ctx)
 	case func() (any, error):
 		val, err = typed()
+		if err != nil {
+			return nil, fmt.Errorf("closure prop resolving: %w", err)
+		}
+	case func(ctx context.Context) (any, error):
+		val, err = typed(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("closure prop resolving: %w", err)
 		}
