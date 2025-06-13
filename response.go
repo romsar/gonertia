@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"maps"
 	"net/http"
 	"strings"
 	"sync"
@@ -76,7 +77,7 @@ func (p DeferProp) Merge() DeferProp {
 func Defer(value any, group ...string) DeferProp {
 	return DeferProp{
 		Value: value,
-		Group: firstOr[string](group, "default"),
+		Group: firstOr(group, "default"),
 	}
 }
 
@@ -241,7 +242,7 @@ func (i *Inertia) flashClearHistoryFromContext(ctx context.Context) {
 //
 // If SSR is enabled, pre-renders JavaScript and return HTML (https://inertiajs.com/server-side-rendering).
 func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component string, props ...Props) (err error) {
-	p, err := i.buildPage(r, component, firstOr[Props](props, nil))
+	p, err := i.buildPage(r, component, firstOr(props, nil))
 	if err != nil {
 		return fmt.Errorf("build page: %w", err)
 	}
@@ -250,7 +251,6 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 		if err = i.doInertiaResponse(w, p); err != nil {
 			return fmt.Errorf("inertia response: %w", err)
 		}
-
 		return
 	}
 
@@ -319,30 +319,22 @@ func (i *Inertia) collectProps(r *http.Request, props Props) Props {
 		result["errors"] = AlwaysProp{ValidationErrorsFromContext(r.Context())}
 	}
 
-	{
-		// Add shared props to the result.
-		i.sharedPropsMu.RLock()
-		for key, val := range i.sharedProps {
-			result[key] = val
-		}
-		i.sharedPropsMu.RUnlock()
+	// Add shared props to the result.
+	i.sharedPropsMu.RLock()
+	maps.Copy(result, i.sharedProps)
+	i.sharedPropsMu.RUnlock()
 
-		// Add props from context to the result.
-		for key, val := range PropsFromContext(r.Context()) {
-			result[key] = val
-		}
+	// Add props from context to the result.
+	maps.Copy(result, PropsFromContext(r.Context()))
 
-		// Add passed props to the result.
-		for key, val := range props {
-			result[key] = val
-		}
-	}
+	// Add passed props to the result.
+	maps.Copy(result, props)
 
 	return result
 }
 
 func resolveMergeProps(r *http.Request, props Props) []string {
-	resetProps := setOf[string](resetFromRequest(r))
+	resetProps := setOf(resetFromRequest(r))
 
 	var mergeProps []string
 	for key, val := range props {
@@ -455,7 +447,7 @@ func isPartial(r *http.Request, component string) bool {
 }
 
 func getOnlyAndExcept(r *http.Request) (only, except map[string]struct{}) {
-	return setOf[string](onlyFromRequest(r)), setOf[string](exceptFromRequest(r))
+	return setOf(onlyFromRequest(r)), setOf(exceptFromRequest(r))
 }
 
 func resolvePropVal(ctx context.Context, val any) (_ any, err error) {
@@ -507,7 +499,7 @@ func (i *Inertia) resolveEncryptHistory(ctx context.Context) bool {
 func (i *Inertia) doInertiaResponse(w http.ResponseWriter, page *page) error {
 	pageJSON, err := i.jsonMarshaller.Marshal(page)
 	if err != nil {
-		return fmt.Errorf("json marshal page into json: %w", err)
+		return fmt.Errorf("json marshal: %w", err)
 	}
 
 	setInertiaInResponse(w)
