@@ -1,23 +1,21 @@
-package vite
+package gonertia
 
 import (
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/romsar/gonertia/v2"
 )
 
-const rootTemplate = `<html><head>{{ .inertiaHead }}</head><body>{{ .inertia }}</body></html>`
+const viteRootTemplate = `<html><head>{{ .inertiaHead }}</head><body>{{ .inertia }}</body></html>`
 
-func TestNew(t *testing.T) {
-	i, err := gonertia.New(rootTemplate)
+func TestNewWithVite(t *testing.T) {
+	i, err := New(viteRootTemplate)
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
 
-	vi, err := New(i)
+	vi, err := NewWithVite(i)
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}
@@ -28,17 +26,17 @@ func TestNew(t *testing.T) {
 	}
 
 	if vi.Inertia != i {
-		t.Error("Instance should embed the provided Inertia instance")
+		t.Error("ViteInstance should embed the provided Inertia instance")
 	}
 }
 
 func TestNewWithOptions(t *testing.T) {
-	i, err := gonertia.New(rootTemplate)
+	i, err := New(viteRootTemplate)
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
 
-	vi, err := New(i,
+	vi, err := NewWithVite(i,
 		WithHotFile("custom/hot"),
 		WithBuildManifest("custom/manifest.json"),
 		WithBuildDir("/custom/"),
@@ -48,7 +46,7 @@ func TestNewWithOptions(t *testing.T) {
 		t.Fatalf("New() with options failed: %v", err)
 	}
 
-	config := vi.config
+	config := vi.viteConfig
 	if config.HotFile != "custom/hot" {
 		t.Errorf("HotFile = %q, want %q", config.HotFile, "custom/hot")
 	}
@@ -67,8 +65,11 @@ func TestIsHotReload(t *testing.T) {
 	tmpDir := t.TempDir()
 	hotFile := filepath.Join(tmpDir, "hot")
 
-	i, _ := gonertia.New(rootTemplate)
-	vi, _ := New(i, WithHotFile(hotFile))
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+	vi, _ := NewWithVite(i, WithHotFile(hotFile))
 
 	// No hot file - should be bundled mode
 	if vi.isHotReload() {
@@ -105,8 +106,11 @@ func TestReadHotReloadURL(t *testing.T) {
 			tmpDir := t.TempDir()
 			hotFile := filepath.Join(tmpDir, "hot")
 
-			i, _ := gonertia.New(rootTemplate)
-			vi, _ := New(i, WithHotFile(hotFile))
+			i, err := New(viteRootTemplate)
+			if err != nil {
+				t.Fatalf("failed to create inertia: %v", err)
+			}
+			vi, _ := NewWithVite(i, WithHotFile(hotFile))
 
 			if tt.createFile {
 				if err := os.WriteFile(hotFile, []byte(tt.content), 0o644); err != nil {
@@ -132,8 +136,11 @@ func TestHotReloadResolver(t *testing.T) {
 		t.Fatalf("failed to create hot file: %v", err)
 	}
 
-	i, _ := gonertia.New(rootTemplate)
-	vi, _ := New(i, WithHotFile(hotFile))
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+	vi, _ := NewWithVite(i, WithHotFile(hotFile))
 
 	resolver := vi.hotReloadResolver()
 
@@ -173,8 +180,11 @@ func TestBundledResolver(t *testing.T) {
 		t.Fatalf("failed to create manifest: %v", err)
 	}
 
-	i, _ := gonertia.New(rootTemplate)
-	vi, _ := New(i, WithBuildManifest(manifestFile), WithBuildDir("/build/"))
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+	vi, _ := NewWithVite(i, WithBuildManifest(manifestFile), WithBuildDir("/build/"))
 
 	resolver := vi.bundledResolver()
 
@@ -245,7 +255,8 @@ func TestFindManifest(t *testing.T) {
 	}
 }
 
-func setupManifestTest(t *testing.T, buildManifest, fallbackManifest string, createBuild, createFallback bool) *Instance {
+func setupManifestTest(t *testing.T, buildManifest, fallbackManifest string, createBuild, createFallback bool) *ViteInstance {
+	t.Helper()
 	_ = os.Remove(buildManifest)
 	_ = os.Remove(fallbackManifest)
 
@@ -256,8 +267,11 @@ func setupManifestTest(t *testing.T, buildManifest, fallbackManifest string, cre
 		_ = os.WriteFile(fallbackManifest, []byte("{}"), 0o644)
 	}
 
-	i, _ := gonertia.New(rootTemplate)
-	vi, _ := New(i,
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+	vi, _ := NewWithVite(i,
 		WithBuildManifest(buildManifest),
 		WithFallbackManifest(fallbackManifest),
 	)
@@ -265,12 +279,14 @@ func setupManifestTest(t *testing.T, buildManifest, fallbackManifest string, cre
 }
 
 func assertManifestError(t *testing.T, err error) {
+	t.Helper()
 	if err == nil {
 		t.Error("findManifest() expected error but got none")
 	}
 }
 
 func assertManifestSuccess(t *testing.T, err error, path, buildManifest string) {
+	t.Helper()
 	if err != nil {
 		t.Fatalf("findManifest() unexpected error: %v", err)
 	}
@@ -280,6 +296,7 @@ func assertManifestSuccess(t *testing.T, err error, path, buildManifest string) 
 }
 
 func assertManifestMove(t *testing.T, buildManifest, fallbackManifest string) {
+	t.Helper()
 	if _, err := os.Stat(buildManifest); err != nil {
 		t.Error("fallback manifest should have been moved to build location")
 	}
@@ -299,8 +316,11 @@ func TestAssetResolverIntegration(t *testing.T) {
 			t.Fatalf("failed to create hot file: %v", err)
 		}
 
-		i, _ := gonertia.New(rootTemplate)
-		vi, _ := New(i, WithHotFile(hotFile))
+		i, err := New(viteRootTemplate)
+		if err != nil {
+			t.Fatalf("failed to create inertia: %v", err)
+		}
+		vi, _ := NewWithVite(i, WithHotFile(hotFile))
 
 		resolver := vi.assetResolver(vi.isHotReload())
 		url, err := resolver("app.js")
@@ -323,8 +343,11 @@ func TestAssetResolverIntegration(t *testing.T) {
 			t.Fatalf("failed to create manifest: %v", err)
 		}
 
-		i, _ := gonertia.New(rootTemplate)
-		vi, _ := New(i,
+		i, err := New(viteRootTemplate)
+		if err != nil {
+			t.Fatalf("failed to create inertia: %v", err)
+		}
+		vi, _ := NewWithVite(i,
 			WithHotFile(hotFile),
 			WithBuildManifest(manifestFile),
 		)
@@ -343,8 +366,11 @@ func TestAssetResolverIntegration(t *testing.T) {
 }
 
 func TestSetupAddsViteFunction(t *testing.T) {
-	i, _ := gonertia.New(rootTemplate)
-	vi, err := New(i)
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+	vi, err := NewWithVite(i)
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}
@@ -366,10 +392,13 @@ func TestInvalidManifest(t *testing.T) {
 		t.Fatalf("failed to create invalid manifest: %v", err)
 	}
 
-	i, _ := gonertia.New(rootTemplate)
-	vi, _ := New(i, WithBuildManifest(manifestFile))
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+	vi, _ := NewWithVite(i, WithBuildManifest(manifestFile))
 
-	_, err := vi.loadManifest()
+	_, err = vi.loadManifest()
 	if err == nil {
 		t.Error("loadManifest() should fail with invalid JSON")
 	}
@@ -382,7 +411,10 @@ func TestViteReactRefresh(t *testing.T) {
 	tmpDir := t.TempDir()
 	hotFile := filepath.Join(tmpDir, "hot")
 
-	i, _ := gonertia.New(rootTemplate)
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
 
 	tests := []struct {
 		name        string
@@ -415,7 +447,8 @@ func TestViteReactRefresh(t *testing.T) {
 	}
 }
 
-func setupViteInstance(t *testing.T, i *gonertia.Inertia, hotFile string, createHot bool) *Instance {
+func setupViteInstance(t *testing.T, i *Inertia, hotFile string, createHot bool) *ViteInstance {
+	t.Helper()
 	_ = os.Remove(hotFile)
 
 	if createHot {
@@ -424,26 +457,28 @@ func setupViteInstance(t *testing.T, i *gonertia.Inertia, hotFile string, create
 		}
 	}
 
-	vi, err := New(i, WithHotFile(hotFile))
+	vi, err := NewWithVite(i, WithHotFile(hotFile))
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}
 	return vi
 }
 
-func getReactRefreshResult(vi *Instance) string {
+func getReactRefreshResult(vi *ViteInstance) string {
 	helper := vi.reactRefreshHelper(vi.isHotReload())
 	result := helper()
 	return string(result)
 }
 
 func assertEmptyResult(t *testing.T, resultStr string) {
+	t.Helper()
 	if resultStr != "" {
 		t.Errorf("expected empty string in production mode, got: %q", resultStr)
 	}
 }
 
 func assertValidReactRefresh(t *testing.T, resultStr string) {
+	t.Helper()
 	if resultStr == "" {
 		t.Error("expected non-empty React refresh setup in development mode")
 		return
@@ -478,8 +513,11 @@ func TestViteReactRefreshIntegration(t *testing.T) {
 		t.Fatalf("failed to create hot file: %v", err)
 	}
 
-	i, _ := gonertia.New(rootTemplate)
-	vi, err := New(i, WithHotFile(hotFile))
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+	vi, err := NewWithVite(i, WithHotFile(hotFile))
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}

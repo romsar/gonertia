@@ -1,5 +1,5 @@
-// Package vite provides Vite integration for Inertia.
-package vite
+// Vite integration for Inertia.
+package gonertia
 
 import (
 	"encoding/json"
@@ -8,12 +8,10 @@ import (
 	"os"
 	"path"
 	"strings"
-
-	"github.com/romsar/gonertia/v2"
 )
 
-// Config holds Vite configuration.
-type Config struct {
+// ViteConfig holds Vite configuration.
+type ViteConfig struct {
 	HotFile          string
 	BuildManifest    string
 	FallbackManifest string
@@ -21,53 +19,53 @@ type Config struct {
 	HotReloadPort    string
 }
 
-// Instance wraps Inertia with Vite functionality.
-type Instance struct {
-	*gonertia.Inertia
-	config Config
+// ViteInstance wraps Inertia with Vite functionality.
+type ViteInstance struct {
+	*Inertia
+	viteConfig ViteConfig
 }
 
-// Option configures Vite.
-type Option func(*Config)
+// ViteOption configures Vite.
+type ViteOption func(*ViteConfig)
 
 // WithHotFile sets the hot reload file path.
-func WithHotFile(path string) Option {
-	return func(c *Config) {
+func WithHotFile(path string) ViteOption {
+	return func(c *ViteConfig) {
 		c.HotFile = path
 	}
 }
 
 // WithBuildManifest sets the build manifest path.
-func WithBuildManifest(path string) Option {
-	return func(c *Config) {
+func WithBuildManifest(path string) ViteOption {
+	return func(c *ViteConfig) {
 		c.BuildManifest = path
 	}
 }
 
 // WithFallbackManifest sets the fallback manifest path.
-func WithFallbackManifest(path string) Option {
-	return func(c *Config) {
+func WithFallbackManifest(path string) ViteOption {
+	return func(c *ViteConfig) {
 		c.FallbackManifest = path
 	}
 }
 
 // WithBuildDir sets the build directory.
-func WithBuildDir(dir string) Option {
-	return func(c *Config) {
+func WithBuildDir(dir string) ViteOption {
+	return func(c *ViteConfig) {
 		c.BuildDir = dir
 	}
 }
 
 // WithHotReloadPort sets the hot reload port.
-func WithHotReloadPort(port string) Option {
-	return func(c *Config) {
+func WithHotReloadPort(port string) ViteOption {
+	return func(c *ViteConfig) {
 		c.HotReloadPort = port
 	}
 }
 
-// New creates a Vite instance with the given Inertia instance.
-func New(i *gonertia.Inertia, opts ...Option) (*Instance, error) {
-	config := Config{
+// NewWithVite creates a Vite instance with the given Inertia instance.
+func NewWithVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
+	config := ViteConfig{
 		HotFile:          "public/hot",
 		BuildManifest:    "public/build/manifest.json",
 		FallbackManifest: "public/build/.vite/manifest.json",
@@ -79,9 +77,9 @@ func New(i *gonertia.Inertia, opts ...Option) (*Instance, error) {
 		opt(&config)
 	}
 
-	vi := &Instance{
-		Inertia: i,
-		config:  config,
+	vi := &ViteInstance{
+		Inertia:    i,
+		viteConfig: config,
 	}
 
 	if err := vi.setup(); err != nil {
@@ -91,7 +89,7 @@ func New(i *gonertia.Inertia, opts ...Option) (*Instance, error) {
 	return vi, nil
 }
 
-func (vi *Instance) setup() error {
+func (vi *ViteInstance) setup() error {
 	hotReload := vi.isHotReload()
 
 	if err := vi.ShareTemplateFunc("vite", vi.assetResolver(hotReload)); err != nil {
@@ -106,19 +104,19 @@ func (vi *Instance) setup() error {
 	return nil
 }
 
-func (vi *Instance) isHotReload() bool {
-	_, err := os.Stat(vi.config.HotFile)
+func (vi *ViteInstance) isHotReload() bool {
+	_, err := os.Stat(vi.viteConfig.HotFile)
 	return err == nil
 }
 
-func (vi *Instance) assetResolver(hotReload bool) func(string) (string, error) {
+func (vi *ViteInstance) assetResolver(hotReload bool) func(string) (string, error) {
 	if hotReload {
 		return vi.hotReloadResolver()
 	}
 	return vi.bundledResolver()
 }
 
-func (vi *Instance) hotReloadResolver() func(string) (string, error) {
+func (vi *ViteInstance) hotReloadResolver() func(string) (string, error) {
 	return func(asset string) (string, error) {
 		url := vi.readHotReloadURL()
 		if asset != "" && !strings.HasPrefix(asset, "/") {
@@ -128,15 +126,15 @@ func (vi *Instance) hotReloadResolver() func(string) (string, error) {
 	}
 }
 
-func (vi *Instance) readHotReloadURL() string {
-	content, err := os.ReadFile(vi.config.HotFile)
+func (vi *ViteInstance) readHotReloadURL() string {
+	content, err := os.ReadFile(vi.viteConfig.HotFile)
 	if err != nil {
-		return vi.config.HotReloadPort
+		return vi.viteConfig.HotReloadPort
 	}
 
 	url := strings.TrimSpace(string(content))
 	if url == "" {
-		return vi.config.HotReloadPort
+		return vi.viteConfig.HotReloadPort
 	}
 
 	if strings.HasPrefix(url, "http://") {
@@ -149,7 +147,7 @@ func (vi *Instance) readHotReloadURL() string {
 	return url
 }
 
-func (vi *Instance) bundledResolver() func(string) (string, error) {
+func (vi *ViteInstance) bundledResolver() func(string) (string, error) {
 	manifest, err := vi.loadManifest()
 	if err != nil {
 		return func(string) (string, error) {
@@ -162,11 +160,11 @@ func (vi *Instance) bundledResolver() func(string) (string, error) {
 		if !exists {
 			return "", fmt.Errorf("asset %q not found", asset)
 		}
-		return path.Join(vi.config.BuildDir, entry.File), nil
+		return path.Join(vi.viteConfig.BuildDir, entry.File), nil
 	}
 }
 
-func (vi *Instance) loadManifest() (map[string]Asset, error) {
+func (vi *ViteInstance) loadManifest() (map[string]Asset, error) {
 	manifestPath, err := vi.findManifest()
 	if err != nil {
 		return nil, err
@@ -186,7 +184,7 @@ func (vi *Instance) loadManifest() (map[string]Asset, error) {
 	return manifest, nil
 }
 
-func (vi *Instance) reactRefreshHelper(hotReload bool) func() template.HTML {
+func (vi *ViteInstance) reactRefreshHelper(hotReload bool) func() template.HTML {
 	return func() template.HTML {
 		if !hotReload {
 			return template.HTML("") // No React Refresh in production
@@ -208,16 +206,16 @@ func (vi *Instance) reactRefreshHelper(hotReload bool) func() template.HTML {
 	}
 }
 
-func (vi *Instance) findManifest() (string, error) {
-	if _, err := os.Stat(vi.config.BuildManifest); err == nil {
-		return vi.config.BuildManifest, nil
+func (vi *ViteInstance) findManifest() (string, error) {
+	if _, err := os.Stat(vi.viteConfig.BuildManifest); err == nil {
+		return vi.viteConfig.BuildManifest, nil
 	}
 
-	if _, err := os.Stat(vi.config.FallbackManifest); err == nil {
-		if err := os.Rename(vi.config.FallbackManifest, vi.config.BuildManifest); err != nil {
+	if _, err := os.Stat(vi.viteConfig.FallbackManifest); err == nil {
+		if err := os.Rename(vi.viteConfig.FallbackManifest, vi.viteConfig.BuildManifest); err != nil {
 			return "", fmt.Errorf("move manifest: %w", err)
 		}
-		return vi.config.BuildManifest, nil
+		return vi.viteConfig.BuildManifest, nil
 	}
 
 	return "", fmt.Errorf("manifest not found")
