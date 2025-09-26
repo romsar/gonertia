@@ -6,13 +6,13 @@ import (
 	"strings"
 	"testing"
 
-	inertia "github.com/romsar/gonertia/v2"
+	"github.com/romsar/gonertia/v2"
 )
 
 const rootTemplate = `<html><head>{{ .inertiaHead }}</head><body>{{ .inertia }}</body></html>`
 
 func TestNew(t *testing.T) {
-	i, err := inertia.New(rootTemplate)
+	i, err := gonertia.New(rootTemplate)
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
@@ -33,7 +33,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewWithOptions(t *testing.T) {
-	i, err := inertia.New(rootTemplate)
+	i, err := gonertia.New(rootTemplate)
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestIsHotReload(t *testing.T) {
 	tmpDir := t.TempDir()
 	hotFile := filepath.Join(tmpDir, "hot")
 
-	i, _ := inertia.New(rootTemplate)
+	i, _ := gonertia.New(rootTemplate)
 	vi, _ := New(i, WithHotFile(hotFile))
 
 	// No hot file - should be bundled mode
@@ -76,7 +76,7 @@ func TestIsHotReload(t *testing.T) {
 	}
 
 	// Create hot file - should be hot reload mode
-	if err := os.WriteFile(hotFile, []byte("//localhost:5173"), 0644); err != nil {
+	if err := os.WriteFile(hotFile, []byte("//localhost:5173"), 0o644); err != nil {
 		t.Fatalf("failed to create hot file: %v", err)
 	}
 
@@ -87,10 +87,10 @@ func TestIsHotReload(t *testing.T) {
 
 func TestReadHotReloadURL(t *testing.T) {
 	tests := []struct {
-		name        string
-		content     string
-		createFile  bool
-		expected    string
+		name       string
+		content    string
+		createFile bool
+		expected   string
 	}{
 		{"no file", "", false, "//localhost:5173"},
 		{"empty file", "", true, "//localhost:5173"},
@@ -105,19 +105,16 @@ func TestReadHotReloadURL(t *testing.T) {
 			tmpDir := t.TempDir()
 			hotFile := filepath.Join(tmpDir, "hot")
 
-			i, _ := inertia.New(rootTemplate)
+			i, _ := gonertia.New(rootTemplate)
 			vi, _ := New(i, WithHotFile(hotFile))
 
 			if tt.createFile {
-				if err := os.WriteFile(hotFile, []byte(tt.content), 0644); err != nil {
+				if err := os.WriteFile(hotFile, []byte(tt.content), 0o644); err != nil {
 					t.Fatalf("failed to create hot file: %v", err)
 				}
 			}
 
-			url, err := vi.readHotReloadURL()
-			if err != nil {
-				t.Fatalf("readHotReloadURL() error: %v", err)
-			}
+			url := vi.readHotReloadURL()
 
 			if url != tt.expected {
 				t.Errorf("readHotReloadURL() = %q, want %q", url, tt.expected)
@@ -131,11 +128,11 @@ func TestHotReloadResolver(t *testing.T) {
 	hotFile := filepath.Join(tmpDir, "hot")
 
 	// Create hot file with custom URL
-	if err := os.WriteFile(hotFile, []byte("//localhost:3000"), 0644); err != nil {
+	if err := os.WriteFile(hotFile, []byte("//localhost:3000"), 0o644); err != nil {
 		t.Fatalf("failed to create hot file: %v", err)
 	}
 
-	i, _ := inertia.New(rootTemplate)
+	i, _ := gonertia.New(rootTemplate)
 	vi, _ := New(i, WithHotFile(hotFile))
 
 	resolver := vi.hotReloadResolver()
@@ -172,11 +169,11 @@ func TestBundledResolver(t *testing.T) {
 		"app.js": {"file": "assets/app.abc123.js"},
 		"main.css": {"file": "assets/main.def456.css"}
 	}`
-	if err := os.WriteFile(manifestFile, []byte(manifest), 0644); err != nil {
+	if err := os.WriteFile(manifestFile, []byte(manifest), 0o644); err != nil {
 		t.Fatalf("failed to create manifest: %v", err)
 	}
 
-	i, _ := inertia.New(rootTemplate)
+	i, _ := gonertia.New(rootTemplate)
 	vi, _ := New(i, WithBuildManifest(manifestFile), WithBuildDir("/build/"))
 
 	resolver := vi.bundledResolver()
@@ -232,50 +229,62 @@ func TestFindManifest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Clean up from previous test
-			_ = os.Remove(buildManifest)
-			_ = os.Remove(fallbackManifest)
-
-			if tt.createBuild {
-				_ = os.WriteFile(buildManifest, []byte("{}"), 0644)
-			}
-			if tt.createFallback {
-				_ = os.WriteFile(fallbackManifest, []byte("{}"), 0644)
-			}
-
-			i, _ := inertia.New(rootTemplate)
-			vi, _ := New(i,
-				WithBuildManifest(buildManifest),
-				WithFallbackManifest(fallbackManifest),
-			)
-
+			vi := setupManifestTest(t, buildManifest, fallbackManifest, tt.createBuild, tt.createFallback)
 			path, err := vi.findManifest()
 
 			if tt.expectError {
-				if err == nil {
-					t.Error("findManifest() expected error but got none")
-				}
+				assertManifestError(t, err)
 				return
 			}
 
-			if err != nil {
-				t.Fatalf("findManifest() unexpected error: %v", err)
-			}
-
-			if path != buildManifest {
-				t.Errorf("findManifest() = %q, want %q", path, buildManifest)
-			}
-
-			// Check if fallback was moved to build location
+			assertManifestSuccess(t, err, path, buildManifest)
 			if tt.expectMove {
-				if _, err := os.Stat(buildManifest); err != nil {
-					t.Error("fallback manifest should have been moved to build location")
-				}
-				if _, err := os.Stat(fallbackManifest); err == nil {
-					t.Error("fallback manifest should have been moved away")
-				}
+				assertManifestMove(t, buildManifest, fallbackManifest)
 			}
 		})
+	}
+}
+
+func setupManifestTest(t *testing.T, buildManifest, fallbackManifest string, createBuild, createFallback bool) *Instance {
+	_ = os.Remove(buildManifest)
+	_ = os.Remove(fallbackManifest)
+
+	if createBuild {
+		_ = os.WriteFile(buildManifest, []byte("{}"), 0o644)
+	}
+	if createFallback {
+		_ = os.WriteFile(fallbackManifest, []byte("{}"), 0o644)
+	}
+
+	i, _ := gonertia.New(rootTemplate)
+	vi, _ := New(i,
+		WithBuildManifest(buildManifest),
+		WithFallbackManifest(fallbackManifest),
+	)
+	return vi
+}
+
+func assertManifestError(t *testing.T, err error) {
+	if err == nil {
+		t.Error("findManifest() expected error but got none")
+	}
+}
+
+func assertManifestSuccess(t *testing.T, err error, path, buildManifest string) {
+	if err != nil {
+		t.Fatalf("findManifest() unexpected error: %v", err)
+	}
+	if path != buildManifest {
+		t.Errorf("findManifest() = %q, want %q", path, buildManifest)
+	}
+}
+
+func assertManifestMove(t *testing.T, buildManifest, fallbackManifest string) {
+	if _, err := os.Stat(buildManifest); err != nil {
+		t.Error("fallback manifest should have been moved to build location")
+	}
+	if _, err := os.Stat(fallbackManifest); err == nil {
+		t.Error("fallback manifest should have been moved away")
 	}
 }
 
@@ -286,11 +295,11 @@ func TestAssetResolverIntegration(t *testing.T) {
 
 	// Test hot reload mode
 	t.Run("hot reload mode", func(t *testing.T) {
-		if err := os.WriteFile(hotFile, []byte("//localhost:3000"), 0644); err != nil {
+		if err := os.WriteFile(hotFile, []byte("//localhost:3000"), 0o644); err != nil {
 			t.Fatalf("failed to create hot file: %v", err)
 		}
 
-		i, _ := inertia.New(rootTemplate)
+		i, _ := gonertia.New(rootTemplate)
 		vi, _ := New(i, WithHotFile(hotFile))
 
 		resolver := vi.assetResolver(vi.isHotReload())
@@ -310,11 +319,11 @@ func TestAssetResolverIntegration(t *testing.T) {
 		_ = os.Remove(hotFile) // Remove hot file to trigger bundled mode
 
 		manifest := `{"app.js": {"file": "assets/app.abc123.js"}}`
-		if err := os.WriteFile(manifestFile, []byte(manifest), 0644); err != nil {
+		if err := os.WriteFile(manifestFile, []byte(manifest), 0o644); err != nil {
 			t.Fatalf("failed to create manifest: %v", err)
 		}
 
-		i, _ := inertia.New(rootTemplate)
+		i, _ := gonertia.New(rootTemplate)
 		vi, _ := New(i,
 			WithHotFile(hotFile),
 			WithBuildManifest(manifestFile),
@@ -334,7 +343,7 @@ func TestAssetResolverIntegration(t *testing.T) {
 }
 
 func TestSetupAddsViteFunction(t *testing.T) {
-	i, _ := inertia.New(rootTemplate)
+	i, _ := gonertia.New(rootTemplate)
 	vi, err := New(i)
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
@@ -353,11 +362,11 @@ func TestInvalidManifest(t *testing.T) {
 	manifestFile := filepath.Join(tmpDir, "manifest.json")
 
 	// Create invalid JSON
-	if err := os.WriteFile(manifestFile, []byte("invalid json"), 0644); err != nil {
+	if err := os.WriteFile(manifestFile, []byte("invalid json"), 0o644); err != nil {
 		t.Fatalf("failed to create invalid manifest: %v", err)
 	}
 
-	i, _ := inertia.New(rootTemplate)
+	i, _ := gonertia.New(rootTemplate)
 	vi, _ := New(i, WithBuildManifest(manifestFile))
 
 	_, err := vi.loadManifest()
@@ -373,7 +382,7 @@ func TestViteReactRefresh(t *testing.T) {
 	tmpDir := t.TempDir()
 	hotFile := filepath.Join(tmpDir, "hot")
 
-	i, _ := inertia.New(rootTemplate)
+	i, _ := gonertia.New(rootTemplate)
 
 	tests := []struct {
 		name        string
@@ -394,55 +403,69 @@ func TestViteReactRefresh(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Clean up previous test
-			_ = os.Remove(hotFile)
-
-			if tt.createHot {
-				if err := os.WriteFile(hotFile, []byte("//localhost:5173"), 0644); err != nil {
-					t.Fatalf("failed to create hot file: %v", err)
-				}
-			}
-
-			vi, err := New(i, WithHotFile(hotFile))
-			if err != nil {
-				t.Fatalf("New() failed: %v", err)
-			}
-
-			helper := vi.reactRefreshHelper(vi.isHotReload())
-			result := helper()
-			resultStr := string(result)
+			vi := setupViteInstance(t, i, hotFile, tt.createHot)
+			resultStr := getReactRefreshResult(vi)
 
 			if tt.expectEmpty {
-				if resultStr != "" {
-					t.Errorf("expected empty string in production mode, got: %q", resultStr)
-				}
+				assertEmptyResult(t, resultStr)
 			} else {
-				if resultStr == "" {
-					t.Error("expected non-empty React refresh setup in development mode")
-				}
-
-				// Check that the result contains expected React refresh elements
-				expectedParts := []string{
-					"@vite/client",
-					"@react-refresh",
-					"RefreshRuntime.injectIntoGlobalHook",
-					"window.$RefreshReg$",
-					"window.$RefreshSig$",
-					"__vite_plugin_react_preamble_installed__",
-				}
-
-				for _, part := range expectedParts {
-					if !strings.Contains(resultStr, part) {
-						t.Errorf("React refresh setup missing expected part: %q", part)
-					}
-				}
-
-				// Verify it contains script tags
-				if !strings.Contains(resultStr, "<script type=\"module\"") {
-					t.Error("React refresh setup should contain script tags")
-				}
+				assertValidReactRefresh(t, resultStr)
 			}
 		})
+	}
+}
+
+func setupViteInstance(t *testing.T, i *gonertia.Inertia, hotFile string, createHot bool) *Instance {
+	_ = os.Remove(hotFile)
+
+	if createHot {
+		if err := os.WriteFile(hotFile, []byte("//localhost:5173"), 0o644); err != nil {
+			t.Fatalf("failed to create hot file: %v", err)
+		}
+	}
+
+	vi, err := New(i, WithHotFile(hotFile))
+	if err != nil {
+		t.Fatalf("New() failed: %v", err)
+	}
+	return vi
+}
+
+func getReactRefreshResult(vi *Instance) string {
+	helper := vi.reactRefreshHelper(vi.isHotReload())
+	result := helper()
+	return string(result)
+}
+
+func assertEmptyResult(t *testing.T, resultStr string) {
+	if resultStr != "" {
+		t.Errorf("expected empty string in production mode, got: %q", resultStr)
+	}
+}
+
+func assertValidReactRefresh(t *testing.T, resultStr string) {
+	if resultStr == "" {
+		t.Error("expected non-empty React refresh setup in development mode")
+		return
+	}
+
+	expectedParts := []string{
+		"@vite/client",
+		"@react-refresh",
+		"RefreshRuntime.injectIntoGlobalHook",
+		"window.$RefreshReg$",
+		"window.$RefreshSig$",
+		"__vite_plugin_react_preamble_installed__",
+	}
+
+	for _, part := range expectedParts {
+		if !strings.Contains(resultStr, part) {
+			t.Errorf("React refresh setup missing expected part: %q", part)
+		}
+	}
+
+	if !strings.Contains(resultStr, "<script type=\"module\"") {
+		t.Error("React refresh setup should contain script tags")
 	}
 }
 
@@ -451,11 +474,11 @@ func TestViteReactRefreshIntegration(t *testing.T) {
 	hotFile := filepath.Join(tmpDir, "hot")
 
 	// Create hot file for development mode
-	if err := os.WriteFile(hotFile, []byte("//localhost:3000"), 0644); err != nil {
+	if err := os.WriteFile(hotFile, []byte("//localhost:3000"), 0o644); err != nil {
 		t.Fatalf("failed to create hot file: %v", err)
 	}
 
-	i, _ := inertia.New(rootTemplate)
+	i, _ := gonertia.New(rootTemplate)
 	vi, err := New(i, WithHotFile(hotFile))
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)

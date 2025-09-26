@@ -9,7 +9,7 @@ import (
 	"path"
 	"strings"
 
-	inertia "github.com/romsar/gonertia/v2"
+	"github.com/romsar/gonertia/v2"
 )
 
 // Config holds Vite configuration.
@@ -23,7 +23,7 @@ type Config struct {
 
 // Instance wraps Inertia with Vite functionality.
 type Instance struct {
-	*inertia.Inertia
+	*gonertia.Inertia
 	config Config
 }
 
@@ -66,7 +66,7 @@ func WithHotReloadPort(port string) Option {
 }
 
 // New creates a Vite instance with the given Inertia instance.
-func New(i *inertia.Inertia, opts ...Option) (*Instance, error) {
+func New(i *gonertia.Inertia, opts ...Option) (*Instance, error) {
 	config := Config{
 		HotFile:          "public/hot",
 		BuildManifest:    "public/build/manifest.json",
@@ -120,7 +120,7 @@ func (vi *Instance) assetResolver(hotReload bool) func(string) (string, error) {
 
 func (vi *Instance) hotReloadResolver() func(string) (string, error) {
 	return func(asset string) (string, error) {
-		url, _ := vi.readHotReloadURL()
+		url := vi.readHotReloadURL()
 		if asset != "" && !strings.HasPrefix(asset, "/") {
 			asset = "/" + asset
 		}
@@ -128,25 +128,25 @@ func (vi *Instance) hotReloadResolver() func(string) (string, error) {
 	}
 }
 
-func (vi *Instance) readHotReloadURL() (string, error) {
+func (vi *Instance) readHotReloadURL() string {
 	content, err := os.ReadFile(vi.config.HotFile)
 	if err != nil {
-		return vi.config.HotReloadPort, nil
+		return vi.config.HotReloadPort
 	}
 
 	url := strings.TrimSpace(string(content))
 	if url == "" {
-		return vi.config.HotReloadPort, nil
+		return vi.config.HotReloadPort
 	}
 
 	if strings.HasPrefix(url, "http://") {
-		return "//" + url[7:], nil
+		return "//" + url[7:]
 	}
 	if strings.HasPrefix(url, "https://") {
-		return "//" + url[8:], nil
+		return "//" + url[8:]
 	}
 
-	return url, nil
+	return url
 }
 
 func (vi *Instance) bundledResolver() func(string) (string, error) {
