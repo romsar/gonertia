@@ -376,7 +376,6 @@ import (
     "net/http"
 
     inertia "github.com/romsar/gonertia/v2"
-    "github.com/romsar/gonertia/v2/vite"
 )
 
 func main() {
@@ -387,7 +386,7 @@ func main() {
     }
 
     // Then wrap it with Vite functionality
-    app, err := vite.New(i)
+    app, err := inertia.NewWithVite(i)
     if err != nil {
         log.Fatal(err)
     }
@@ -412,12 +411,12 @@ if err != nil {
 }
 
 // Wrap with Vite and configure Vite-specific options
-app, err := vite.New(i,
-    vite.WithHotFile("custom/hot"),                           // Hot reload file path
-    vite.WithBuildManifest("public/build/manifest.json"),     // Build manifest path
-    vite.WithFallbackManifest("public/.vite/manifest.json"), // Fallback manifest
-    vite.WithBuildDir("/assets/"),                           // Build output directory
-    vite.WithHotReloadPort("//localhost:3000"),             // Hot reload server port
+app, err := inertia.NewWithVite(i,
+    inertia.WithHotFile("custom/hot"),                           // Hot reload file path
+    inertia.WithBuildManifest("public/build/manifest.json"),     // Build manifest path
+    inertia.WithFallbackManifest("public/.vite/manifest.json"), // Fallback manifest
+    inertia.WithBuildDir("/assets/"),                           // Build output directory
+    inertia.WithHotReloadPort("//localhost:3000"),             // Hot reload server port
 )
 if err != nil {
     log.Fatal(err)
