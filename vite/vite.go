@@ -176,7 +176,7 @@ func (vi *Instance) loadManifest() (map[string]Asset, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open manifest: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	var manifest map[string]Asset
 	if err := json.NewDecoder(file).Decode(&manifest); err != nil {

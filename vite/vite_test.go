@@ -24,6 +24,7 @@ func TestNew(t *testing.T) {
 
 	if vi == nil {
 		t.Fatal("New() returned nil")
+		return
 	}
 
 	if vi.Inertia != i {
@@ -232,14 +233,14 @@ func TestFindManifest(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clean up from previous test
-			os.Remove(buildManifest)
-			os.Remove(fallbackManifest)
+			_ = os.Remove(buildManifest)
+			_ = os.Remove(fallbackManifest)
 
 			if tt.createBuild {
-				os.WriteFile(buildManifest, []byte("{}"), 0644)
+				_ = os.WriteFile(buildManifest, []byte("{}"), 0644)
 			}
 			if tt.createFallback {
-				os.WriteFile(fallbackManifest, []byte("{}"), 0644)
+				_ = os.WriteFile(fallbackManifest, []byte("{}"), 0644)
 			}
 
 			i, _ := inertia.New(rootTemplate)
@@ -306,7 +307,7 @@ func TestAssetResolverIntegration(t *testing.T) {
 
 	// Test bundled mode
 	t.Run("bundled mode", func(t *testing.T) {
-		os.Remove(hotFile) // Remove hot file to trigger bundled mode
+		_ = os.Remove(hotFile) // Remove hot file to trigger bundled mode
 
 		manifest := `{"app.js": {"file": "assets/app.abc123.js"}}`
 		if err := os.WriteFile(manifestFile, []byte(manifest), 0644); err != nil {
@@ -394,7 +395,7 @@ func TestViteReactRefresh(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clean up previous test
-			os.Remove(hotFile)
+			_ = os.Remove(hotFile)
 
 			if tt.createHot {
 				if err := os.WriteFile(hotFile, []byte("//localhost:5173"), 0644); err != nil {
