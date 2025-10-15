@@ -489,18 +489,18 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 }
 
 type page struct {
-	Component      string                         `json:"component"`
-	Props          Props                          `json:"props"`
-	URL            string                         `json:"url"`
-	Version        string                         `json:"version"`
-	EncryptHistory bool                           `json:"encryptHistory"`
-	ClearHistory   bool                           `json:"clearHistory"`
-	DeferredProps  map[string][]string            `json:"deferredProps,omitempty"`
-	MergeProps     []string                       `json:"mergeProps,omitempty"`
-	PrependProps   []string                       `json:"prependProps,omitempty"`
-	DeepMergeProps []string                       `json:"deepMergeProps,omitempty"`
-	MatchPropsOn   []string                       `json:"matchPropsOn,omitempty"`
-	ScrollProps    map[string]scrollPropMetadata  `json:"scrollProps,omitempty"`
+	Component      string                        `json:"component"`
+	Props          Props                         `json:"props"`
+	URL            string                        `json:"url"`
+	Version        string                        `json:"version"`
+	EncryptHistory bool                          `json:"encryptHistory"`
+	ClearHistory   bool                          `json:"clearHistory"`
+	DeferredProps  map[string][]string           `json:"deferredProps,omitempty"`
+	MergeProps     []string                      `json:"mergeProps,omitempty"`
+	PrependProps   []string                      `json:"prependProps,omitempty"`
+	DeepMergeProps []string                      `json:"deepMergeProps,omitempty"`
+	MatchPropsOn   []string                      `json:"matchPropsOn,omitempty"`
+	ScrollProps    map[string]scrollPropMetadata `json:"scrollProps,omitempty"`
 }
 
 type scrollPropMetadata struct {

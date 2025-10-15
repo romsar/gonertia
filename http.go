@@ -6,16 +6,16 @@ import (
 )
 
 const (
-	headerInertia                      = "X-Inertia"
-	headerInertiaLocation              = "X-Inertia-Location"
-	headerInertiaPartialData           = "X-Inertia-Partial-Data"
-	headerInertiaPartialExcept         = "X-Inertia-Partial-Except"
-	headerInertiaPartialComponent      = "X-Inertia-Partial-Component"
-	headerInertiaVersion               = "X-Inertia-Version"
-	headerInertiaReset                 = "X-Inertia-Reset"
+	headerInertia                          = "X-Inertia"
+	headerInertiaLocation                  = "X-Inertia-Location"
+	headerInertiaPartialData               = "X-Inertia-Partial-Data"
+	headerInertiaPartialExcept             = "X-Inertia-Partial-Except"
+	headerInertiaPartialComponent          = "X-Inertia-Partial-Component"
+	headerInertiaVersion                   = "X-Inertia-Version"
+	headerInertiaReset                     = "X-Inertia-Reset"
 	headerInertiaInfiniteScrollMergeIntent = "X-Inertia-Infinite-Scroll-Merge-Intent"
-	headerVary                         = "Vary"
-	headerContentType                  = "Content-Type"
+	headerVary                             = "Vary"
+	headerContentType                      = "Content-Type"
 )
 
 // IsInertiaRequest returns true if the request is an Inertia request.
