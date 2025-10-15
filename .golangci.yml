@@ -1,47 +1,28 @@
+version: "2"
 run:
   tests: true
-
-linters-settings:
-  funlen:
-    lines: 150
-    statements: 80
-
-issues:
-  exclude-rules:
-    - path: (.+)_test.go
-      linters:
-        - funlen
-        - lll
-        - goconst
-        - dupl
-        - gocritic
-
 linters:
-  disable-all: true
+  default: none
   enable:
     - asciicheck
     - bodyclose
+    - copyloopvar
     - depguard
     - dogsled
     - dupl
     - durationcheck
     - errorlint
     - exhaustive
-    - copyloopvar
     - funlen
-    - gci
     - gocognit
     - goconst
     - gocritic
     - gocyclo
     - godot
-    - gofmt
-    - gofumpt
     - goheader
     - gomoddirectives
     - gomodguard
     - goprintffuncname
-    - gosimple
     - govet
     - importas
     - ineffassign
@@ -55,13 +36,45 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - stylecheck
     - tagliatelle
     - thelper
     - tparallel
-    - typecheck
     - unconvert
     - unparam
     - unused
     - wastedassign
     - whitespace
+  settings:
+    funlen:
+      lines: 150
+      statements: 80
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - funlen
+          - goconst
+          - gocritic
+          - lll
+        path: (.+)_test.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

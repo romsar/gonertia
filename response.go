@@ -478,7 +478,7 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 		if err = i.doInertiaResponse(w, p); err != nil {
 			return fmt.Errorf("inertia response: %w", err)
 		}
-		return
+		return nil
 	}
 
 	if err = i.doHTMLResponse(w, r, p); err != nil {
