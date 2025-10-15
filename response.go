@@ -71,6 +71,7 @@ func (p DeferProp) Prop() any {
 
 func (p DeferProp) Merge() DeferProp {
 	p.merge = true
+	p.append = true
 	return p
 }
 
@@ -117,10 +118,46 @@ func (p MergeProps) Merge() MergeProps {
 	return p
 }
 
+func (p MergeProps) DeepMerge() MergeProps {
+	p.deepMerge = true
+	p.merge = true
+	return p
+}
+
+func (p MergeProps) MatchOn(keys ...string) MergeProps {
+	p.matchOn = append(p.matchOn, keys...)
+	return p
+}
+
+func (p MergeProps) Append(paths ...string) MergeProps {
+	if len(paths) == 0 {
+		p.append = true
+	} else {
+		p.appendAtPaths = append(p.appendAtPaths, paths...)
+	}
+	return p
+}
+
+func (p MergeProps) Prepend(paths ...string) MergeProps {
+	if len(paths) == 0 {
+		p.append = false
+	} else {
+		p.prependAtPaths = append(p.prependAtPaths, paths...)
+	}
+	return p
+}
+
 func Merge(value any) MergeProps {
 	return MergeProps{
 		Value:       value,
-		mergesProps: mergesProps{merge: true},
+		mergesProps: mergesProps{merge: true, append: true},
+	}
+}
+
+func DeepMerge(value any) MergeProps {
+	return MergeProps{
+		Value:       value,
+		mergesProps: mergesProps{merge: true, deepMerge: true, append: true},
 	}
 }
 
@@ -128,14 +165,53 @@ var _ mergeable = MergeProps{}
 
 type mergeable interface {
 	shouldMerge() bool
+	shouldDeepMerge() bool
+	matchesOn() []string
+	appendsAtRoot() bool
+	prependsAtRoot() bool
+	appendsAtPaths() []string
+	prependsAtPaths() []string
 }
 
 type mergesProps struct {
-	merge bool
+	merge          bool
+	deepMerge      bool
+	matchOn        []string
+	append         bool
+	appendAtPaths  []string
+	prependAtPaths []string
 }
 
 func (p mergesProps) shouldMerge() bool {
 	return p.merge
+}
+
+func (p mergesProps) shouldDeepMerge() bool {
+	return p.deepMerge
+}
+
+func (p mergesProps) matchesOn() []string {
+	return p.matchOn
+}
+
+func (p mergesProps) appendsAtRoot() bool {
+	return p.append && p.mergesAtRoot()
+}
+
+func (p mergesProps) prependsAtRoot() bool {
+	return !p.append && p.mergesAtRoot()
+}
+
+func (p mergesProps) mergesAtRoot() bool {
+	return len(p.appendAtPaths) == 0 && len(p.prependAtPaths) == 0
+}
+
+func (p mergesProps) appendsAtPaths() []string {
+	return p.appendAtPaths
+}
+
+func (p mergesProps) prependsAtPaths() []string {
+	return p.prependAtPaths
 }
 
 // Proper is an interface for custom type, which provides property, that will be resolved.
@@ -162,6 +238,157 @@ type TryProperWithContext interface {
 
 // ValidationErrors are messages, that will be stored in the "errors" prop.
 type ValidationErrors map[string]any
+
+// ProvidesScrollMetadata is an interface for providing scroll metadata.
+type ProvidesScrollMetadata interface {
+	GetPageName() string
+	GetPreviousPage() any
+	GetNextPage() any
+	GetCurrentPage() any
+}
+
+// ScrollMetadata holds pagination metadata for infinite scroll.
+type ScrollMetadata struct {
+	PageName     string `json:"pageName"`
+	PreviousPage any    `json:"previousPage"`
+	NextPage     any    `json:"nextPage"`
+	CurrentPage  any    `json:"currentPage"`
+}
+
+func (s ScrollMetadata) GetPageName() string {
+	return s.PageName
+}
+
+func (s ScrollMetadata) GetPreviousPage() any {
+	return s.PreviousPage
+}
+
+func (s ScrollMetadata) GetNextPage() any {
+	return s.NextPage
+}
+
+func (s ScrollMetadata) GetCurrentPage() any {
+	return s.CurrentPage
+}
+
+var _ ProvidesScrollMetadata = ScrollMetadata{}
+
+// ScrollProp is a property for infinite scroll/pagination that can be merged during partial reloads.
+//
+// https://v2.inertiajs.com/infinite-scrolling
+type ScrollProp struct {
+	mergesProps
+	Value            any
+	Wrapper          string
+	MetadataProvider ProvidesScrollMetadata
+	MetadataFunc     func(any) ProvidesScrollMetadata
+}
+
+func (p ScrollProp) Prop() any {
+	// If the value is a map and already has the wrapper key, return as is
+	if m, ok := p.Value.(map[string]any); ok {
+		if _, hasWrapper := m[p.Wrapper]; hasWrapper {
+			return p.Value
+		}
+	}
+
+	// Otherwise, wrap the value with the wrapper key
+	return map[string]any{
+		p.Wrapper: p.Value,
+	}
+}
+
+func (p ScrollProp) Merge() ScrollProp {
+	p.merge = true
+	return p
+}
+
+func (p ScrollProp) ConfigureMergeIntent(r *http.Request) ScrollProp {
+	intent := infiniteScrollMergeIntentFromRequest(r)
+	if intent == "prepend" {
+		p.prependAtPaths = []string{p.Wrapper}
+	} else {
+		p.appendAtPaths = []string{p.Wrapper}
+	}
+	return p
+}
+
+func (p ScrollProp) GetMetadata() ScrollMetadata {
+	if p.MetadataProvider != nil {
+		return ScrollMetadata{
+			PageName:     p.MetadataProvider.GetPageName(),
+			PreviousPage: p.MetadataProvider.GetPreviousPage(),
+			NextPage:     p.MetadataProvider.GetNextPage(),
+			CurrentPage:  p.MetadataProvider.GetCurrentPage(),
+		}
+	}
+
+	// Resolve the value
+	val := p.Value
+	if proper, ok := val.(Proper); ok {
+		val = proper.Prop()
+	}
+
+	// If metadata function is provided, use it
+	if p.MetadataFunc != nil {
+		provider := p.MetadataFunc(val)
+		return ScrollMetadata{
+			PageName:     provider.GetPageName(),
+			PreviousPage: provider.GetPreviousPage(),
+			NextPage:     provider.GetNextPage(),
+			CurrentPage:  provider.GetCurrentPage(),
+		}
+	}
+
+	// Default: return empty metadata
+	return ScrollMetadata{
+		PageName:     "page",
+		PreviousPage: nil,
+		NextPage:     nil,
+		CurrentPage:  nil,
+	}
+}
+
+// ScrollOption is a functional option for configuring ScrollProp.
+type ScrollOption func(*ScrollProp)
+
+// WithWrapper sets a custom wrapper key for the scroll prop (defaults to "data").
+func WithWrapper(wrapper string) ScrollOption {
+	return func(p *ScrollProp) {
+		p.Wrapper = wrapper
+	}
+}
+
+// WithMetadata sets a metadata provider for the scroll prop.
+func WithMetadata(metadata ProvidesScrollMetadata) ScrollOption {
+	return func(p *ScrollProp) {
+		p.MetadataProvider = metadata
+	}
+}
+
+// WithMetadataFunc sets a metadata function that extracts metadata from the value.
+func WithMetadataFunc(fn func(any) ProvidesScrollMetadata) ScrollOption {
+	return func(p *ScrollProp) {
+		p.MetadataFunc = fn
+	}
+}
+
+// Scroll creates a scroll prop for infinite scrolling.
+func Scroll(value any, opts ...ScrollOption) ScrollProp {
+	p := ScrollProp{
+		Value:       value,
+		Wrapper:     "data",
+		mergesProps: mergesProps{merge: true, append: true},
+	}
+
+	for _, opt := range opts {
+		opt(&p)
+	}
+
+	return p
+}
+
+var _ mergeable = ScrollProp{}
 
 // Location creates redirect response.
 //
@@ -262,21 +489,41 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 }
 
 type page struct {
-	Component      string              `json:"component"`
-	Props          Props               `json:"props"`
-	URL            string              `json:"url"`
-	Version        string              `json:"version"`
-	EncryptHistory bool                `json:"encryptHistory"`
-	ClearHistory   bool                `json:"clearHistory"`
-	DeferredProps  map[string][]string `json:"deferredProps,omitempty"`
-	MergeProps     []string            `json:"mergeProps,omitempty"`
+	Component      string                        `json:"component"`
+	Props          Props                         `json:"props"`
+	URL            string                        `json:"url"`
+	Version        string                        `json:"version"`
+	EncryptHistory bool                          `json:"encryptHistory"`
+	ClearHistory   bool                          `json:"clearHistory"`
+	DeferredProps  map[string][]string           `json:"deferredProps,omitempty"`
+	MergeProps     []string                      `json:"mergeProps,omitempty"`
+	PrependProps   []string                      `json:"prependProps,omitempty"`
+	DeepMergeProps []string                      `json:"deepMergeProps,omitempty"`
+	MatchPropsOn   []string                      `json:"matchPropsOn,omitempty"`
+	ScrollProps    map[string]scrollPropMetadata `json:"scrollProps,omitempty"`
+}
+
+type scrollPropMetadata struct {
+	PageName     string `json:"pageName"`
+	PreviousPage any    `json:"previousPage"`
+	NextPage     any    `json:"nextPage"`
+	CurrentPage  any    `json:"currentPage"`
+	Reset        bool   `json:"reset"`
 }
 
 func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*page, error) {
 	props = i.collectProps(r, props)
 
+	// Configure merge intent for ScrollProp before resolving merge props
+	for key, val := range props {
+		if sp, ok := val.(ScrollProp); ok {
+			props[key] = sp.ConfigureMergeIntent(r)
+		}
+	}
+
 	deferredProps := i.resolveDeferredProps(r, component, props)
-	mergeProps := resolveMergeProps(r, props)
+	mergePropsResult := resolveMergeProps(r, props)
+	scrollProps := resolveScrollProps(r, props)
 
 	props, err := i.resolveProps(r, component, props)
 	if err != nil {
@@ -291,7 +538,11 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 		EncryptHistory: i.resolveEncryptHistory(r.Context()),
 		ClearHistory:   ClearHistoryFromContext(r.Context()),
 		DeferredProps:  deferredProps,
-		MergeProps:     mergeProps,
+		MergeProps:     mergePropsResult.MergeProps,
+		PrependProps:   mergePropsResult.PrependProps,
+		DeepMergeProps: mergePropsResult.DeepMergeProps,
+		MatchPropsOn:   mergePropsResult.MatchPropsOn,
+		ScrollProps:    scrollProps,
 	}, nil
 }
 
@@ -333,21 +584,86 @@ func (i *Inertia) collectProps(r *http.Request, props Props) Props {
 	return result
 }
 
-func resolveMergeProps(r *http.Request, props Props) []string {
+type mergePropsResult struct {
+	MergeProps     []string
+	PrependProps   []string
+	DeepMergeProps []string
+	MatchPropsOn   []string
+}
+
+func resolveMergeProps(r *http.Request, props Props) mergePropsResult {
 	resetProps := setOf(resetFromRequest(r))
 
-	var mergeProps []string
+	var result mergePropsResult
+	var appendProps []string
+
 	for key, val := range props {
 		if _, ok := resetProps[key]; ok {
 			continue
 		}
 
-		if m, ok := val.(mergeable); ok && m.shouldMerge() {
-			mergeProps = append(mergeProps, key)
+		m, ok := val.(mergeable)
+		if !ok || !m.shouldMerge() {
+			continue
+		}
+
+		// Handle deep merge
+		if m.shouldDeepMerge() {
+			result.DeepMergeProps = append(result.DeepMergeProps, key)
+			continue
+		}
+
+		// Handle prepend at root
+		if m.prependsAtRoot() {
+			result.PrependProps = append(result.PrependProps, key)
+		} else if m.appendsAtRoot() {
+			appendProps = append(appendProps, key)
+		}
+
+		// Handle nested prepend paths
+		for _, path := range m.prependsAtPaths() {
+			result.PrependProps = append(result.PrependProps, key+"."+path)
+		}
+
+		// Handle nested append paths
+		for _, path := range m.appendsAtPaths() {
+			appendProps = append(appendProps, key+"."+path)
+		}
+
+		// Handle match on keys
+		for _, matchKey := range m.matchesOn() {
+			result.MatchPropsOn = append(result.MatchPropsOn, key+"."+matchKey)
 		}
 	}
 
-	return mergeProps
+	result.MergeProps = appendProps
+
+	return result
+}
+
+func resolveScrollProps(r *http.Request, props Props) map[string]scrollPropMetadata {
+	resetProps := setOf(resetFromRequest(r))
+	scrollProps := make(map[string]scrollPropMetadata)
+
+	for key, val := range props {
+		sp, ok := val.(ScrollProp)
+		if !ok {
+			continue
+		}
+
+		metadata := sp.GetMetadata()
+		_, isReset := resetProps[key]
+
+		scrollProps[key] = scrollPropMetadata{
+			PageName:     metadata.PageName,
+			PreviousPage: metadata.PreviousPage,
+			NextPage:     metadata.NextPage,
+			CurrentPage:  metadata.CurrentPage,
+			Reset:        isReset,
+		}
+	}
+
+	return scrollProps
 }
 
 //nolint:gocognit

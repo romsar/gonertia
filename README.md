@@ -169,6 +169,38 @@ props := inertia.Props{
 }
 ```
 
+#### Infinite scrolling ([learn more](https://inertiajs.com/infinite-scroll))
+
+```go
+props := inertia.Props{
+    // Basic scroll prop (defaults to "data" wrapper)
+    "items": inertia.Scroll(items),
+
+    // Scroll prop with custom wrapper
+    "results": inertia.Scroll(items, inertia.WithWrapper("results")),
+
+    // Scroll prop with pagination metadata
+    "posts": inertia.Scroll(posts, inertia.WithMetadata(inertia.ScrollMetadata{
+        PageName:     "page",
+        PreviousPage: 1,
+        NextPage:     3,
+        CurrentPage:  2,
+    })),
+
+    // Scroll prop with metadata function (extracts metadata from your data structure)
+    "articles": inertia.Scroll(paginatedData, inertia.WithMetadataFunc(
+        func(data PaginatedData) inertia.ProvidesScrollMetadata {
+            return inertia.ScrollMetadata{
+                PageName:     "page",
+                CurrentPage:  data.CurrentPage,
+                NextPage:     data.NextPage,
+                PreviousPage: data.PrevPage,
+            }
+        },
+    )),
+}
+```
+
 #### Redirects ([learn more](https://inertiajs.com/redirects))
 
 ```go
