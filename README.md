@@ -362,6 +362,101 @@ ctx := inertia.ClearHistory(r.Context())
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
 
+#### Vite Integration
+
+Built-in Vite integration that automatically detects hot reload vs bundled mode. By default, Vite integration assumes a standard `public/` directory structure for assets, but it can be overwritten.
+
+##### Basic Vite usage
+
+```go
+package main
+
+import (
+    "log"
+    "net/http"
+
+    inertia "github.com/romsar/gonertia/v2"
+)
+
+func main() {
+    // First create your Inertia instance (you can use any inertia.New* method)
+    i, err := inertia.NewFromFile("resources/views/app.html")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Then wrap it with Vite functionality
+    app, err := inertia.NewWithVite(i)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // The rest of your application setup...
+    mux := http.NewServeMux()
+    mux.Handle("/", app.Middleware(homeHandler(app)))
+}
+```
+
+#### Vite configuration options
+
+All Vite integration settings can be customized:
+
+```go
+// Create Inertia instance with any options you need
+i, err := inertia.NewFromFile("resources/views/app.html",
+    inertia.WithSSR("http://localhost:13714"),
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Wrap with Vite and configure Vite-specific options
+app, err := inertia.NewWithVite(i,
+    inertia.WithHotFile("custom/hot"),                           // Hot reload file path
+    inertia.WithBuildManifest("public/build/manifest.json"),     // Build manifest path
+    inertia.WithFallbackManifest("public/.vite/manifest.json"), // Fallback manifest
+    inertia.WithBuildDir("/assets/"),                           // Build output directory
+    inertia.WithHotReloadPort("//localhost:3000"),             // Hot reload server port
+)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+#### Template usage with Vite
+
+Create your root template with Vite functions:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ .inertiaHead }}
+
+    <!-- Vite React Refresh - automatically handles HMR setup -->
+    {{ viteReactRefresh }}
+
+    <!-- CSS - automatically resolves dev vs production -->
+    <link rel="stylesheet" href="{{ vite "resources/css/app.css" }}">
+</head>
+<body>
+    {{ .inertia }}
+
+    <!-- Main app script - automatically resolves dev vs production -->
+    <script type="module" src="{{ vite "resources/js/app.jsx" }}"></script>
+</body>
+</html>
+```
+
+#### Template functions
+
+The Vite integration provides two template functions:
+
+- **`{{ vite "path" }}`** - Resolves asset URLs automatically
+- **`{{ viteReactRefresh }}`** - Handles React HMR setup
+
 #### Testing
 
 Of course, this package provides convenient interfaces for testing!
