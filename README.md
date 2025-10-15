@@ -149,7 +149,7 @@ props := inertia.Props{
 i.Render(w, r, "Some/Page", props)
 ```
 
-#### Merging props ([learn more](https://v2.inertiajs.com/merging-props))
+#### Merging props ([learn more](https://inertiajs.com/merging-props))
 
 ```go
 props := inertia.Props{
@@ -157,7 +157,7 @@ props := inertia.Props{
 }
 ```
 
-#### Deferred props ([learn more](https://v2.inertiajs.com/deferred-props))
+#### Deferred props ([learn more](https://inertiajs.com/deferred-props))
 
 ```go
 props := inertia.Props{
@@ -339,7 +339,7 @@ func (p *InmemFlashProvider) ShouldClearHistory(ctx context.Context) (bool, erro
 }
 ```
 
-#### History encryption ([learn more](https://v2.inertiajs.com/history-encryption))
+#### History encryption ([learn more](https://inertiajs.com/history-encryption))
 
 Encrypt history:
 ```go
