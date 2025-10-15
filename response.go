@@ -57,7 +57,7 @@ func Lazy(value any) LazyProp {
 
 // DeferProp is a property that will evaluate after page load.
 //
-// https://v2.inertiajs.com/deferred-props
+// https://inertiajs.com/deferred-props
 type DeferProp struct {
 	ignoresFirstLoad
 	mergesProps
@@ -103,7 +103,7 @@ func Always(value any) AlwaysProp {
 
 // MergeProps is a property, which items will be merged instead of overwrite.
 //
-// https://v2.inertiajs.com/merging-props
+// https://inertiajs.com/merging-props
 type MergeProps struct {
 	mergesProps
 	Value any
