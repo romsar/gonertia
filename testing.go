@@ -105,6 +105,58 @@ func (i AssertableInertia) AssertMergeProps(want []string) {
 	}
 }
 
+// AssertPrependProps verifies that prepend props from Inertia
+// response and the passed prepend props are the same.
+func (i AssertableInertia) AssertPrependProps(want []string) {
+	i.t.Helper()
+
+	if !reflect.DeepEqual(i.PrependProps, want) {
+		i.t.Fatalf("inertia: PrependProps=%#v, want=%#v", i.PrependProps, want)
+	}
+}
+
+// AssertDeepMergeProps verifies that deep merge props from Inertia
+// response and the passed deep merge props are the same.
+func (i AssertableInertia) AssertDeepMergeProps(want []string) {
+	i.t.Helper()
+
+	if !reflect.DeepEqual(i.DeepMergeProps, want) {
+		i.t.Fatalf("inertia: DeepMergeProps=%#v, want=%#v", i.DeepMergeProps, want)
+	}
+}
+
+// AssertMatchPropsOn verifies that match props on from Inertia
+// response and the passed match props on are the same.
+func (i AssertableInertia) AssertMatchPropsOn(want []string) {
+	i.t.Helper()
+
+	if !reflect.DeepEqual(i.MatchPropsOn, want) {
+		i.t.Fatalf("inertia: MatchPropsOn=%#v, want=%#v", i.MatchPropsOn, want)
+	}
+}
+
+// AssertScrollProps verifies that scroll props from Inertia
+// response and the passed scroll props are the same.
+func (i AssertableInertia) AssertScrollProps(want map[string]map[string]any) {
+	i.t.Helper()
+
+	// Convert scrollPropMetadata to map[string]any for comparison
+	got := make(map[string]map[string]any)
+	for key, val := range i.ScrollProps {
+		got[key] = map[string]any{
+			"pageName":     val.PageName,
+			"previousPage": val.PreviousPage,
+			"nextPage":     val.NextPage,
+			"currentPage":  val.CurrentPage,
+			"reset":        val.Reset,
+		}
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		i.t.Fatalf("inertia: ScrollProps=%#v, want=%#v", got, want)
+	}
+}
+
 var containerRe = regexp.MustCompile(` data-page="(.*?)"`)
 
 // AssertFromReader creates AssertableInertia from the io.Reader body.
