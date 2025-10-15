@@ -9,19 +9,19 @@ import (
 
 const viteRootTemplate = `<html><head>{{ .inertiaHead }}</head><body>{{ .inertia }}</body></html>`
 
-func TestNewWithVite(t *testing.T) {
+func TestNewVite(t *testing.T) {
 	i, err := New(viteRootTemplate)
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
 
-	vi, err := NewWithVite(i)
+	vi, err := NewVite(i)
 	if err != nil {
-		t.Fatalf("New() failed: %v", err)
+		t.Fatalf("NewVite() failed: %v", err)
 	}
 
 	if vi == nil {
-		t.Fatal("New() returned nil")
+		t.Fatal("NewVite() returned nil")
 		return
 	}
 
@@ -36,14 +36,14 @@ func TestNewWithOptions(t *testing.T) {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
 
-	vi, err := NewWithVite(i,
+	vi, err := NewVite(i,
 		WithHotFile("custom/hot"),
 		WithBuildManifest("custom/manifest.json"),
 		WithBuildDir("/custom/"),
 		WithHotReloadPort("//localhost:3000"),
 	)
 	if err != nil {
-		t.Fatalf("New() with options failed: %v", err)
+		t.Fatalf("NewVite() with options failed: %v", err)
 	}
 
 	config := vi.viteConfig
@@ -69,7 +69,7 @@ func TestIsHotReload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
-	vi, _ := NewWithVite(i, WithHotFile(hotFile))
+	vi, _ := NewVite(i, WithHotFile(hotFile))
 
 	// No hot file - should be bundled mode
 	if vi.isHotReload() {
@@ -110,7 +110,7 @@ func TestReadHotReloadURL(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create inertia: %v", err)
 			}
-			vi, _ := NewWithVite(i, WithHotFile(hotFile))
+			vi, _ := NewVite(i, WithHotFile(hotFile))
 
 			if tt.createFile {
 				if err := os.WriteFile(hotFile, []byte(tt.content), 0o644); err != nil {
@@ -140,7 +140,7 @@ func TestHotReloadResolver(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
-	vi, _ := NewWithVite(i, WithHotFile(hotFile))
+	vi, _ := NewVite(i, WithHotFile(hotFile))
 
 	resolver := vi.hotReloadResolver()
 
@@ -184,7 +184,7 @@ func TestBundledResolver(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
-	vi, _ := NewWithVite(i, WithBuildManifest(manifestFile), WithBuildDir("/build/"))
+	vi, _ := NewVite(i, WithBuildManifest(manifestFile), WithBuildDir("/build/"))
 
 	resolver := vi.bundledResolver()
 
@@ -271,7 +271,7 @@ func setupManifestTest(t *testing.T, buildManifest, fallbackManifest string, cre
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
-	vi, _ := NewWithVite(i,
+	vi, _ := NewVite(i,
 		WithBuildManifest(buildManifest),
 		WithFallbackManifest(fallbackManifest),
 	)
@@ -320,7 +320,7 @@ func TestAssetResolverIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create inertia: %v", err)
 		}
-		vi, _ := NewWithVite(i, WithHotFile(hotFile))
+		vi, _ := NewVite(i, WithHotFile(hotFile))
 
 		resolver := vi.assetResolver(vi.isHotReload())
 		url, err := resolver("app.js")
@@ -347,7 +347,7 @@ func TestAssetResolverIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create inertia: %v", err)
 		}
-		vi, _ := NewWithVite(i,
+		vi, _ := NewVite(i,
 			WithHotFile(hotFile),
 			WithBuildManifest(manifestFile),
 		)
@@ -370,9 +370,9 @@ func TestSetupAddsViteFunction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
-	vi, err := NewWithVite(i)
+	vi, err := NewVite(i)
 	if err != nil {
-		t.Fatalf("New() failed: %v", err)
+		t.Fatalf("NewVite() failed: %v", err)
 	}
 
 	// The vite function should be available in templates
@@ -396,7 +396,7 @@ func TestInvalidManifest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
-	vi, _ := NewWithVite(i, WithBuildManifest(manifestFile))
+	vi, _ := NewVite(i, WithBuildManifest(manifestFile))
 
 	_, err = vi.loadManifest()
 	if err == nil {
@@ -457,9 +457,9 @@ func setupViteInstance(t *testing.T, i *Inertia, hotFile string, createHot bool)
 		}
 	}
 
-	vi, err := NewWithVite(i, WithHotFile(hotFile))
+	vi, err := NewVite(i, WithHotFile(hotFile))
 	if err != nil {
-		t.Fatalf("New() failed: %v", err)
+		t.Fatalf("NewVite() failed: %v", err)
 	}
 	return vi
 }
@@ -517,9 +517,9 @@ func TestViteReactRefreshIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create inertia: %v", err)
 	}
-	vi, err := NewWithVite(i, WithHotFile(hotFile))
+	vi, err := NewVite(i, WithHotFile(hotFile))
 	if err != nil {
-		t.Fatalf("New() failed: %v", err)
+		t.Fatalf("NewVite() failed: %v", err)
 	}
 
 	// The viteReactRefresh function should be available in shared template functions
@@ -540,5 +540,144 @@ func TestViteReactRefreshIntegration(t *testing.T) {
 	}
 	if !strings.Contains(resultStr, "//localhost:3000/@react-refresh") {
 		t.Error("React refresh setup should contain correct React refresh URL")
+	}
+}
+
+func TestNewViteFromFS(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a test manifest in the temp directory
+	manifestContent := `{
+		"app.js": {"file": "assets/app.abc123.js"},
+		"main.css": {"file": "assets/main.def456.css"}
+	}`
+	manifestPath := filepath.Join(tmpDir, "manifest.json")
+	if err := os.WriteFile(manifestPath, []byte(manifestContent), 0o644); err != nil {
+		t.Fatalf("failed to create test manifest: %v", err)
+	}
+
+	// Create an fs.FS from the temp directory
+	embedFS := os.DirFS(tmpDir)
+
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+
+	vi, err := NewViteFromFS(i, embedFS)
+	if err != nil {
+		t.Fatalf("NewViteFromFS() failed: %v", err)
+	}
+
+	if vi == nil {
+		t.Fatal("NewViteFromFS() returned nil")
+	}
+
+	if vi.Inertia != i {
+		t.Error("ViteInstance should embed the provided Inertia instance")
+	}
+
+	if !vi.viteConfig.UseEmbedFS {
+		t.Error("UseEmbedFS should be true for NewViteFromFS")
+	}
+}
+
+func TestNewViteFromFSWithHotReload(t *testing.T) {
+	tmpDir := t.TempDir()
+	hotFile := filepath.Join(tmpDir, "hot")
+
+	// Create hot file for development mode
+	if err := os.WriteFile(hotFile, []byte("//localhost:3000"), 0o644); err != nil {
+		t.Fatalf("failed to create hot file: %v", err)
+	}
+
+	// Create a test manifest
+	manifestContent := `{"app.js": {"file": "assets/app.abc123.js"}}`
+	manifestPath := filepath.Join(tmpDir, "manifest.json")
+	if err := os.WriteFile(manifestPath, []byte(manifestContent), 0o644); err != nil {
+		t.Fatalf("failed to create test manifest: %v", err)
+	}
+
+	embedFS := os.DirFS(tmpDir)
+
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+
+	vi, err := NewViteFromFS(i, embedFS, WithHotFile(hotFile))
+	if err != nil {
+		t.Fatalf("NewViteFromFS() failed: %v", err)
+	}
+
+	// In hot reload mode, should use file system resolver
+	if !vi.isHotReload() {
+		t.Error("Should detect hot reload mode when hot file exists")
+	}
+}
+
+func TestNewViteFromFSProductionMode(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a test manifest
+	manifestContent := `{
+		"app.js": {"file": "assets/app.abc123.js"},
+		"main.css": {"file": "assets/main.def456.css"}
+	}`
+	manifestPath := filepath.Join(tmpDir, "manifest.json")
+	if err := os.WriteFile(manifestPath, []byte(manifestContent), 0o644); err != nil {
+		t.Fatalf("failed to create test manifest: %v", err)
+	}
+
+	embedFS := os.DirFS(tmpDir)
+
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+
+	vi, err := NewViteFromFS(i, embedFS, WithBuildManifest("manifest.json"))
+	if err != nil {
+		t.Fatalf("NewViteFromFS() failed: %v", err)
+	}
+
+	// Should not be in hot reload mode
+	if vi.isHotReload() {
+		t.Error("Should not detect hot reload mode without hot file")
+	}
+
+	// Test that manifest can be loaded from embed.FS
+	manifest, err := vi.loadManifest()
+	if err != nil {
+		t.Fatalf("loadManifest() failed: %v", err)
+	}
+
+	if len(manifest) != 2 {
+		t.Errorf("Expected 2 manifest entries, got %d", len(manifest))
+	}
+
+	if asset, ok := manifest["app.js"]; !ok || asset.File != "assets/app.abc123.js" {
+		t.Error("app.js not found or incorrect in manifest")
+	}
+}
+
+func TestBackwardCompatibilityNewWithVite(t *testing.T) {
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+
+	// Test that NewWithVite still works (backward compatibility)
+	vi, err := NewWithVite(i)
+	if err != nil {
+		t.Fatalf("NewWithVite() failed: %v", err)
+	}
+
+	if vi == nil {
+		t.Fatal("NewWithVite() returned nil")
+	}
+
+	if vi.Inertia != i {
+		t.Error("ViteInstance should embed the provided Inertia instance")
 	}
 }

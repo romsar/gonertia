@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"os"
 	"path"
 	"strings"
@@ -17,6 +18,8 @@ type ViteConfig struct {
 	FallbackManifest string
 	BuildDir         string
 	HotReloadPort    string
+	EmbedFS          fs.FS // Optional fs.FS (embed.FS or os.DirFS) for production builds
+	UseEmbedFS       bool  // Whether to use embed.FS for manifest loading
 }
 
 // ViteInstance wraps Inertia with Vite functionality.
@@ -63,14 +66,16 @@ func WithHotReloadPort(port string) ViteOption {
 	}
 }
 
-// NewWithVite creates a Vite instance with the given Inertia instance.
-func NewWithVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
+// NewVite creates a Vite instance with the given Inertia instance.
+// This uses the file system for hot reload detection and manifest loading.
+func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
 	config := ViteConfig{
 		HotFile:          "public/hot",
 		BuildManifest:    "public/build/manifest.json",
 		FallbackManifest: "public/build/.vite/manifest.json",
 		BuildDir:         "/build/",
 		HotReloadPort:    "//localhost:5173",
+		UseEmbedFS:       false,
 	}
 
 	for _, opt := range opts {
@@ -87,6 +92,40 @@ func NewWithVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
 	}
 
 	return vi, nil
+}
+
+// NewViteFromFS creates a Vite instance using fs.FS (embed.FS or os.DirFS) for production builds.
+// It checks for hot reload file first (for development), otherwise uses the provided fs.FS.
+func NewViteFromFS(i *Inertia, embedFS fs.FS, opts ...ViteOption) (*ViteInstance, error) {
+	config := ViteConfig{
+		HotFile:          "public/hot",
+		BuildManifest:    "public/build/manifest.json",
+		FallbackManifest: "public/build/.vite/manifest.json",
+		BuildDir:         "/build/",
+		HotReloadPort:    "//localhost:5173",
+		EmbedFS:          embedFS,
+		UseEmbedFS:       true,
+	}
+
+	for _, opt := range opts {
+		opt(&config)
+	}
+
+	vi := &ViteInstance{
+		Inertia:    i,
+		viteConfig: config,
+	}
+
+	if err := vi.setup(); err != nil {
+		return nil, fmt.Errorf("setup vite: %w", err)
+	}
+
+	return vi, nil
+}
+
+// NewWithVite is deprecated. Use NewVite instead.
+func NewWithVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
+	return NewVite(i, opts...)
 }
 
 func (vi *ViteInstance) setup() error {
@@ -165,6 +204,15 @@ func (vi *ViteInstance) bundledResolver() func(string) (string, error) {
 }
 
 func (vi *ViteInstance) loadManifest() (map[string]Asset, error) {
+	// If using embed.FS and not in hot reload mode, load from embed.FS
+	if vi.viteConfig.UseEmbedFS && !vi.isHotReload() {
+		return vi.loadManifestFromEmbed()
+	}
+
+	return vi.loadManifestFromFS()
+}
+
+func (vi *ViteInstance) loadManifestFromFS() (map[string]Asset, error) {
 	manifestPath, err := vi.findManifest()
 	if err != nil {
 		return nil, err
@@ -182,6 +230,40 @@ func (vi *ViteInstance) loadManifest() (map[string]Asset, error) {
 	}
 
 	return manifest, nil
+}
+
+func (vi *ViteInstance) loadManifestFromEmbed() (map[string]Asset, error) {
+	manifestPath, err := vi.findManifestInEmbed()
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := vi.viteConfig.EmbedFS.Open(manifestPath)
+	if err != nil {
+		return nil, fmt.Errorf("open manifest from embed: %w", err)
+	}
+	defer func() { _ = file.Close() }()
+
+	var manifest map[string]Asset
+	if err := json.NewDecoder(file).Decode(&manifest); err != nil {
+		return nil, fmt.Errorf("decode manifest: %w", err)
+	}
+
+	return manifest, nil
+}
+
+func (vi *ViteInstance) findManifestInEmbed() (string, error) {
+	// Check primary manifest path
+	if _, err := fs.Stat(vi.viteConfig.EmbedFS, vi.viteConfig.BuildManifest); err == nil {
+		return vi.viteConfig.BuildManifest, nil
+	}
+
+	// Check fallback manifest path
+	if _, err := fs.Stat(vi.viteConfig.EmbedFS, vi.viteConfig.FallbackManifest); err == nil {
+		return vi.viteConfig.FallbackManifest, nil
+	}
+
+	return "", fmt.Errorf("manifest not found in embed.FS")
 }
 
 func (vi *ViteInstance) reactRefreshHelper(hotReload bool) func() template.HTML {
