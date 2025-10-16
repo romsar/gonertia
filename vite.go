@@ -139,6 +139,10 @@ func (vi *ViteInstance) setup() error {
 		return fmt.Errorf("share vite react refresh function: %w", err)
 	}
 
+	if err := vi.ShareTemplateFunc("viteRefresh", vi.refreshHelper(hotReload)); err != nil {
+		return fmt.Errorf("share vite refresh function: %w", err)
+	}
+
 	vi.ShareTemplateData("hmr", hotReload)
 	return nil
 }
@@ -283,6 +287,20 @@ func (vi *ViteInstance) reactRefreshHelper(hotReload bool) func() template.HTML 
     window.$RefreshSig$ = () => (type) => type
     window.__vite_plugin_react_preamble_installed__ = true
 </script>`, viteClientURL, reactRefreshURL)
+
+		return template.HTML(html)
+	}
+}
+
+func (vi *ViteInstance) refreshHelper(hotReload bool) func() template.HTML {
+	return func() template.HTML {
+		if !hotReload {
+			return template.HTML("") // No refresh in production
+		}
+
+		viteClientURL, _ := vi.assetResolver(hotReload)("@vite/client")
+
+		html := fmt.Sprintf(`<script type="module" src="%s"></script>`, viteClientURL)
 
 		return template.HTML(html)
 	}
