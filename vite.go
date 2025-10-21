@@ -2,6 +2,8 @@
 package gonertia
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -10,6 +12,21 @@ import (
 	"path"
 	"strings"
 )
+
+// PreloadStrategy determines how dependencies are loaded.
+type PreloadStrategy string
+
+const (
+	// PreloadNone loads only the main entry point with no preloading.
+	PreloadNone PreloadStrategy = "none"
+	// PreloadAggressive preloads all static dependencies immediately.
+	PreloadAggressive PreloadStrategy = "aggressive"
+	// PreloadWaterfall loads dependencies in controlled batches after page load.
+	PreloadWaterfall PreloadStrategy = "waterfall"
+)
+
+// NonceGenerator generates CSP nonces.
+type NonceGenerator func() string
 
 // ViteConfig holds Vite configuration.
 type ViteConfig struct {
@@ -20,6 +37,14 @@ type ViteConfig struct {
 	HotReloadPort    string
 	EmbedFS          fs.FS // Optional fs.FS (embed.FS or os.DirFS) for production builds
 	UseEmbedFS       bool  // Whether to use embed.FS for manifest loading
+
+	// Asset management configuration
+	Nonce             string          // Static CSP nonce
+	NonceGenerator    NonceGenerator  // Dynamic nonce generator (called once)
+	IntegrityKey      *string         // Manifest key for SRI hashes (nil = disabled)
+	EntryPoints       []string        // Entry points for asset generation
+	PreloadStrategy   PreloadStrategy // How to handle dependency loading
+	PreloadConcurrent int             // Concurrent prefetch count for waterfall
 }
 
 // ViteInstance wraps Inertia with Vite functionality.
@@ -66,6 +91,86 @@ func WithHotReloadPort(port string) ViteOption {
 	}
 }
 
+// WithNonce sets a static CSP nonce.
+func WithNonce(nonce string) ViteOption {
+	return func(c *ViteConfig) {
+		c.Nonce = nonce
+	}
+}
+
+// WithAutoNonce generates a cryptographically secure nonce automatically.
+func WithAutoNonce() ViteOption {
+	return func(c *ViteConfig) {
+		c.Nonce = generateCryptoNonce()
+	}
+}
+
+// WithNonceGenerator sets a custom nonce generator function.
+func WithNonceGenerator(gen NonceGenerator) ViteOption {
+	return func(c *ViteConfig) {
+		c.NonceGenerator = gen
+	}
+}
+
+// WithIntegrity enables SubResource Integrity with the default manifest key "integrity".
+func WithIntegrity() ViteOption {
+	return func(c *ViteConfig) {
+		key := "integrity"
+		c.IntegrityKey = &key
+	}
+}
+
+// WithIntegrityKey enables SubResource Integrity with a custom manifest key.
+func WithIntegrityKey(key string) ViteOption {
+	return func(c *ViteConfig) {
+		c.IntegrityKey = &key
+	}
+}
+
+// WithEntryPoints explicitly sets entry points to load.
+func WithEntryPoints(entries ...string) ViteOption {
+	return func(c *ViteConfig) {
+		c.EntryPoints = entries
+	}
+}
+
+// WithoutPreloading disables preloading. Browser handles module discovery naturally.
+// This is the default behavior.
+func WithoutPreloading() ViteOption {
+	return withPreloadStrategy(PreloadNone, 0)
+}
+
+// WithAggressivePreload enables aggressive preloading of all dependencies.
+// All JavaScript imports are preloaded immediately using modulepreload.
+func WithAggressivePreload() ViteOption {
+	return withPreloadStrategy(PreloadAggressive, 0)
+}
+
+// WithWaterfallPreload enables batched prefetch with concurrency control.
+// Assets are loaded after page load in batches. concurrent controls how many
+// assets load in parallel (default: 3 if not specified or <= 0).
+func WithWaterfallPreload(concurrent int) ViteOption {
+	return withPreloadStrategy(PreloadWaterfall, concurrent)
+}
+
+// withPreloadStrategy sets the preload strategy and concurrency.
+// This is the internal implementation used by public helpers.
+func withPreloadStrategy(strategy PreloadStrategy, concurrent int) ViteOption {
+	return func(c *ViteConfig) {
+		c.PreloadStrategy = strategy
+		c.PreloadConcurrent = concurrent
+	}
+}
+
+// generateCryptoNonce creates a cryptographically secure random nonce.
+func generateCryptoNonce() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(b)
+}
+
 // NewVite creates a Vite instance with the given Inertia instance.
 // This uses the file system for hot reload detection and manifest loading.
 func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
@@ -76,6 +181,10 @@ func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
 		BuildDir:         "/build/",
 		HotReloadPort:    "//localhost:5173",
 		UseEmbedFS:       false,
+
+		// Default configuration
+		PreloadStrategy:   PreloadNone,
+		PreloadConcurrent: 3,
 	}
 
 	for _, opt := range opts {
@@ -105,6 +214,10 @@ func NewViteFromFS(i *Inertia, embedFS fs.FS, opts ...ViteOption) (*ViteInstance
 		HotReloadPort:    "//localhost:5173",
 		EmbedFS:          embedFS,
 		UseEmbedFS:       true,
+
+		// Default configuration
+		PreloadStrategy:   PreloadNone,
+		PreloadConcurrent: 3,
 	}
 
 	for _, opt := range opts {
@@ -131,6 +244,7 @@ func NewWithVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
 func (vi *ViteInstance) setup() error {
 	hotReload := vi.isHotReload()
 
+	// Existing template functions (backward compatibility)
 	if err := vi.ShareTemplateFunc("vite", vi.assetResolver(hotReload)); err != nil {
 		return fmt.Errorf("share vite function: %w", err)
 	}
@@ -141,6 +255,10 @@ func (vi *ViteInstance) setup() error {
 
 	if err := vi.ShareTemplateFunc("viteRefresh", vi.refreshHelper(hotReload)); err != nil {
 		return fmt.Errorf("share vite refresh function: %w", err)
+	}
+
+	if err := vi.ShareTemplateFunc("viteAssets", vi.generateAllAssets); err != nil {
+		return fmt.Errorf("share viteAssets function: %w", err)
 	}
 
 	vi.ShareTemplateData("hmr", hotReload)
@@ -323,6 +441,13 @@ func (vi *ViteInstance) findManifest() (string, error) {
 
 // Asset represents a Vite manifest entry.
 type Asset struct {
-	File string `json:"file"`
-	Src  string `json:"src"`
+	File           string   `json:"file"`                     // Hashed output file
+	Src            string   `json:"src,omitempty"`            // Source file path
+	Name           string   `json:"name,omitempty"`           // Asset name
+	IsEntry        bool     `json:"isEntry,omitempty"`        // Main entry point
+	IsDynamicEntry bool     `json:"isDynamicEntry,omitempty"` // Code-split chunk
+	Imports        []string `json:"imports,omitempty"`        // Static dependencies
+	DynamicImports []string `json:"dynamicImports,omitempty"` // Lazy imports
+	Css            []string `json:"css,omitempty"`            // Associated CSS
+	Integrity      string   `json:"integrity,omitempty"`      // SRI hash (e.g., from vite-plugin-manifest-sri)
 }

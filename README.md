@@ -485,13 +485,65 @@ Create your root template with Vite functions:
 </html>
 ```
 
+#### Vite Asset Management
+
+Automatic asset loading with configurable preload strategies:
+
+```go
+app, err := inertia.NewVite(i,
+    inertia.WithEntryPoints("resources/js/app.tsx"),
+    inertia.WithAutoNonce(),
+    inertia.WithWaterfallPreload(3),
+)
+```
+
+**Template usage - Two approaches:**
+
+**Option 1: Config-based**
+```html
+<head>
+    {{ .inertiaHead }}
+    {{ viteAssets }}
+</head>
+```
+
+**Option 2: Template arguments**
+```html
+<head>
+    {{ .inertiaHead }}
+    {{ viteAssets "resources/js/app.tsx" }}
+    {{ viteAssets "app.js" "admin.js" }}
+</head>
+```
+
+**Configuration options:**
+- `WithEntryPoints(...)` - Specify entry points (required unless using template args)
+- `WithNonce(nonce)` - Set static CSP nonce
+- `WithAutoNonce()` - Auto-generate crypto nonce
+- `WithNonceGenerator(fn)` - Custom nonce generator
+- `WithIntegrity()` - Enable SubResource Integrity (requires Vite plugin like [vite-plugin-manifest-sri](https://github.com/ElMassimo/vite-plugin-manifest-sri))
+
+**Preload strategies:**
+- `WithoutPreloading()` - Minimal output, browser handles discovery (default)
+- `WithAggressivePreload()` - Preload all dependencies immediately
+- `WithWaterfallPreload(concurrent)` - Batched prefetch with concurrency control
+
+**SubResource Integrity (SRI):**
+
+SRI hashes are automatically included in generated tags when present in the manifest. To add SRI support to your Vite build:
+
+1. Install [vite-plugin-manifest-sri](https://github.com/ElMassimo/vite-plugin-manifest-sri)
+2. Add the plugin to your `vite.config.js`
+3. The `integrity` field will be read from the manifest and added to all asset tags
+
 #### Template functions
 
 The Vite integration provides the following template functions:
 
-- **`{{ vite "path" }}`** - Resolves asset URLs automatically (dev vs production)
-- **`{{ viteRefresh }}`** - Generic HMR setup for frameworks like Preact, Vue, or custom setups
-- **`{{ viteReactRefresh }}`** - React-specific HMR with refresh runtime injection
+- **`{{ viteAssets "entry.js" ... }}`** - Outputs all required assets (accepts optional entry point args)
+- **`{{ vite "path" }}`** - Resolves asset URLs (dev vs production)
+- **`{{ viteRefresh }}`** - HMR setup for frameworks like Preact, Vue
+- **`{{ viteReactRefresh }}`** - React-specific HMR with refresh runtime
 
 #### Testing
 
