@@ -467,8 +467,11 @@ Create your root template with Vite functions:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {{ .inertiaHead }}
 
-    <!-- Vite React Refresh - automatically handles HMR setup -->
-    {{ viteReactRefresh }}
+    <!-- Vite Refresh - automatically handles HMR setup for React/Preact/Vue -->
+    {{ viteRefresh }}
+
+    <!-- Or use framework-specific helpers: -->
+    <!-- {{ viteReactRefresh }} - React-specific HMR with refresh runtime -->
 
     <!-- CSS - automatically resolves dev vs production -->
     <link rel="stylesheet" href="{{ vite "resources/css/app.css" }}">
@@ -484,10 +487,11 @@ Create your root template with Vite functions:
 
 #### Template functions
 
-The Vite integration provides two template functions:
+The Vite integration provides the following template functions:
 
-- **`{{ vite "path" }}`** - Resolves asset URLs automatically
-- **`{{ viteReactRefresh }}`** - Handles React HMR setup
+- **`{{ vite "path" }}`** - Resolves asset URLs automatically (dev vs production)
+- **`{{ viteRefresh }}`** - Generic HMR setup for frameworks like Preact, Vue, or custom setups
+- **`{{ viteReactRefresh }}`** - React-specific HMR with refresh runtime injection
 
 #### Testing
 

@@ -681,3 +681,93 @@ func TestBackwardCompatibilityNewWithVite(t *testing.T) {
 		t.Error("ViteInstance should embed the provided Inertia instance")
 	}
 }
+
+func TestViteRefresh(t *testing.T) {
+	tmpDir := t.TempDir()
+	hotFile := filepath.Join(tmpDir, "hot")
+
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+
+	tests := []struct {
+		name        string
+		createHot   bool
+		expectEmpty bool
+	}{
+		{
+			name:        "hot reload mode - should output Vite client setup",
+			createHot:   true,
+			expectEmpty: false,
+		},
+		{
+			name:        "production mode - should output empty string",
+			createHot:   false,
+			expectEmpty: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			vi := setupViteInstance(t, i, hotFile, tt.createHot)
+			helper := vi.refreshHelper(vi.isHotReload())
+			result := helper()
+			resultStr := string(result)
+
+			if tt.expectEmpty {
+				if resultStr != "" {
+					t.Errorf("expected empty string in production mode, got: %q", resultStr)
+				}
+			} else {
+				if resultStr == "" {
+					t.Error("expected non-empty refresh setup in development mode")
+					return
+				}
+
+				// Should contain the Vite client script
+				if !strings.Contains(resultStr, "@vite/client") {
+					t.Error("refresh setup should contain @vite/client")
+				}
+
+				if !strings.Contains(resultStr, "<script type=\"module\"") {
+					t.Error("refresh setup should contain script tag")
+				}
+			}
+		})
+	}
+}
+
+func TestViteRefreshIntegration(t *testing.T) {
+	tmpDir := t.TempDir()
+	hotFile := filepath.Join(tmpDir, "hot")
+
+	// Create hot file for development mode
+	if err := os.WriteFile(hotFile, []byte("//localhost:3000"), 0o644); err != nil {
+		t.Fatalf("failed to create hot file: %v", err)
+	}
+
+	i, err := New(viteRootTemplate)
+	if err != nil {
+		t.Fatalf("failed to create inertia: %v", err)
+	}
+	vi, err := NewVite(i, WithHotFile(hotFile))
+	if err != nil {
+		t.Fatalf("NewVite() failed: %v", err)
+	}
+
+	// The viteRefresh function should be available in shared template functions
+	if err := vi.setup(); err != nil {
+		t.Errorf("setup() with refresh failed: %v", err)
+	}
+
+	// Test that URLs are correctly resolved in the helper
+	helper := vi.refreshHelper(true) // Force development mode
+	result := helper()
+	resultStr := string(result)
+
+	// Should contain the correct dev server URL
+	if !strings.Contains(resultStr, "//localhost:3000/@vite/client") {
+		t.Error("refresh setup should contain correct Vite client URL")
+	}
+}
