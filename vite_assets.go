@@ -106,10 +106,16 @@ func (vi *ViteInstance) processAsset(
 		// Do nothing - browser handles discovery
 	}
 
-	// Add script tag ONLY for entry points
-	if asset.IsEntry {
+	// Add script tag ONLY for JavaScript entry points
+	if asset.IsEntry && strings.HasSuffix(asset.File, ".js") {
 		tag := vi.generateScriptTag(asset, nonce)
 		assets.scriptTags = append(assets.scriptTags, tag)
+	}
+
+	// Add stylesheet tag for CSS entry points
+	if asset.IsEntry && strings.HasSuffix(asset.File, ".css") {
+		tag := vi.generateStylesheetTag(asset, nonce)
+		assets.stylesheetTags = append(assets.stylesheetTags, tag)
 	}
 
 	return nil
