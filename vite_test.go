@@ -229,12 +229,12 @@ func TestFindManifest(t *testing.T) {
 		createBuild    bool
 		createFallback bool
 		expectError    bool
-		expectMove     bool
+		expectPath     string
 	}{
-		{"build exists", true, false, false, false},
-		{"fallback exists", false, true, false, true},
-		{"both exist", true, true, false, false}, // build takes priority
-		{"neither exists", false, false, true, false},
+		{"build exists", true, false, false, buildManifest},
+		{"fallback exists", false, true, false, fallbackManifest},
+		{"both exist", true, true, false, buildManifest},
+		{"neither exists", false, false, true, ""},
 	}
 
 	for _, tt := range tests {
@@ -247,9 +247,12 @@ func TestFindManifest(t *testing.T) {
 				return
 			}
 
-			assertManifestSuccess(t, err, path, buildManifest)
-			if tt.expectMove {
-				assertManifestMove(t, buildManifest, fallbackManifest)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if path != tt.expectPath {
+				t.Errorf("findManifest() = %q, want %q", path, tt.expectPath)
 			}
 		})
 	}
@@ -282,26 +285,6 @@ func assertManifestError(t *testing.T, err error) {
 	t.Helper()
 	if err == nil {
 		t.Error("findManifest() expected error but got none")
-	}
-}
-
-func assertManifestSuccess(t *testing.T, err error, path, buildManifest string) {
-	t.Helper()
-	if err != nil {
-		t.Fatalf("findManifest() unexpected error: %v", err)
-	}
-	if path != buildManifest {
-		t.Errorf("findManifest() = %q, want %q", path, buildManifest)
-	}
-}
-
-func assertManifestMove(t *testing.T, buildManifest, fallbackManifest string) {
-	t.Helper()
-	if _, err := os.Stat(buildManifest); err != nil {
-		t.Error("fallback manifest should have been moved to build location")
-	}
-	if _, err := os.Stat(fallbackManifest); err == nil {
-		t.Error("fallback manifest should have been moved away")
 	}
 }
 

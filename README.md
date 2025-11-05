@@ -492,7 +492,6 @@ Automatic asset loading with configurable preload strategies:
 ```go
 app, err := inertia.NewVite(i,
     inertia.WithEntryPoints("resources/js/app.tsx"),
-    inertia.WithAutoNonce(),
     inertia.WithWaterfallPreload(3),
 )
 ```
@@ -518,9 +517,6 @@ app, err := inertia.NewVite(i,
 
 **Configuration options:**
 - `WithEntryPoints(...)` - Specify entry points (required unless using template args)
-- `WithNonce(nonce)` - Set static CSP nonce
-- `WithAutoNonce()` - Auto-generate crypto nonce
-- `WithNonceGenerator(fn)` - Custom nonce generator
 - `WithIntegrity()` - Enable SubResource Integrity (requires Vite plugin like [vite-plugin-manifest-sri](https://github.com/ElMassimo/vite-plugin-manifest-sri))
 
 **Preload strategies:**
@@ -536,11 +532,33 @@ SRI hashes are automatically included in generated tags when present in the mani
 2. Add the plugin to your `vite.config.js`
 3. The `integrity` field will be read from the manifest and added to all asset tags
 
+#### Content Security Policy (CSP)
+
+```go
+handler := app.CSPMiddleware()(app.Middleware(mux))
+```
+
+Template:
+```html
+{{ viteAssetsWithNonce .csp_nonce "app.tsx" }}
+```
+
+Customize:
+```go
+app.CSPMiddleware(
+    inertia.WithCSPPolicy("script-src 'nonce-%s'"),
+    inertia.WithCSPNonceGenerator(customFunc),
+)
+```
+
+Returns `func(http.Handler) http.Handler`. Nonces applied to all tags. Merges with existing CSP headers.
+
 #### Template functions
 
 The Vite integration provides the following template functions:
 
 - **`{{ viteAssets "entry.js" ... }}`** - Outputs all required assets (accepts optional entry point args)
+- **`{{ viteAssetsWithNonce .csp_nonce "entry.js" ... }}`** - Outputs assets with CSP nonce for enhanced security
 - **`{{ vite "path" }}`** - Resolves asset URLs (dev vs production)
 - **`{{ viteRefresh }}`** - HMR setup for frameworks like Preact, Vue
 - **`{{ viteReactRefresh }}`** - React-specific HMR with refresh runtime

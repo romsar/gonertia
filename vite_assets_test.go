@@ -30,7 +30,7 @@ func TestEntryPointHandling(t *testing.T) {
 		}
 
 		// Template args should override config
-		html, err := vi.generateHotAssets("template-arg.js")
+		html, err := vi.buildHotAssets("", "template-arg.js")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -63,7 +63,7 @@ func TestEntryPointHandling(t *testing.T) {
 			},
 		}
 
-		html, err := vi.generateHotAssets()
+		html, err := vi.buildHotAssets("")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -91,7 +91,7 @@ func TestEntryPointHandling(t *testing.T) {
 			},
 		}
 
-		_, err := vi.generateHotAssets()
+		_, err := vi.buildHotAssets("")
 		if err == nil {
 			t.Error("expected error when no entries configured")
 		}
@@ -118,7 +118,7 @@ func TestEntryPointHandling(t *testing.T) {
 			},
 		}
 
-		html, err := vi.generateHotAssets("app.js", "admin.js")
+		html, err := vi.buildHotAssets("", "app.js", "admin.js")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -130,85 +130,6 @@ func TestEntryPointHandling(t *testing.T) {
 
 		if !strings.Contains(htmlStr, "admin.js") {
 			t.Error("should include second entry")
-		}
-	})
-}
-
-func TestResolveNonce(t *testing.T) {
-	t.Parallel()
-
-	t.Run("static nonce", func(t *testing.T) {
-		t.Parallel()
-
-		vi := &ViteInstance{
-			viteConfig: ViteConfig{
-				Nonce: "static-nonce-123",
-			},
-		}
-
-		nonce := vi.resolveNonce()
-		if nonce != "static-nonce-123" {
-			t.Errorf("expected static-nonce-123, got %s", nonce)
-		}
-	})
-
-	t.Run("generated nonce", func(t *testing.T) {
-		t.Parallel()
-
-		called := false
-		vi := &ViteInstance{
-			viteConfig: ViteConfig{
-				NonceGenerator: func() string {
-					called = true
-					return "generated-nonce"
-				},
-			},
-		}
-
-		nonce := vi.resolveNonce()
-		if nonce != "generated-nonce" {
-			t.Errorf("expected generated-nonce, got %s", nonce)
-		}
-
-		if !called {
-			t.Error("nonce generator was not called")
-		}
-	})
-
-	t.Run("no nonce", func(t *testing.T) {
-		t.Parallel()
-
-		vi := &ViteInstance{
-			viteConfig: ViteConfig{},
-		}
-
-		nonce := vi.resolveNonce()
-		if nonce != "" {
-			t.Errorf("expected empty string, got %s", nonce)
-		}
-	})
-
-	t.Run("static nonce takes precedence", func(t *testing.T) {
-		t.Parallel()
-
-		generatorCalled := false
-		vi := &ViteInstance{
-			viteConfig: ViteConfig{
-				Nonce: "static",
-				NonceGenerator: func() string {
-					generatorCalled = true
-					return "generated"
-				},
-			},
-		}
-
-		nonce := vi.resolveNonce()
-		if nonce != "static" {
-			t.Errorf("expected static, got %s", nonce)
-		}
-
-		if generatorCalled {
-			t.Error("generator should not be called when static nonce is set")
 		}
 	})
 }
@@ -524,7 +445,7 @@ func TestGenerateHotAssets(t *testing.T) {
 			},
 		}
 
-		html, err := vi.generateHotAssets()
+		html, err := vi.buildHotAssets("")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -592,7 +513,7 @@ func TestGenerateWaterfallScript(t *testing.T) {
 		}
 
 		// Should contain concurrent value
-		if !strings.Contains(scriptStr, ",3)") {
+		if !strings.Contains(scriptStr, "loadNext(assets, 3)") {
 			t.Error("should contain concurrent value")
 		}
 	})
@@ -995,7 +916,7 @@ func TestGenerateProductionAssets(t *testing.T) {
 			},
 		}
 
-		html, err := vi.generateProductionAssets()
+		html, err := vi.buildAssets("")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -1025,95 +946,15 @@ func TestGenerateProductionAssets(t *testing.T) {
 			},
 		}
 
-		_, err := vi.generateProductionAssets()
+		_, err := vi.buildAssets("")
 		if err == nil {
 			t.Error("should return error when manifest not found")
-		}
-	})
-
-	t.Run("with nonce", func(t *testing.T) {
-		t.Parallel()
-
-		manifestPath := t.TempDir() + "/manifest.json"
-		manifest := map[string]Asset{
-			"app.js": {
-				File:    "assets/app-abc.js",
-				IsEntry: true,
-			},
-		}
-		data, _ := json.Marshal(manifest)
-		if err := os.WriteFile(manifestPath, data, 0o644); err != nil {
-			t.Fatal(err)
-		}
-
-		i := &Inertia{}
-		vi := &ViteInstance{
-			Inertia: i,
-			viteConfig: ViteConfig{
-				BuildManifest: manifestPath,
-				BuildDir:      "/build/",
-				EntryPoints:   []string{"app.js"},
-				Nonce:         "test-nonce-123",
-			},
-		}
-
-		html, err := vi.generateProductionAssets()
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		htmlStr := string(html)
-		if !strings.Contains(htmlStr, `nonce="test-nonce-123"`) {
-			t.Error("should include nonce in tags")
 		}
 	})
 }
 
 func TestViteOptionFunctions(t *testing.T) {
 	t.Parallel()
-
-	t.Run("WithNonce", func(t *testing.T) {
-		t.Parallel()
-
-		cfg := &ViteConfig{}
-		WithNonce("test-nonce")(cfg)
-
-		if cfg.Nonce != "test-nonce" {
-			t.Errorf("expected test-nonce, got %s", cfg.Nonce)
-		}
-	})
-
-	t.Run("WithAutoNonce", func(t *testing.T) {
-		t.Parallel()
-
-		cfg := &ViteConfig{}
-		WithAutoNonce()(cfg)
-
-		if cfg.Nonce == "" {
-			t.Error("Nonce should be auto-generated")
-		}
-
-		if len(cfg.Nonce) == 0 {
-			t.Error("generated nonce should not be empty")
-		}
-	})
-
-	t.Run("WithNonceGenerator", func(t *testing.T) {
-		t.Parallel()
-
-		customGen := func() string { return "custom-nonce" }
-		cfg := &ViteConfig{}
-		WithNonceGenerator(customGen)(cfg)
-
-		if cfg.NonceGenerator == nil {
-			t.Error("NonceGenerator should be set")
-		}
-
-		nonce := cfg.NonceGenerator()
-		if nonce != "custom-nonce" {
-			t.Errorf("expected custom-nonce, got %s", nonce)
-		}
-	})
 
 	t.Run("WithIntegrity", func(t *testing.T) {
 		t.Parallel()

@@ -2,8 +2,6 @@
 package gonertia
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -25,9 +23,6 @@ const (
 	PreloadWaterfall PreloadStrategy = "waterfall"
 )
 
-// NonceGenerator generates CSP nonces.
-type NonceGenerator func() string
-
 // ViteConfig holds Vite configuration.
 type ViteConfig struct {
 	HotFile          string
@@ -38,9 +33,6 @@ type ViteConfig struct {
 	EmbedFS          fs.FS // Optional fs.FS (embed.FS or os.DirFS) for production builds
 	UseEmbedFS       bool  // Whether to use embed.FS for manifest loading
 
-	// Asset management configuration
-	Nonce             string          // Static CSP nonce
-	NonceGenerator    NonceGenerator  // Dynamic nonce generator (called once)
 	IntegrityKey      *string         // Manifest key for SRI hashes (nil = disabled)
 	EntryPoints       []string        // Entry points for asset generation
 	PreloadStrategy   PreloadStrategy // How to handle dependency loading
@@ -91,27 +83,6 @@ func WithHotReloadPort(port string) ViteOption {
 	}
 }
 
-// WithNonce sets a static CSP nonce.
-func WithNonce(nonce string) ViteOption {
-	return func(c *ViteConfig) {
-		c.Nonce = nonce
-	}
-}
-
-// WithAutoNonce generates a cryptographically secure nonce automatically.
-func WithAutoNonce() ViteOption {
-	return func(c *ViteConfig) {
-		c.Nonce = generateCryptoNonce()
-	}
-}
-
-// WithNonceGenerator sets a custom nonce generator function.
-func WithNonceGenerator(gen NonceGenerator) ViteOption {
-	return func(c *ViteConfig) {
-		c.NonceGenerator = gen
-	}
-}
-
 // WithIntegrity enables SubResource Integrity with the default manifest key "integrity".
 func WithIntegrity() ViteOption {
 	return func(c *ViteConfig) {
@@ -134,27 +105,21 @@ func WithEntryPoints(entries ...string) ViteOption {
 	}
 }
 
-// WithoutPreloading disables preloading. Browser handles module discovery naturally.
-// This is the default behavior.
+// WithoutPreloading disables preloading (default).
 func WithoutPreloading() ViteOption {
 	return withPreloadStrategy(PreloadNone, 0)
 }
 
-// WithAggressivePreload enables aggressive preloading of all dependencies.
-// All JavaScript imports are preloaded immediately using modulepreload.
+// WithAggressivePreload preloads all dependencies immediately.
 func WithAggressivePreload() ViteOption {
 	return withPreloadStrategy(PreloadAggressive, 0)
 }
 
 // WithWaterfallPreload enables batched prefetch with concurrency control.
-// Assets are loaded after page load in batches. concurrent controls how many
-// assets load in parallel (default: 3 if not specified or <= 0).
 func WithWaterfallPreload(concurrent int) ViteOption {
 	return withPreloadStrategy(PreloadWaterfall, concurrent)
 }
 
-// withPreloadStrategy sets the preload strategy and concurrency.
-// This is the internal implementation used by public helpers.
 func withPreloadStrategy(strategy PreloadStrategy, concurrent int) ViteOption {
 	return func(c *ViteConfig) {
 		c.PreloadStrategy = strategy
@@ -162,30 +127,22 @@ func withPreloadStrategy(strategy PreloadStrategy, concurrent int) ViteOption {
 	}
 }
 
-// generateCryptoNonce creates a cryptographically secure random nonce.
-func generateCryptoNonce() string {
-	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		return ""
-	}
-	return base64.StdEncoding.EncodeToString(b)
-}
-
-// NewVite creates a Vite instance with the given Inertia instance.
-// This uses the file system for hot reload detection and manifest loading.
-func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
-	config := ViteConfig{
-		HotFile:          "public/hot",
-		BuildManifest:    "public/build/manifest.json",
-		FallbackManifest: "public/build/.vite/manifest.json",
-		BuildDir:         "/build/",
-		HotReloadPort:    "//localhost:5173",
-		UseEmbedFS:       false,
-
-		// Default configuration
+func defaultViteConfig() ViteConfig {
+	return ViteConfig{
+		HotFile:           "public/hot",
+		BuildManifest:     "public/build/manifest.json",
+		FallbackManifest:  "public/build/.vite/manifest.json",
+		BuildDir:          "/build/",
+		HotReloadPort:     "//localhost:5173",
 		PreloadStrategy:   PreloadNone,
 		PreloadConcurrent: 3,
 	}
+}
+
+// NewVite creates a Vite instance with file system for manifest loading.
+func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
+	config := defaultViteConfig()
+	config.UseEmbedFS = false
 
 	for _, opt := range opts {
 		opt(&config)
@@ -203,22 +160,11 @@ func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
 	return vi, nil
 }
 
-// NewViteFromFS creates a Vite instance using fs.FS (embed.FS or os.DirFS) for production builds.
-// It checks for hot reload file first (for development), otherwise uses the provided fs.FS.
+// NewViteFromFS creates a Vite instance using fs.FS for production builds.
 func NewViteFromFS(i *Inertia, embedFS fs.FS, opts ...ViteOption) (*ViteInstance, error) {
-	config := ViteConfig{
-		HotFile:          "public/hot",
-		BuildManifest:    "public/build/manifest.json",
-		FallbackManifest: "public/build/.vite/manifest.json",
-		BuildDir:         "/build/",
-		HotReloadPort:    "//localhost:5173",
-		EmbedFS:          embedFS,
-		UseEmbedFS:       true,
-
-		// Default configuration
-		PreloadStrategy:   PreloadNone,
-		PreloadConcurrent: 3,
-	}
+	config := defaultViteConfig()
+	config.EmbedFS = embedFS
+	config.UseEmbedFS = true
 
 	for _, opt := range opts {
 		opt(&config)
@@ -259,6 +205,10 @@ func (vi *ViteInstance) setup() error {
 
 	if err := vi.ShareTemplateFunc("viteAssets", vi.generateAllAssets); err != nil {
 		return fmt.Errorf("share viteAssets function: %w", err)
+	}
+
+	if err := vi.ShareTemplateFunc("viteAssetsWithNonce", vi.generateAllAssetsWithNonce); err != nil {
+		return fmt.Errorf("share viteAssetsWithNonce function: %w", err)
 	}
 
 	vi.ShareTemplateData("hmr", hotReload)
@@ -391,11 +341,18 @@ func (vi *ViteInstance) findManifestInEmbed() (string, error) {
 func (vi *ViteInstance) reactRefreshHelper(hotReload bool) func() template.HTML {
 	return func() template.HTML {
 		if !hotReload {
-			return template.HTML("") // No React Refresh in production
+			return template.HTML("")
 		}
 
-		viteClientURL, _ := vi.assetResolver(hotReload)("@vite/client")
-		reactRefreshURL, _ := vi.assetResolver(hotReload)("@react-refresh")
+		viteClientURL, err := vi.assetResolver(hotReload)("@vite/client")
+		if err != nil {
+			return template.HTML("")
+		}
+
+		reactRefreshURL, err := vi.assetResolver(hotReload)("@react-refresh")
+		if err != nil {
+			return template.HTML("")
+		}
 
 		html := fmt.Sprintf(`<script type="module" src="%s"></script>
 <script type="module">
@@ -413,10 +370,13 @@ func (vi *ViteInstance) reactRefreshHelper(hotReload bool) func() template.HTML 
 func (vi *ViteInstance) refreshHelper(hotReload bool) func() template.HTML {
 	return func() template.HTML {
 		if !hotReload {
-			return template.HTML("") // No refresh in production
+			return template.HTML("")
 		}
 
-		viteClientURL, _ := vi.assetResolver(hotReload)("@vite/client")
+		viteClientURL, err := vi.assetResolver(hotReload)("@vite/client")
+		if err != nil {
+			return template.HTML("")
+		}
 
 		html := fmt.Sprintf(`<script type="module" src="%s"></script>`, viteClientURL)
 
@@ -430,13 +390,12 @@ func (vi *ViteInstance) findManifest() (string, error) {
 	}
 
 	if _, err := os.Stat(vi.viteConfig.FallbackManifest); err == nil {
-		if err := os.Rename(vi.viteConfig.FallbackManifest, vi.viteConfig.BuildManifest); err != nil {
-			return "", fmt.Errorf("move manifest: %w", err)
-		}
-		return vi.viteConfig.BuildManifest, nil
+		return vi.viteConfig.FallbackManifest, nil
 	}
 
-	return "", fmt.Errorf("manifest not found")
+	return "", fmt.Errorf("manifest not found at %q or %q",
+		vi.viteConfig.BuildManifest,
+		vi.viteConfig.FallbackManifest)
 }
 
 // Asset represents a Vite manifest entry.
