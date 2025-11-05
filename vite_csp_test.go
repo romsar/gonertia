@@ -54,7 +54,7 @@ func TestCSPMiddlewareCustom(t *testing.T) {
 		vi := &ViteInstance{Inertia: i}
 
 		handler := vi.CSPMiddleware(
-			WithCSPPolicy("script-src 'nonce-%s'; default-src 'self'"),
+			WithCSPPolicy("script-src 'nonce-{{nonce}}'; default-src 'self'"),
 		)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))

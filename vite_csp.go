@@ -3,8 +3,8 @@ package gonertia
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"net/http"
+	"strings"
 )
 
 type cspConfig struct {
@@ -24,7 +24,7 @@ func WithCSPNonceGenerator(gen func() string) CSPOption {
 }
 
 // WithCSPPolicy sets a custom CSP policy template.
-// Use %s placeholders where nonces should be inserted.
+// Use {{nonce}} placeholders where nonces should be inserted.
 func WithCSPPolicy(policy string) CSPOption {
 	return func(c *cspConfig) {
 		c.policy = policy
@@ -44,8 +44,8 @@ func WithCSPNonceKey(key string) CSPOption {
 func (vi *ViteInstance) CSPMiddleware(opts ...CSPOption) func(http.Handler) http.Handler {
 	config := &cspConfig{
 		nonceGenerator: generateCryptoNonce,
-		policy: "script-src 'nonce-%s' 'strict-dynamic'; " +
-			"style-src 'nonce-%s'; " +
+		policy: "script-src 'nonce-{{nonce}}' 'strict-dynamic'; " +
+			"style-src 'nonce-{{nonce}}'; " +
 			"font-src 'self' data:; " +
 			"img-src 'self' data: https:; " +
 			"object-src 'none'; " +
@@ -60,7 +60,7 @@ func (vi *ViteInstance) CSPMiddleware(opts ...CSPOption) func(http.Handler) http
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			nonce := config.nonceGenerator()
-			newCSP := fmt.Sprintf(config.policy, nonce, nonce)
+			newCSP := strings.ReplaceAll(config.policy, "{{nonce}}", nonce)
 
 			existing := w.Header().Get("Content-Security-Policy")
 			if existing != "" {

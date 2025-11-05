@@ -546,7 +546,7 @@ Template:
 Customize:
 ```go
 app.CSPMiddleware(
-    inertia.WithCSPPolicy("script-src 'nonce-%s'"),
+    inertia.WithCSPPolicy("script-src 'nonce-{{nonce}}'"),
     inertia.WithCSPNonceGenerator(customFunc),
 )
 ```
