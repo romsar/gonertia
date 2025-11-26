@@ -11,6 +11,18 @@ import (
 	"strings"
 )
 
+// PreloadStrategy determines how dependencies are loaded.
+type PreloadStrategy string
+
+const (
+	// PreloadNone loads only the main entry point with no preloading.
+	PreloadNone PreloadStrategy = "none"
+	// PreloadAggressive preloads all static dependencies immediately.
+	PreloadAggressive PreloadStrategy = "aggressive"
+	// PreloadWaterfall loads dependencies in controlled batches after page load.
+	PreloadWaterfall PreloadStrategy = "waterfall"
+)
+
 // ViteConfig holds Vite configuration.
 type ViteConfig struct {
 	HotFile          string
@@ -20,6 +32,11 @@ type ViteConfig struct {
 	HotReloadPort    string
 	EmbedFS          fs.FS // Optional fs.FS (embed.FS or os.DirFS) for production builds
 	UseEmbedFS       bool  // Whether to use embed.FS for manifest loading
+
+	IntegrityKey      *string         // Manifest key for SRI hashes (nil = disabled)
+	EntryPoints       []string        // Entry points for asset generation
+	PreloadStrategy   PreloadStrategy // How to handle dependency loading
+	PreloadConcurrent int             // Concurrent prefetch count for waterfall
 }
 
 // ViteInstance wraps Inertia with Vite functionality.
@@ -66,17 +83,66 @@ func WithHotReloadPort(port string) ViteOption {
 	}
 }
 
-// NewVite creates a Vite instance with the given Inertia instance.
-// This uses the file system for hot reload detection and manifest loading.
-func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
-	config := ViteConfig{
-		HotFile:          "public/hot",
-		BuildManifest:    "public/build/manifest.json",
-		FallbackManifest: "public/build/.vite/manifest.json",
-		BuildDir:         "/build/",
-		HotReloadPort:    "//localhost:5173",
-		UseEmbedFS:       false,
+// WithIntegrity enables SubResource Integrity with the default manifest key "integrity".
+func WithIntegrity() ViteOption {
+	return func(c *ViteConfig) {
+		key := "integrity"
+		c.IntegrityKey = &key
 	}
+}
+
+// WithIntegrityKey enables SubResource Integrity with a custom manifest key.
+func WithIntegrityKey(key string) ViteOption {
+	return func(c *ViteConfig) {
+		c.IntegrityKey = &key
+	}
+}
+
+// WithEntryPoints explicitly sets entry points to load.
+func WithEntryPoints(entries ...string) ViteOption {
+	return func(c *ViteConfig) {
+		c.EntryPoints = entries
+	}
+}
+
+// WithoutPreloading disables preloading (default).
+func WithoutPreloading() ViteOption {
+	return withPreloadStrategy(PreloadNone, 0)
+}
+
+// WithAggressivePreload preloads all dependencies immediately.
+func WithAggressivePreload() ViteOption {
+	return withPreloadStrategy(PreloadAggressive, 0)
+}
+
+// WithWaterfallPreload enables batched prefetch with concurrency control.
+func WithWaterfallPreload(concurrent int) ViteOption {
+	return withPreloadStrategy(PreloadWaterfall, concurrent)
+}
+
+func withPreloadStrategy(strategy PreloadStrategy, concurrent int) ViteOption {
+	return func(c *ViteConfig) {
+		c.PreloadStrategy = strategy
+		c.PreloadConcurrent = concurrent
+	}
+}
+
+func defaultViteConfig() ViteConfig {
+	return ViteConfig{
+		HotFile:           "public/hot",
+		BuildManifest:     "public/build/manifest.json",
+		FallbackManifest:  "public/build/.vite/manifest.json",
+		BuildDir:          "/build/",
+		HotReloadPort:     "//localhost:5173",
+		PreloadStrategy:   PreloadNone,
+		PreloadConcurrent: 3,
+	}
+}
+
+// NewVite creates a Vite instance with file system for manifest loading.
+func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
+	config := defaultViteConfig()
+	config.UseEmbedFS = false
 
 	for _, opt := range opts {
 		opt(&config)
@@ -94,18 +160,11 @@ func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
 	return vi, nil
 }
 
-// NewViteFromFS creates a Vite instance using fs.FS (embed.FS or os.DirFS) for production builds.
-// It checks for hot reload file first (for development), otherwise uses the provided fs.FS.
+// NewViteFromFS creates a Vite instance using fs.FS for production builds.
 func NewViteFromFS(i *Inertia, embedFS fs.FS, opts ...ViteOption) (*ViteInstance, error) {
-	config := ViteConfig{
-		HotFile:          "public/hot",
-		BuildManifest:    "public/build/manifest.json",
-		FallbackManifest: "public/build/.vite/manifest.json",
-		BuildDir:         "/build/",
-		HotReloadPort:    "//localhost:5173",
-		EmbedFS:          embedFS,
-		UseEmbedFS:       true,
-	}
+	config := defaultViteConfig()
+	config.EmbedFS = embedFS
+	config.UseEmbedFS = true
 
 	for _, opt := range opts {
 		opt(&config)
@@ -131,6 +190,7 @@ func NewWithVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
 func (vi *ViteInstance) setup() error {
 	hotReload := vi.isHotReload()
 
+	// Existing template functions (backward compatibility)
 	if err := vi.ShareTemplateFunc("vite", vi.assetResolver(hotReload)); err != nil {
 		return fmt.Errorf("share vite function: %w", err)
 	}
@@ -141,6 +201,14 @@ func (vi *ViteInstance) setup() error {
 
 	if err := vi.ShareTemplateFunc("viteRefresh", vi.refreshHelper(hotReload)); err != nil {
 		return fmt.Errorf("share vite refresh function: %w", err)
+	}
+
+	if err := vi.ShareTemplateFunc("viteAssets", vi.generateAllAssets); err != nil {
+		return fmt.Errorf("share viteAssets function: %w", err)
+	}
+
+	if err := vi.ShareTemplateFunc("viteAssetsWithNonce", vi.generateAllAssetsWithNonce); err != nil {
+		return fmt.Errorf("share viteAssetsWithNonce function: %w", err)
 	}
 
 	vi.ShareTemplateData("hmr", hotReload)
@@ -273,11 +341,18 @@ func (vi *ViteInstance) findManifestInEmbed() (string, error) {
 func (vi *ViteInstance) reactRefreshHelper(hotReload bool) func() template.HTML {
 	return func() template.HTML {
 		if !hotReload {
-			return template.HTML("") // No React Refresh in production
+			return template.HTML("")
 		}
 
-		viteClientURL, _ := vi.assetResolver(hotReload)("@vite/client")
-		reactRefreshURL, _ := vi.assetResolver(hotReload)("@react-refresh")
+		viteClientURL, err := vi.assetResolver(hotReload)("@vite/client")
+		if err != nil {
+			return template.HTML("")
+		}
+
+		reactRefreshURL, err := vi.assetResolver(hotReload)("@react-refresh")
+		if err != nil {
+			return template.HTML("")
+		}
 
 		html := fmt.Sprintf(`<script type="module" src="%s"></script>
 <script type="module">
@@ -295,10 +370,13 @@ func (vi *ViteInstance) reactRefreshHelper(hotReload bool) func() template.HTML 
 func (vi *ViteInstance) refreshHelper(hotReload bool) func() template.HTML {
 	return func() template.HTML {
 		if !hotReload {
-			return template.HTML("") // No refresh in production
+			return template.HTML("")
 		}
 
-		viteClientURL, _ := vi.assetResolver(hotReload)("@vite/client")
+		viteClientURL, err := vi.assetResolver(hotReload)("@vite/client")
+		if err != nil {
+			return template.HTML("")
+		}
 
 		html := fmt.Sprintf(`<script type="module" src="%s"></script>`, viteClientURL)
 
@@ -312,17 +390,23 @@ func (vi *ViteInstance) findManifest() (string, error) {
 	}
 
 	if _, err := os.Stat(vi.viteConfig.FallbackManifest); err == nil {
-		if err := os.Rename(vi.viteConfig.FallbackManifest, vi.viteConfig.BuildManifest); err != nil {
-			return "", fmt.Errorf("move manifest: %w", err)
-		}
-		return vi.viteConfig.BuildManifest, nil
+		return vi.viteConfig.FallbackManifest, nil
 	}
 
-	return "", fmt.Errorf("manifest not found")
+	return "", fmt.Errorf("manifest not found at %q or %q",
+		vi.viteConfig.BuildManifest,
+		vi.viteConfig.FallbackManifest)
 }
 
 // Asset represents a Vite manifest entry.
 type Asset struct {
-	File string `json:"file"`
-	Src  string `json:"src"`
+	File           string   `json:"file"`                     // Hashed output file
+	Src            string   `json:"src,omitempty"`            // Source file path
+	Name           string   `json:"name,omitempty"`           // Asset name
+	IsEntry        bool     `json:"isEntry,omitempty"`        // Main entry point
+	IsDynamicEntry bool     `json:"isDynamicEntry,omitempty"` // Code-split chunk
+	Imports        []string `json:"imports,omitempty"`        // Static dependencies
+	DynamicImports []string `json:"dynamicImports,omitempty"` // Lazy imports
+	Css            []string `json:"css,omitempty"`            // Associated CSS
+	Integrity      string   `json:"integrity,omitempty"`      // SRI hash (e.g., from vite-plugin-manifest-sri)
 }
