@@ -101,6 +101,20 @@ func Always(value any) AlwaysProp {
 	return AlwaysProp{Value: value}
 }
 
+// OnceProp is a property that is sent only on the first visit, not on partial reloads unless explicitly requested.
+// https://inertiajs.com/docs/v2/data-props/once-props
+type OnceProp struct {
+	Value any
+}
+
+func (p OnceProp) Prop() any {
+	return p.Value
+}
+
+func Once(value any) OnceProp {
+	return OnceProp{Value: value}
+}
+
 // MergeProps is a property, which items will be merged instead of overwrite.
 //
 // https://inertiajs.com/merging-props
@@ -674,7 +688,6 @@ func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (
 	if isPartial(r, component) {
 		// Only (include keys) and except (exclude keys) logic.
 		only, except := getOnlyAndExcept(r)
-
 		if len(only) > 0 {
 			for key, val := range props {
 				if _, ok := only[key]; ok {
@@ -683,15 +696,28 @@ func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (
 				if _, ok := val.(AlwaysProp); ok {
 					continue
 				}
-
+				// Remove OnceProp if not explicitly requested
+				if _, ok := val.(OnceProp); ok {
+					delete(props, key)
+					continue
+				}
 				delete(props, key)
+			}
+		} else {
+			// Remove OnceProp on partial reload if not explicitly requested
+			for key, val := range props {
+				if _, ok := val.(OnceProp); ok {
+					delete(props, key)
+				}
 			}
 		}
 		for key := range except {
 			if _, ok := props[key].(AlwaysProp); ok {
 				continue
 			}
-
+			if _, ok := props[key].(OnceProp); ok {
+				continue
+			}
 			delete(props, key)
 		}
 	} else {
