@@ -102,6 +102,7 @@ func Always(value any) AlwaysProp {
 }
 
 // OnceProp is a property that is sent only on the first visit, not on partial reloads unless explicitly requested.
+//
 // https://inertiajs.com/docs/v2/data-props/once-props
 type OnceProp struct {
 	Value any
@@ -536,7 +537,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 	}
 
 	deferredProps := i.resolveDeferredProps(r, component, props)
-	mergePropsResult := resolveMergeProps(r, props)
+	mergeProps := resolveMergeProps(r, props)
 	scrollProps := resolveScrollProps(r, props)
 
 	props, err := i.resolveProps(r, component, props)
@@ -552,10 +553,10 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 		EncryptHistory: i.resolveEncryptHistory(r.Context()),
 		ClearHistory:   ClearHistoryFromContext(r.Context()),
 		DeferredProps:  deferredProps,
-		MergeProps:     mergePropsResult.MergeProps,
-		PrependProps:   mergePropsResult.PrependProps,
-		DeepMergeProps: mergePropsResult.DeepMergeProps,
-		MatchPropsOn:   mergePropsResult.MatchPropsOn,
+		MergeProps:     mergeProps.MergeProps,
+		PrependProps:   mergeProps.PrependProps,
+		DeepMergeProps: mergeProps.DeepMergeProps,
+		MatchPropsOn:   mergeProps.MatchPropsOn,
 		ScrollProps:    scrollProps,
 	}, nil
 }
@@ -688,34 +689,21 @@ func (i *Inertia) resolveProps(r *http.Request, component string, props Props) (
 	if isPartial(r, component) {
 		// Only (include keys) and except (exclude keys) logic.
 		only, except := getOnlyAndExcept(r)
-		if len(only) > 0 {
-			for key, val := range props {
-				if _, ok := only[key]; ok {
-					continue
-				}
-				if _, ok := val.(AlwaysProp); ok {
-					continue
-				}
-				// Remove OnceProp if not explicitly requested
-				if _, ok := val.(OnceProp); ok {
-					delete(props, key)
-					continue
-				}
-				delete(props, key)
+		for key, val := range props {
+			if _, ok := only[key]; ok {
+				continue
 			}
-		} else {
-			// Remove OnceProp on partial reload if not explicitly requested
-			for key, val := range props {
-				if _, ok := val.(OnceProp); ok {
-					delete(props, key)
-				}
+			if _, ok := val.(AlwaysProp); ok {
+				continue
+			}
+			_, isOnce := val.(OnceProp)
+			if isOnce || len(only) > 0 {
+				delete(props, key)
 			}
 		}
 		for key := range except {
-			if _, ok := props[key].(AlwaysProp); ok {
-				continue
-			}
-			if _, ok := props[key].(OnceProp); ok {
+			switch props[key].(type) {
+			case AlwaysProp, OnceProp:
 				continue
 			}
 			delete(props, key)

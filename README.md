@@ -169,6 +169,16 @@ props := inertia.Props{
 }
 ```
 
+#### Once props ([learn more](https://inertiajs.com/docs/v2/data-props/once-props))
+
+Gonertia supports light version of Once props (feel free to send a pr with support of other features).
+
+```go
+props := inertia.Props{
+    "foo": inertia.Once("bar"),
+}
+```
+
 #### Infinite scrolling ([learn more](https://inertiajs.com/infinite-scroll))
 
 ```go
