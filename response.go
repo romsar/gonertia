@@ -965,12 +965,18 @@ func (i *Inertia) prepareSSRURL() string {
 func (i *Inertia) htmlContainer(pageJSON []byte) (inertia, _ template.HTML, _ error) {
 	var sb strings.Builder
 
-	// It doesn't look pretty, but fast!
+	writePageScript(&sb, i.containerID, pageJSON)
 	sb.WriteString(`<div id="`)
-	sb.WriteString(i.containerID)
-	sb.WriteString(`" data-page="`)
-	template.HTMLEscape(&sb, pageJSON)
+	template.HTMLEscape(&sb, []byte(i.containerID))
 	sb.WriteString(`"></div>`)
 
 	return template.HTML(sb.String()), "", nil
+}
+
+func writePageScript(sb *strings.Builder, containerID string, pageJSON []byte) {
+	sb.WriteString(`<script data-page="`)
+	template.HTMLEscape(sb, []byte(containerID))
+	sb.WriteString(`" type="application/json">`)
+	sb.WriteString(strings.ReplaceAll(string(pageJSON), `</script>`, `<\/script>`))
+	sb.WriteString(`</script>`)
 }
