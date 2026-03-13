@@ -33,11 +33,20 @@ const stubHTML = `<!DOCTYPE html>
             <link rel="stylesheet" href="/build/assets/index.css">
 	</head>
 	<body>
-		<div data-page="foo bar">
+		<div>
 			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla a metus condimentum, pulvinar arcu in, lacinia urna.</p>
 			<p>Proin tincidunt, leo ut consectetur tincidunt, sem ex fermentum ipsum, a sollicitudin odio magna et dui.</p>
 			<p>Aliquam efficitur, purus quis porttitor placerat, massa mi hendrerit nulla, id convallis eros tortor non augue. Duis id varius arcu.</p>
 		</div>
+		<script data-page="app" type="application/json">{"component":"Foo/Bar","props":{"foo": "bar"},"url":"https://example.com","version":"foobar"}</script>
+		<div id="app"></div>
+	</body>
+</html>`
+
+const stubLegacyHTML = `<!DOCTYPE html>
+<html lang="en">
+	<head></head>
+	<body>
 		<div id="app" data-page="{&#34;component&#34;:&#34;Foo/Bar&#34;,&#34;props&#34;:{&#34;foo&#34;: &#34;bar&#34;},&#34;url&#34;:&#34;https://example.com&#34;,&#34;version&#34;:&#34;foobar&#34;}"></div>
 	</body>
 </html>`
@@ -472,6 +481,16 @@ func TestAssertFromString(t *testing.T) {
 
 		assertStubSuccess(t, mock, stubHTML, assertable)
 	})
+
+	t.Run("success with legacy html container", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		assertable := AssertFromString(mock, stubLegacyHTML)
+
+		assertStubSuccess(t, mock, stubLegacyHTML, assertable)
+	})
 }
 
 func TestAssertFromBytes(t *testing.T) {
@@ -482,6 +501,16 @@ func TestAssertFromBytes(t *testing.T) {
 	assertable := AssertFromBytes(mock, []byte(stubHTML))
 
 	assertStubSuccess(t, mock, stubHTML, assertable)
+}
+
+func TestAssertFromBytes_LegacyHTML(t *testing.T) {
+	t.Parallel()
+
+	mock := new(tMock)
+
+	assertable := AssertFromBytes(mock, []byte(stubLegacyHTML))
+
+	assertStubSuccess(t, mock, stubLegacyHTML, assertable)
 }
 
 func TestAssertFromReader(t *testing.T) {

@@ -157,7 +157,9 @@ func (i AssertableInertia) AssertScrollProps(want map[string]map[string]any) {
 	}
 }
 
-var containerRe = regexp.MustCompile(` data-page="(.*?)"`)
+var dataPageAttrRe = regexp.MustCompile(` data-page="(.*?)"`)
+
+var dataPageScriptRe = regexp.MustCompile(`(?s)<script[^>]* data-page="[^"]*"[^>]*>(.*?)</script>`)
 
 // AssertFromReader creates AssertableInertia from the io.Reader body.
 func AssertFromReader(t t, body io.Reader) AssertableInertia {
@@ -192,11 +194,7 @@ func AssertFromBytes(t t, body []byte) AssertableInertia {
 		return assertable
 	}
 
-	matched := containerRe.FindAllStringSubmatch(buf.String(), -1)
-	if len(matched) == 0 {
-		invalidInertiaResponse(t)
-	}
-
+	matched := dataPageAttrRe.FindAllStringSubmatch(buf.String(), -1)
 	for _, m := range matched {
 		if len(m) <= 1 {
 			invalidInertiaResponse(t)
@@ -205,6 +203,20 @@ func AssertFromBytes(t t, body []byte) AssertableInertia {
 		pageJSON := []byte(html.UnescapeString(m[1]))
 		if err := json.Unmarshal(pageJSON, &assertable.page); err == nil {
 			break
+		}
+	}
+
+	if assertable.page == nil {
+		matched = dataPageScriptRe.FindAllStringSubmatch(buf.String(), -1)
+		for _, m := range matched {
+			if len(m) <= 1 {
+				invalidInertiaResponse(t)
+			}
+
+			pageJSON := []byte(m[1])
+			if err := json.Unmarshal(pageJSON, &assertable.page); err == nil {
+				break
+			}
 		}
 	}
 
