@@ -442,6 +442,7 @@ func (i *Inertia) Redirect(w http.ResponseWriter, r *http.Request, url string, s
 
 func (i *Inertia) flashContext(ctx context.Context) {
 	i.flashValidationErrorsFromContext(ctx)
+	i.flashDataFromContext(ctx)
 	i.flashClearHistoryFromContext(ctx)
 }
 
@@ -477,6 +478,22 @@ func (i *Inertia) flashClearHistoryFromContext(ctx context.Context) {
 	}
 }
 
+func (i *Inertia) flashDataFromContext(ctx context.Context) {
+	if i.flash == nil {
+		return
+	}
+
+	flash := FlashFromContext(ctx)
+	if len(flash) == 0 {
+		return
+	}
+
+	err := i.flash.Flash(ctx, flash)
+	if err != nil {
+		i.logger.Printf("cannot flash data: %s", err)
+	}
+}
+
 // Render returns response with Inertia data.
 //
 // If request was made by Inertia - it will return data in JSON format.
@@ -506,6 +523,7 @@ func (i *Inertia) Render(w http.ResponseWriter, r *http.Request, component strin
 type page struct {
 	Component      string                        `json:"component"`
 	Props          Props                         `json:"props"`
+	Flash          Flash                         `json:"flash,omitempty"`
 	URL            string                        `json:"url"`
 	Version        string                        `json:"version"`
 	EncryptHistory bool                          `json:"encryptHistory"`
@@ -548,6 +566,7 @@ func (i *Inertia) buildPage(r *http.Request, component string, props Props) (*pa
 	return &page{
 		Component:      component,
 		Props:          props,
+		Flash:          FlashFromContext(r.Context()),
 		URL:            r.RequestURI,
 		Version:        i.version,
 		EncryptHistory: i.resolveEncryptHistory(r.Context()),

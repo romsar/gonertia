@@ -413,6 +413,171 @@ func Test_ValidationErrorsFromContext(t *testing.T) {
 	}
 }
 
+func TestInertia_SetFlash(t *testing.T) {
+	t.Parallel()
+
+	t.Run("fresh", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := SetFlash(context.Background(), Flash{"foo": "bar"})
+
+		got, ok := ctx.Value(flashContextKey).(Flash)
+		if !ok {
+			t.Fatal("flash from context is not `Flash` type")
+		}
+
+		want := Flash{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("Flash=%#v, want=%#v", got, want)
+		}
+	})
+
+	t.Run("already filled", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.WithValue(context.Background(), flashContextKey, Flash{"baz": "quz", "foo": "quz"})
+		ctx = SetFlash(ctx, Flash{"foo": "bar"})
+
+		got, ok := ctx.Value(flashContextKey).(Flash)
+		if !ok {
+			t.Fatal("flash from context is not `Flash` type")
+		}
+
+		want := Flash{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("Flash=%#v, want=%#v", got, want)
+		}
+	})
+}
+
+func TestInertia_AddFlash(t *testing.T) {
+	t.Parallel()
+
+	t.Run("fresh", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := AddFlash(context.Background(), Flash{"foo": "bar"})
+
+		got, ok := ctx.Value(flashContextKey).(Flash)
+		if !ok {
+			t.Fatal("flash from context is not `Flash` type")
+		}
+
+		want := Flash{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("Flash=%#v, want=%#v", got, want)
+		}
+	})
+
+	t.Run("already filled", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.WithValue(context.Background(), flashContextKey, Flash{"baz": "quz", "foo": "quz"})
+		ctx = AddFlash(ctx, Flash{"foo": "bar"})
+
+		got, ok := ctx.Value(flashContextKey).(Flash)
+		if !ok {
+			t.Fatal("flash from context is not `Flash` type")
+		}
+
+		want := Flash{"baz": "quz", "foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("Flash=%#v, want=%#v", got, want)
+		}
+	})
+}
+
+func TestInertia_SetFlashValue(t *testing.T) {
+	t.Parallel()
+
+	t.Run("fresh", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := SetFlashValue(context.Background(), "foo", "bar")
+
+		got, ok := ctx.Value(flashContextKey).(Flash)
+		if !ok {
+			t.Fatal("flash from context is not `Flash` type")
+		}
+
+		want := Flash{"foo": "bar"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("Flash=%#v, want=%#v", got, want)
+		}
+	})
+
+	t.Run("already filled", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.WithValue(context.Background(), flashContextKey, Flash{"baz": "quz", "foo": "quz"})
+		ctx = SetFlashValue(ctx, "foo", "bar")
+
+		got, ok := ctx.Value(flashContextKey).(Flash)
+		if !ok {
+			t.Fatal("flash from context is not `Flash` type")
+		}
+
+		want := Flash{"foo": "bar", "baz": "quz"}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("Flash=%#v, want=%#v", got, want)
+		}
+	})
+}
+
+func Test_FlashFromContext(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		ctxData any
+		want    Flash
+	}{
+		{
+			name:    "nil",
+			ctxData: nil,
+			want:    Flash{},
+		},
+		{
+			name:    "empty",
+			ctxData: Flash{},
+			want:    Flash{},
+		},
+		{
+			name:    "filled",
+			ctxData: Flash{"foo": "bar"},
+			want:    Flash{"foo": "bar"},
+		},
+		{
+			name:    "filled with nested",
+			ctxData: Flash{"foo": Flash{"abc": "123"}},
+			want:    Flash{"foo": Flash{"abc": "123"}},
+		},
+		{
+			name:    "wrong type",
+			ctxData: []string{"foo", "bar"},
+			want:    Flash{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := context.WithValue(context.Background(), flashContextKey, tt.ctxData)
+
+			got := FlashFromContext(ctx)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("Flash=%#v, want=%#v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestInertia_SetEncryptHistory(t *testing.T) {
 	t.Parallel()
 

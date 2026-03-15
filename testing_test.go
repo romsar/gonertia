@@ -43,14 +43,6 @@ const stubHTML = `<!DOCTYPE html>
 	</body>
 </html>`
 
-const stubLegacyHTML = `<!DOCTYPE html>
-<html lang="en">
-	<head></head>
-	<body>
-		<div id="app" data-page="{&#34;component&#34;:&#34;Foo/Bar&#34;,&#34;props&#34;:{&#34;foo&#34;: &#34;bar&#34;},&#34;url&#34;:&#34;https://example.com&#34;,&#34;version&#34;:&#34;foobar&#34;}"></div>
-	</body>
-</html>`
-
 const stubJSON = `{"component":"Foo/Bar","props":{"foo": "bar"},"url":"https://example.com","version":"foobar"}`
 
 func TestAssertableInertia_AssertComponent(t *testing.T) {
@@ -226,6 +218,52 @@ func TestAssertableInertia_AssertProps(t *testing.T) {
 		}
 
 		i.AssertProps(Props{"foo": "barrr"})
+
+		if !mock.helperInvoked {
+			t.Fatal("expected Helper() to be invoked")
+		}
+
+		if !mock.isFailed {
+			t.Fatal("expected assertion failure")
+		}
+	})
+}
+
+func TestAssertableInertia_AssertFlash(t *testing.T) {
+	t.Parallel()
+
+	t.Run("positive", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		i := AssertableInertia{
+			t:    mock,
+			page: &page{Flash: Flash{"foo": "bar"}},
+		}
+
+		i.AssertFlash(Flash{"foo": "bar"})
+
+		if !mock.helperInvoked {
+			t.Fatal("expected Helper() to be invoked")
+		}
+
+		if mock.isFailed {
+			t.Fatal("unexpected assertion failure")
+		}
+	})
+
+	t.Run("negative", func(t *testing.T) {
+		t.Parallel()
+
+		mock := new(tMock)
+
+		i := AssertableInertia{
+			t:    mock,
+			page: &page{Flash: Flash{"foo": "bar"}},
+		}
+
+		i.AssertFlash(Flash{"foo": "baz"})
 
 		if !mock.helperInvoked {
 			t.Fatal("expected Helper() to be invoked")
@@ -450,7 +488,7 @@ func TestAssertFromString(t *testing.T) {
 
 		AssertFromString(mock, `<html>
 	<head></head>
-	<body><div id="app" data-page="foo bar"></div></body>
+	<body><script data-page="app" type="application/json">foo bar</script></body>
 </html>`)
 
 		if !mock.helperInvoked {
@@ -481,16 +519,6 @@ func TestAssertFromString(t *testing.T) {
 
 		assertStubSuccess(t, mock, stubHTML, assertable)
 	})
-
-	t.Run("success with legacy html container", func(t *testing.T) {
-		t.Parallel()
-
-		mock := new(tMock)
-
-		assertable := AssertFromString(mock, stubLegacyHTML)
-
-		assertStubSuccess(t, mock, stubLegacyHTML, assertable)
-	})
 }
 
 func TestAssertFromBytes(t *testing.T) {
@@ -501,16 +529,6 @@ func TestAssertFromBytes(t *testing.T) {
 	assertable := AssertFromBytes(mock, []byte(stubHTML))
 
 	assertStubSuccess(t, mock, stubHTML, assertable)
-}
-
-func TestAssertFromBytes_LegacyHTML(t *testing.T) {
-	t.Parallel()
-
-	mock := new(tMock)
-
-	assertable := AssertFromBytes(mock, []byte(stubLegacyHTML))
-
-	assertStubSuccess(t, mock, stubLegacyHTML, assertable)
 }
 
 func TestAssertFromReader(t *testing.T) {

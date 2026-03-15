@@ -199,6 +199,7 @@ func tmpFile(t *testing.T, content string) *os.File {
 
 type flashProviderMock struct {
 	errors       ValidationErrors
+	flash        Flash
 	clearHistory bool
 }
 
@@ -211,6 +212,15 @@ func (p *flashProviderMock) FlashErrors(_ context.Context, errors ValidationErro
 
 func (p *flashProviderMock) GetErrors(_ context.Context) (ValidationErrors, error) {
 	return p.errors, nil
+}
+
+func (p *flashProviderMock) Flash(_ context.Context, flash Flash) error {
+	p.flash = flash
+	return nil
+}
+
+func (p *flashProviderMock) GetFlash(_ context.Context) (Flash, error) {
+	return p.flash, nil
 }
 
 func (p *flashProviderMock) FlashClearHistory(_ context.Context) error {

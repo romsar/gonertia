@@ -3,7 +3,6 @@ package gonertia
 import (
 	"bytes"
 	"encoding/json"
-	"html"
 	"io"
 	"reflect"
 	"regexp"
@@ -62,6 +61,15 @@ func (i AssertableInertia) AssertProps(want Props) {
 
 	if !reflect.DeepEqual(i.Props, want) {
 		i.t.Fatalf("inertia: Props=%#v, want=%#v", i.Props, want)
+	}
+}
+
+// AssertFlash verifies that flash from Inertia response and the passed flash are the same.
+func (i AssertableInertia) AssertFlash(want Flash) {
+	i.t.Helper()
+
+	if !reflect.DeepEqual(i.Flash, want) {
+		i.t.Fatalf("inertia: Flash=%#v, want=%#v", i.Flash, want)
 	}
 }
 
@@ -157,8 +165,6 @@ func (i AssertableInertia) AssertScrollProps(want map[string]map[string]any) {
 	}
 }
 
-var dataPageAttrRe = regexp.MustCompile(` data-page="(.*?)"`)
-
 var dataPageScriptRe = regexp.MustCompile(`(?s)<script[^>]* data-page="[^"]*"[^>]*>(.*?)</script>`)
 
 // AssertFromReader creates AssertableInertia from the io.Reader body.
@@ -194,29 +200,15 @@ func AssertFromBytes(t t, body []byte) AssertableInertia {
 		return assertable
 	}
 
-	matched := dataPageAttrRe.FindAllStringSubmatch(buf.String(), -1)
+	matched := dataPageScriptRe.FindAllStringSubmatch(buf.String(), -1)
 	for _, m := range matched {
 		if len(m) <= 1 {
 			invalidInertiaResponse(t)
 		}
 
-		pageJSON := []byte(html.UnescapeString(m[1]))
+		pageJSON := []byte(m[1])
 		if err := json.Unmarshal(pageJSON, &assertable.page); err == nil {
 			break
-		}
-	}
-
-	if assertable.page == nil {
-		matched = dataPageScriptRe.FindAllStringSubmatch(buf.String(), -1)
-		for _, m := range matched {
-			if len(m) <= 1 {
-				invalidInertiaResponse(t)
-			}
-
-			pageJSON := []byte(m[1])
-			if err := json.Unmarshal(pageJSON, &assertable.page); err == nil {
-				break
-			}
 		}
 	}
 
