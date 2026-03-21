@@ -23,14 +23,14 @@ This package based on the official Laravel adapter for Inertia.js [inertiajs/ine
 - [x] Helpers for validation errors
 - [x] Examples
 - [x] SSR
-- [x] Inertia 2.0 compatibility
+- [x] Inertia 3.0 compatibility
 
 ## Installation
 
 Install using `go get` command:
 
 ```shell
-go get github.com/romsar/gonertia/v2
+go get github.com/romsar/gonertia/v3
 ```
 
 ## Usage
@@ -46,7 +46,7 @@ import (
     "log"
     "net/http"
 
-    inertia "github.com/romsar/gonertia"
+    inertia "github.com/romsar/gonertia/v3"
 )
 
 func main() {
@@ -169,7 +169,7 @@ props := inertia.Props{
 }
 ```
 
-#### Once props ([learn more](https://inertiajs.com/docs/v2/data-props/once-props))
+#### Once props ([learn more](https://inertiajs.com/docs/v3/data-props/once-props))
 
 Gonertia supports light version of Once props (feel free to send a pr with support of other features).
 
@@ -417,7 +417,7 @@ import (
     "log"
     "net/http"
 
-    inertia "github.com/romsar/gonertia/v2"
+    inertia "github.com/romsar/gonertia/v3"
 )
 
 func main() {
