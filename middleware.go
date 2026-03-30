@@ -20,6 +20,7 @@ func (i *Inertia) Middleware(next http.Handler) http.Handler {
 		// Resolve validation errors and clear history from the flash data provider.
 		{
 			r = i.resolveValidationErrors(r)
+			r = i.resolveFlash(r)
 			r = i.resolveClearHistory(r)
 		}
 
@@ -106,6 +107,24 @@ func (i *Inertia) resolveClearHistory(r *http.Request) *http.Request {
 	}
 
 	return r
+}
+
+func (i *Inertia) resolveFlash(r *http.Request) *http.Request {
+	if i.flash == nil {
+		return r
+	}
+
+	flash, err := i.flash.GetFlash(r.Context())
+	if err != nil {
+		i.logger.Printf("get flash data from the flash data provider error: %s", err)
+		return r
+	}
+
+	if len(flash) == 0 {
+		return r
+	}
+
+	return r.WithContext(SetFlash(r.Context(), flash))
 }
 
 func (i *Inertia) copyWrapperResponse(dst http.ResponseWriter, src *inertiaResponseWrapper) {

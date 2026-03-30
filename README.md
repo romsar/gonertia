@@ -281,6 +281,43 @@ ctx := inertia.SetValidationErrors(r.Context(), inertia.ValidationErrors{"some_f
 // pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
 ```
 
+Validation errors are exposed as `page.props.errors`.
+
+#### Flash data ([learn more](https://inertiajs.com/docs/v3/data-props/flash-data))
+
+```go
+ctx := inertia.SetFlash(r.Context(), inertia.Flash{"toast": "Saved"})
+// or inertia.AddFlash(ctx, inertia.Flash{"newUserId": 123})
+// or inertia.SetFlashValue(ctx, "redirectTo", "/private")
+
+// pass it to the next middleware or inertia.Render function using r.WithContext(ctx).
+```
+
+Flash data is exposed as `page.flash`.
+
+Example redirect flow:
+
+```go
+ctx := inertia.SetValidationErrors(r.Context(), inertia.ValidationErrors{
+    "email": "Email is required",
+})
+
+ctx = inertia.SetFlash(ctx, inertia.Flash{
+    "toast": "Please fix the form errors",
+})
+
+inertia.Redirect(w, r.WithContext(ctx), "/users")
+```
+
+Example client-side usage:
+
+```jsx
+const page = usePage()
+
+page.props.errors.email
+page.flash.toast
+```
+
 #### Replace standard JSON marshaller
 
 1. Implement [JSONMarshaller](./json.go) interface:
@@ -332,8 +369,8 @@ i, err := inertia.New(
 Unfortunately (or fortunately) we do not have the advantages of such a framework as Laravel in terms of session management.
 In this regard, we have to do some things manually that are done automatically in frameworks.
 
-One of them is displaying validation errors after redirects.
-You have to write your own implementation of `gonertia.FlashProvider` which will have to store error data into the user's session and return this data (you can get the session ID from the context depending on your application).
+Two of them are displaying validation errors after redirects and transporting arbitrary flash data.
+You have to write your own implementation of `gonertia.FlashProvider` which will have to store validation errors and flash data into the user's session and return this data (you can get the session ID from the context depending on your application).
 
 ```go
 i, err := inertia.New(
@@ -347,11 +384,16 @@ Simple inmemory implementation of flash provider:
 ```go
 type InmemFlashProvider struct {
     errors map[string]inertia.ValidationErrors
+    flash map[string]inertia.Flash
     clearHistory map[string]bool
 }
 
 func NewInmemFlashProvider() *InmemFlashProvider {
-    return &InmemFlashProvider{errors: make(map[string]inertia.ValidationErrors)}
+    return &InmemFlashProvider{
+        errors: make(map[string]inertia.ValidationErrors),
+        flash: make(map[string]inertia.Flash),
+        clearHistory: make(map[string]bool),
+    }
 }
 
 func (p *InmemFlashProvider) FlashErrors(ctx context.Context, errors ValidationErrors) error {
@@ -367,6 +409,19 @@ func (p *InmemFlashProvider) GetErrors(ctx context.Context) (ValidationErrors, e
     return errors, nil
 }
 
+func (p *InmemFlashProvider) Flash(ctx context.Context, flash inertia.Flash) error {
+    sessionID := getSessionIDFromContext(ctx)
+    p.flash[sessionID] = flash
+    return nil
+}
+
+func (p *InmemFlashProvider) GetFlash(ctx context.Context) (inertia.Flash, error) {
+    sessionID := getSessionIDFromContext(ctx)
+    flash := p.flash[sessionID]
+    delete(p.flash, sessionID)
+    return flash, nil
+}
+
 func (p *InmemFlashProvider) FlashClearHistory(ctx context.Context) error {
     sessionID := getSessionIDFromContext(ctx)
     p.clearHistory[sessionID] = true
@@ -377,9 +432,11 @@ func (p *InmemFlashProvider) ShouldClearHistory(ctx context.Context) (bool, erro
     sessionID := getSessionIDFromContext(ctx)
     clearHistory := p.clearHistory[sessionID]
     delete(p.clearHistory, sessionID)
-    return clearHistory
+    return clearHistory, nil
 }
 ```
+
+Validation errors are exposed as `page.props.errors`, while arbitrary flashed data is exposed as `page.flash`.
 
 #### History encryption ([learn more](https://inertiajs.com/history-encryption))
 

@@ -138,6 +138,8 @@ type Logger interface {
 type FlashProvider interface {
 	FlashErrors(ctx context.Context, errors ValidationErrors) error
 	GetErrors(ctx context.Context) (ValidationErrors, error)
+	Flash(ctx context.Context, flash Flash) error
+	GetFlash(ctx context.Context) (Flash, error)
 	ShouldClearHistory(ctx context.Context) (bool, error)
 	FlashClearHistory(ctx context.Context) error
 }

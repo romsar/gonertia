@@ -56,6 +56,34 @@ func TestInertia_Middleware(t *testing.T) {
 				}
 			})
 
+			t.Run("arbitrary flash", func(t *testing.T) {
+				t.Parallel()
+
+				w, r := requestMock(http.MethodGet, "/")
+
+				want := Flash{
+					"message":   "Saved",
+					"newUserId": 123,
+				}
+
+				flashProvider := &flashProviderMock{
+					flash: want,
+				}
+
+				i := I(func(i *Inertia) {
+					i.flash = flashProvider
+				})
+
+				var got Flash
+				i.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					got = FlashFromContext(r.Context())
+				})).ServeHTTP(w, r)
+
+				if !reflect.DeepEqual(got, want) {
+					t.Fatalf("flash=%#v, want=%#v", got, want)
+				}
+			})
+
 			t.Run("clear history", func(t *testing.T) {
 				t.Parallel()
 

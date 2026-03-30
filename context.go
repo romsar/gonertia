@@ -10,6 +10,7 @@ const (
 	templateDataContextKey = contextKey(iota + 1)
 	propsContextKey
 	validationErrorsContextKey
+	flashContextKey
 	encryptHistoryContextKey
 	clearHistoryContextKey
 )
@@ -61,6 +62,9 @@ func SetValidationErrors(ctx context.Context, errors ValidationErrors) context.C
 	return context.WithValue(ctx, validationErrorsContextKey, errors)
 }
 
+// Flash contains arbitrary one-time data that will be exposed as page.flash.
+type Flash map[string]any
+
 // AddValidationErrors appends validation errors to the passed context.
 func AddValidationErrors(ctx context.Context, errors ValidationErrors) context.Context {
 	validationErrors := ValidationErrorsFromContext(ctx)
@@ -84,6 +88,36 @@ func ValidationErrorsFromContext(ctx context.Context) ValidationErrors {
 		return validationErrors
 	}
 	return ValidationErrors{}
+}
+
+// SetFlash sets flash data to the passed context.
+func SetFlash(ctx context.Context, flash Flash) context.Context {
+	return context.WithValue(ctx, flashContextKey, flash)
+}
+
+// AddFlash appends flash data to the passed context.
+func AddFlash(ctx context.Context, flash Flash) context.Context {
+	currentFlash := FlashFromContext(ctx)
+	for key, val := range flash {
+		currentFlash[key] = val
+	}
+	return SetFlash(ctx, currentFlash)
+}
+
+// SetFlashValue sets a single flash value to the passed context.
+func SetFlashValue(ctx context.Context, key string, val any) context.Context {
+	currentFlash := FlashFromContext(ctx)
+	currentFlash[key] = val
+	return SetFlash(ctx, currentFlash)
+}
+
+// FlashFromContext returns flash data from the context.
+func FlashFromContext(ctx context.Context) Flash {
+	flash, ok := ctx.Value(flashContextKey).(Flash)
+	if ok {
+		return flash
+	}
+	return Flash{}
 }
 
 // SetEncryptHistory enables or disables history encryption.
