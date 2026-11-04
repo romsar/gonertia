@@ -270,6 +270,19 @@ func TestInertia_SharedProp(t *testing.T) {
 	}
 }
 
+func TestInertia_Version(t *testing.T) {
+	t.Parallel()
+
+	i, err := New(rootTemplate, WithVersion("foo"))
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if got, want := i.Version(), md5("foo"); got != want {
+		t.Fatalf("Version()=%s, want=%s", got, want)
+	}
+}
+
 func TestInertia_ShareTemplateData(t *testing.T) {
 	t.Parallel()
 

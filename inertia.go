@@ -169,6 +169,15 @@ func (i *Inertia) SharedProp(key string) (any, bool) {
 	return val, ok
 }
 
+// Version returns the asset version that gets sent to the client
+// (whatever WithVersion, WithVersionFromFile or WithVersionFromFileFS set).
+//
+// Handy if you can't use Middleware and need to compare it against
+// X-Inertia-Version yourself.
+func (i *Inertia) Version() string {
+	return i.version
+}
+
 // ShareTemplateData adds passed data to shared template data.
 func (i *Inertia) ShareTemplateData(key string, val any) {
 	i.sharedTemplateDataMu.Lock()

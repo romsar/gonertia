@@ -127,7 +127,9 @@ func withPreloadStrategy(strategy PreloadStrategy, concurrent int) ViteOption {
 	}
 }
 
-func defaultViteConfig() ViteConfig {
+// DefaultViteConfig returns the config NewVite and NewViteFromFS start
+// with before your options kick in.
+func DefaultViteConfig() ViteConfig {
 	return ViteConfig{
 		HotFile:           "public/hot",
 		BuildManifest:     "public/build/manifest.json",
@@ -141,7 +143,7 @@ func defaultViteConfig() ViteConfig {
 
 // NewVite creates a Vite instance with file system for manifest loading.
 func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
-	config := defaultViteConfig()
+	config := DefaultViteConfig()
 	config.UseEmbedFS = false
 
 	for _, opt := range opts {
@@ -162,7 +164,7 @@ func NewVite(i *Inertia, opts ...ViteOption) (*ViteInstance, error) {
 
 // NewViteFromFS creates a Vite instance using fs.FS for production builds.
 func NewViteFromFS(i *Inertia, embedFS fs.FS, opts ...ViteOption) (*ViteInstance, error) {
-	config := defaultViteConfig()
+	config := DefaultViteConfig()
 	config.EmbedFS = embedFS
 	config.UseEmbedFS = true
 
