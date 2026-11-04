@@ -40,7 +40,7 @@ func TestScrollProp(t *testing.T) {
 
 		w, r := requestMock(http.MethodGet, "/home")
 		asInertiaRequest(r)
-		r.Header.Set(headerInertiaInfiniteScrollMergeIntent, "append")
+		r.Header.Set(HeaderInertiaInfiniteScrollMergeIntent, "append")
 
 		items := []string{"item1", "item2", "item3"}
 		err := I().Render(w, r, "Some/Component", Props{
@@ -65,7 +65,7 @@ func TestScrollProp(t *testing.T) {
 
 		w, r := requestMock(http.MethodGet, "/home")
 		asInertiaRequest(r)
-		r.Header.Set(headerInertiaInfiniteScrollMergeIntent, "prepend")
+		r.Header.Set(HeaderInertiaInfiniteScrollMergeIntent, "prepend")
 
 		items := []string{"item1", "item2", "item3"}
 		err := I().Render(w, r, "Some/Component", Props{
@@ -90,7 +90,7 @@ func TestScrollProp(t *testing.T) {
 
 		w, r := requestMock(http.MethodGet, "/home")
 		asInertiaRequest(r)
-		r.Header.Set(headerInertiaInfiniteScrollMergeIntent, "append")
+		r.Header.Set(HeaderInertiaInfiniteScrollMergeIntent, "append")
 
 		items := []string{"item1", "item2", "item3"}
 		err := I().Render(w, r, "Some/Component", Props{

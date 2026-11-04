@@ -5,34 +5,41 @@ import (
 	"strings"
 )
 
+// Headers used by the Inertia protocol, so you don't have to retype them
+// when you deal with Inertia requests yourself (custom middleware, tests…).
+//
+// https://inertiajs.com/the-protocol
 const (
-	headerInertia                          = "X-Inertia"
-	headerInertiaLocation                  = "X-Inertia-Location"
-	headerInertiaPartialData               = "X-Inertia-Partial-Data"
-	headerInertiaPartialExcept             = "X-Inertia-Partial-Except"
-	headerInertiaPartialComponent          = "X-Inertia-Partial-Component"
-	headerInertiaVersion                   = "X-Inertia-Version"
-	headerInertiaReset                     = "X-Inertia-Reset"
-	headerInertiaInfiniteScrollMergeIntent = "X-Inertia-Infinite-Scroll-Merge-Intent"
-	headerVary                             = "Vary"
-	headerContentType                      = "Content-Type"
+	HeaderInertia                          = "X-Inertia"
+	HeaderInertiaLocation                  = "X-Inertia-Location"
+	HeaderInertiaPartialData               = "X-Inertia-Partial-Data"
+	HeaderInertiaPartialExcept             = "X-Inertia-Partial-Except"
+	HeaderInertiaPartialComponent          = "X-Inertia-Partial-Component"
+	HeaderInertiaVersion                   = "X-Inertia-Version"
+	HeaderInertiaReset                     = "X-Inertia-Reset"
+	HeaderInertiaInfiniteScrollMergeIntent = "X-Inertia-Infinite-Scroll-Merge-Intent"
+)
+
+const (
+	headerVary        = "Vary"
+	headerContentType = "Content-Type"
 )
 
 // IsInertiaRequest returns true if the request is an Inertia request.
 func IsInertiaRequest(r *http.Request) bool {
-	return r.Header.Get(headerInertia) != ""
+	return r.Header.Get(HeaderInertia) != ""
 }
 
 func setInertiaInResponse(w http.ResponseWriter) {
-	w.Header().Set(headerInertia, "true")
+	w.Header().Set(HeaderInertia, "true")
 }
 
 func deleteInertiaInResponse(w http.ResponseWriter) {
-	w.Header().Del(headerInertia)
+	w.Header().Del(HeaderInertia)
 }
 
 func setInertiaVaryInResponse(w http.ResponseWriter) {
-	w.Header().Set(headerVary, headerInertia)
+	w.Header().Set(headerVary, HeaderInertia)
 }
 
 func deleteVaryInResponse(w http.ResponseWriter) {
@@ -40,7 +47,7 @@ func deleteVaryInResponse(w http.ResponseWriter) {
 }
 
 func setInertiaLocationInResponse(w http.ResponseWriter, url string) {
-	w.Header().Set(headerInertiaLocation, url)
+	w.Header().Set(HeaderInertiaLocation, url)
 }
 
 func setResponseStatus(w http.ResponseWriter, status int) {
@@ -48,7 +55,7 @@ func setResponseStatus(w http.ResponseWriter, status int) {
 }
 
 func onlyFromRequest(r *http.Request) []string {
-	header := r.Header.Get(headerInertiaPartialData)
+	header := r.Header.Get(HeaderInertiaPartialData)
 	if header == "" {
 		return nil
 	}
@@ -57,7 +64,7 @@ func onlyFromRequest(r *http.Request) []string {
 }
 
 func exceptFromRequest(r *http.Request) []string {
-	header := r.Header.Get(headerInertiaPartialExcept)
+	header := r.Header.Get(HeaderInertiaPartialExcept)
 	if header == "" {
 		return nil
 	}
@@ -66,7 +73,7 @@ func exceptFromRequest(r *http.Request) []string {
 }
 
 func resetFromRequest(r *http.Request) []string {
-	header := r.Header.Get(headerInertiaReset)
+	header := r.Header.Get(HeaderInertiaReset)
 	if header == "" {
 		return nil
 	}
@@ -75,11 +82,11 @@ func resetFromRequest(r *http.Request) []string {
 }
 
 func partialComponentFromRequest(r *http.Request) string {
-	return r.Header.Get(headerInertiaPartialComponent)
+	return r.Header.Get(HeaderInertiaPartialComponent)
 }
 
 func inertiaVersionFromRequest(r *http.Request) string {
-	return r.Header.Get(headerInertiaVersion)
+	return r.Header.Get(HeaderInertiaVersion)
 }
 
 func redirectResponse(w http.ResponseWriter, r *http.Request, url string, status ...int) {
@@ -107,5 +114,5 @@ func refererFromRequest(r *http.Request) string {
 }
 
 func infiniteScrollMergeIntentFromRequest(r *http.Request) string {
-	return r.Header.Get(headerInertiaInfiniteScrollMergeIntent)
+	return r.Header.Get(HeaderInertiaInfiniteScrollMergeIntent)
 }
