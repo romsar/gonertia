@@ -119,7 +119,10 @@ i, err := inertia.New(
     inertia.WithVersion("some-version"), // by any string
     inertia.WithVersionFromFile("./public/build/manifest.json"), // by file checksum
     inertia.WithVersionFromFileFS(embedFS, "./public/build/manifest.json"), // by file checksum from fs.FS
+    inertia.WithVersionFromFile(inertia.DefaultViteConfig().BuildManifest), // same manifest Vite uses, no hardcoded path
 )
+
+i.Version() // read it back, e.g. to check X-Inertia-Version yourself when you can't use Middleware
 ```
 
 #### SSR (Server Side Rendering) ([learn more](https://inertiajs.com/server-side-rendering))
